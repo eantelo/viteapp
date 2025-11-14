@@ -25,10 +25,18 @@ Reglas clave de arquitectura frontend
 - TypeScript
 - Cliente HTTP centralizado (`apiClient`) con Axios o `fetch`.
 - Estado de autenticación basado en JWT (almacenado en `localStorage`/`sessionStorage`).
+- Librería de componentes: **shadcn/ui** administrada mediante `components.json` y el CLI `npx shadcn@latest add`.
 
 🎨 Sistema de diseño
 
 El sistema de diseño de `viteapp` garantiza consistencia visual, accesibilidad y mantenibilidad en toda la aplicación. Todos los componentes deben seguir estas convenciones.
+
+Integración con shadcn/ui
+
+- Mantén sincronizado `components.json`; refleja el inventario de componentes instalados.
+- Agrega o actualiza componentes usando `npx shadcn@latest add <component>` para heredar estilos y tokens consistentes.
+- Evita copiar código desde la web sin pasar por el CLI; así aseguramos paridad con los presets del proyecto.
+- Personalizaciones locales deben residir en `/src/components/ui/` siguiendo la estructura generada por shadcn/ui y respetando los helpers utilitarios existentes (`cn`, temas, etc.).
 
 Tecnología de estilos
 
@@ -90,6 +98,9 @@ Espaciado y layout
 Componentes base reutilizables
 
 Crear componentes atómicos en `/src/components/ui/` (inspirados en shadcn/ui o similar):
+
+- Prioriza los componentes exportados por shadcn/ui ya instalados antes de proponer nuevos.
+- Si falta un componente, usa el CLI (`npx shadcn@latest add`) para generarlo y documenta la adición en `/viteapp/docs`.
 
 - `Button`: variantes `primary`, `secondary`, `outline`, `ghost`, `danger`.
 - `Input`: input de texto con validación visual y label integrado.
