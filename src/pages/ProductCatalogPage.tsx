@@ -8,11 +8,24 @@ import {
   IconUpload,
   IconSearch,
   IconChevronDown,
+  IconEdit,
+  IconTrash,
+  IconDots,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
-import { getProducts } from "@/api/productsApi";
+import { getProducts, deleteProduct } from "@/api/productsApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
+import { ProductFormDialog } from "@/components/products/ProductFormDialog";
+import { DeleteProductDialog } from "@/components/products/DeleteProductDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 export function ProductCatalogPage() {
   useDocumentTitle("Catálogo de Productos");
@@ -28,20 +41,29 @@ export function ProductCatalogPage() {
   };
 
   const [products, setProducts] = useState<ProductDto[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(2);
   const [selectedFilters, setSelectedFilters] = useState({
     category: [] as string[],
+    brand: [] as string[],
     status: [] as string[],
-    supplier: [] as string[],
   });
   const [expandedFilters, setExpandedFilters] = useState({
     category: true,
+    brand: false,
     status: false,
-    supplier: false,
   });
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [showFormDialog, setShowFormDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
+    null
+  );
+  const [deletingProduct, setDeletingProduct] = useState(false);
+  const { toast } = useToast();
 
   const loadProducts = async (searchTerm?: string) => {
     try {
@@ -49,6 +71,16 @@ export function ProductCatalogPage() {
       setError(null);
       const data = await getProducts(searchTerm);
       setProducts(data);
+
+      // Extraer categorías y marcas únicas
+      const categories = Array.from(
+        new Set(data.map((p) => p.category).filter(Boolean))
+      );
+      const brands = Array.from(
+        new Set(data.map((p) => p.brand).filter(Boolean))
+      );
+      setAvailableCategories(categories);
+      setAvailableBrands(brands);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al cargar productos"
@@ -62,15 +94,83 @@ export function ProductCatalogPage() {
     loadProducts();
   }, []);
 
+  // Aplicar filtros cuando cambien
+  useEffect(() => {
+    let result = [...products];
+
+    // Filtrar por búsqueda
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.sku.toLowerCase().includes(searchLower) ||
+          p.barcode.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedFilters.category.length > 0) {
+      result = result.filter((p) =>
+        selectedFilters.category.includes(p.category)
+      );
+    }
+
+    // Filtrar por marca
+    if (selectedFilters.brand.length > 0) {
+      result = result.filter((p) => selectedFilters.brand.includes(p.brand));
+    }
+
+    // Filtrar por estatus
+    if (selectedFilters.status.length > 0) {
+      result = result.filter((p) => {
+        if (selectedFilters.status.includes("active")) {
+          return p.isActive && p.stock > 0;
+        }
+        if (selectedFilters.status.includes("inactive")) {
+          return !p.isActive;
+        }
+        if (selectedFilters.status.includes("out-of-stock")) {
+          return p.stock === 0;
+        }
+        return true;
+      });
+    }
+
+    setFilteredProducts(result);
+  }, [products, search, selectedFilters]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
   };
 
-  const toggleFilter = (section: "category" | "status" | "supplier") => {
+  const toggleFilter = (section: "category" | "brand" | "status") => {
     setExpandedFilters((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
+  };
+
+  const toggleFilterValue = (
+    section: "category" | "brand" | "status",
+    value: string
+  ) => {
+    setSelectedFilters((prev) => {
+      const currentValues = prev[section];
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter((v) => v !== value)
+        : [...currentValues, value];
+      return { ...prev, [section]: newValues };
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedFilters({
+      category: [],
+      brand: [],
+      status: [],
+    });
+    setSearch("");
   };
 
   const formatPrice = (price: number) => {
@@ -81,63 +181,75 @@ export function ProductCatalogPage() {
   };
 
   const getStatusBadgeClass = (isActive: boolean, stock: number) => {
+    if (stock === 0) {
+      return "px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300";
+    }
     if (!isActive) {
       return "px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300";
     }
     return "px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300";
   };
 
-  const getStatusText = (isActive: boolean) => {
-    return isActive ? "Active" : "Draft";
+  const getStatusText = (isActive: boolean, stock: number) => {
+    if (stock === 0) return "Sin Stock";
+    return isActive ? "Activo" : "Inactivo";
   };
 
-  // Mock data para demo (4 productos de ejemplo)
-  const mockProducts = [
-    {
-      id: "1",
-      name: "Classic Wristwatch",
-      sku: "CWW-001",
-      category: "Electronics",
-      price: 199.99,
-      stock: 120,
-      isActive: true,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuAsKTd-sBDsGCZ6TU1cgvUgEs-Nt3UYuFJ46AQItrtXj9d9vb0U4tMGOyXl_ACV1OntoesNp767S7ByQCLYlc5J9_-lWhNB1rl01zAvNdaSFe148_lNg-BvVuX1BoHbWTT_m0RZWtuluJkYe_1xZf5ALrcE3mBXKgL-QcbvVoMpetpQxezu7Cc0N7NmWoGXND5dNf25sBwBvFU2yL19JmCn1j-pyi_ts8Md_lefI5pvu8TTqYFLUAITyECAmjbi2liDbJbwBJmPpf8",
-    },
-    {
-      id: "2",
-      name: "Running Shoes",
-      sku: "RS-204",
-      category: "Apparel",
-      price: 89.5,
-      stock: 350,
-      isActive: true,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuB80GTQoolL_Xf7EAi8L0wD2-tT_hm7FFOschw7HbsWrRg-Iw1tR0nbtDPRv0sOd1TJgdOec8oWgvg5xTikK0U8MqkFfAU09LEXNxqqm5WUTZelR5lELCH1e88hpm1s0H95pfPu_zeu4dM67rPO4XlLfv5P7bczxSAN0zuWu-GCAAIHc6BieQ5wke3nbwDobSbwEWmHadVLVI9LfLS0sPtpi3W7HbAtQgTqGZHrX5tRPNnQLw9qgcJV9abyuDBz9enDg4qpUr4xI-M",
-    },
-    {
-      id: "3",
-      name: "Wireless Headphones",
-      sku: "WH-335",
-      category: "Electronics",
-      price: 149.0,
-      stock: 8,
-      isActive: true,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuA7WhGO-_DrBC9jRVifxTIFweFkivUaGtBudMyhNRQcTcEcmmG0avlEUjHIq9k-8ykPeNf3wn1OGL_CkmUIJOf0pv3sy61FOO9dQrlE3cvn0jkmLaMgm_9kJUuPg2bjz9IEh02PiFfx1RsbJ5NkWqIyu31_t5MbimeYkIYIgkzEfGImy9gpSlAjT8eua1kiLP3lDSavVIwuN9JKCdbSmW28dBZ2GJ_i9p820sV31HS1zBuPMi9etHkHeta7LIEXIoT16rCPLo9_cjo",
-    },
-    {
-      id: "4",
-      name: "Design Thinking Handbook",
-      sku: "BK-DTH-12",
-      category: "Books",
-      price: 24.95,
-      stock: 0,
-      isActive: false,
-      image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuA91uPBPkOfoxWfvfYPtyxjxTYCv-ek6ZFHWkC3wRmpHchbUjC1aKdOFQh8lIxrLFBHdYJXAIoZbTDSSraSNLWKEloNRhFPypTFj_X8hM_cV5VKcREzZZXEcJoFeduVGTGnG_edtofRioDcwroGRcYWcLpwOh9GlSQRNHljem96PiFGWo6aEzwdhhrvyoP_3e5aUgqcAaOuiAxzLLVDNuA3Pc9C0zfyPxQUS7UeC4W6_po3zPRqCaZBRp73YrkYoeR_TYK_OwJIrHI",
-    },
-  ];
+  const handleCreateProduct = () => {
+    setSelectedProduct(null);
+    setShowFormDialog(true);
+  };
+
+  const handleEditProduct = (product: ProductDto) => {
+    setSelectedProduct(product);
+    setShowFormDialog(true);
+  };
+
+  const handleDeleteProduct = (product: ProductDto) => {
+    setSelectedProduct(product);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!selectedProduct) return;
+
+    setDeletingProduct(true);
+    try {
+      await deleteProduct(selectedProduct.id);
+      toast({
+        title: "Producto eliminado",
+        description: `El producto "${selectedProduct.name}" ha sido eliminado correctamente.`,
+      });
+      await loadProducts();
+      setShowDeleteDialog(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      toast({
+        title: "Error al eliminar",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo eliminar el producto",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingProduct(false);
+    }
+  };
+
+  const handleFormClose = async (saved: boolean) => {
+    setShowFormDialog(false);
+    if (saved) {
+      toast({
+        title: selectedProduct ? "Producto actualizado" : "Producto creado",
+        description: selectedProduct
+          ? "Los cambios se han guardado correctamente."
+          : "El producto se ha creado correctamente.",
+      });
+      await loadProducts();
+    }
+    setSelectedProduct(null);
+  };
 
   return (
     <PageTransition>
@@ -157,20 +269,24 @@ export function ProductCatalogPage() {
         >
           <div className="flex flex-col gap-2">
             <h1 className="text-gray-900 dark:text-white text-3xl font-bold leading-tight">
-              Product Catalog
+              Catálogo de Productos
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">
-              Manage your products, update details, and track inventory.
+              Administra tus productos, actualiza detalles y controla el
+              inventario.
             </p>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="outline" className="flex items-center gap-2">
               <IconUpload size={18} />
-              <span>Import</span>
+              <span>Importar</span>
             </Button>
-            <Button className="flex items-center gap-2">
+            <Button
+              className="flex items-center gap-2"
+              onClick={handleCreateProduct}
+            >
               <IconPlus size={18} />
-              <span>Add New Product</span>
+              <span>Crear Producto</span>
             </Button>
           </div>
         </motion.header>
@@ -185,7 +301,7 @@ export function ProductCatalogPage() {
           }}
         >
           {/* Filters Sidebar */}
-          <aside className="w-72 flex-shrink-0">
+          <aside className="w-72 shrink-0">
             <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
               {/* Search Bar */}
               <div className="pb-3">
@@ -219,7 +335,7 @@ export function ProductCatalogPage() {
                     }}
                   >
                     <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Category
+                      Categoría
                     </p>
                     <IconChevronDown
                       size={20}
@@ -230,27 +346,78 @@ export function ProductCatalogPage() {
                   </summary>
                   {expandedFilters.category && (
                     <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Electronics</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Apparel</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Books</span>
-                      </label>
+                      {availableCategories.length > 0 ? (
+                        availableCategories.map((category) => (
+                          <label
+                            key={category}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <input
+                              className="form-checkbox rounded text-primary focus:ring-primary/50"
+                              type="checkbox"
+                              checked={selectedFilters.category.includes(
+                                category
+                              )}
+                              onChange={() =>
+                                toggleFilterValue("category", category)
+                              }
+                            />
+                            <span>{category}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400">
+                          No hay categorías disponibles
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </details>
+
+                {/* Brand Filter */}
+                <details
+                  className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+                  open={expandedFilters.brand}
+                >
+                  <summary
+                    className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleFilter("brand");
+                    }}
+                  >
+                    <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+                      Marca
+                    </p>
+                    <IconChevronDown
+                      size={20}
+                      className={`text-gray-600 dark:text-slate-400 transition-transform ${
+                        expandedFilters.brand ? "rotate-180" : ""
+                      }`}
+                    />
+                  </summary>
+                  {expandedFilters.brand && (
+                    <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+                      {availableBrands.length > 0 ? (
+                        availableBrands.map((brand) => (
+                          <label
+                            key={brand}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <input
+                              className="form-checkbox rounded text-primary focus:ring-primary/50"
+                              type="checkbox"
+                              checked={selectedFilters.brand.includes(brand)}
+                              onChange={() => toggleFilterValue("brand", brand)}
+                            />
+                            <span>{brand}</span>
+                          </label>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400">
+                          No hay marcas disponibles
+                        </p>
+                      )}
                     </div>
                   )}
                 </details>
@@ -268,7 +435,7 @@ export function ProductCatalogPage() {
                     }}
                   >
                     <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Status
+                      Estatus
                     </p>
                     <IconChevronDown
                       size={20}
@@ -283,71 +450,34 @@ export function ProductCatalogPage() {
                         <input
                           className="form-checkbox rounded text-primary focus:ring-primary/50"
                           type="checkbox"
+                          checked={selectedFilters.status.includes("active")}
+                          onChange={() => toggleFilterValue("status", "active")}
                         />
-                        <span>Active</span>
+                        <span>Activo</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           className="form-checkbox rounded text-primary focus:ring-primary/50"
                           type="checkbox"
+                          checked={selectedFilters.status.includes("inactive")}
+                          onChange={() =>
+                            toggleFilterValue("status", "inactive")
+                          }
                         />
-                        <span>Draft</span>
+                        <span>Inactivo</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           className="form-checkbox rounded text-primary focus:ring-primary/50"
                           type="checkbox"
+                          checked={selectedFilters.status.includes(
+                            "out-of-stock"
+                          )}
+                          onChange={() =>
+                            toggleFilterValue("status", "out-of-stock")
+                          }
                         />
-                        <span>Archived</span>
-                      </label>
-                    </div>
-                  )}
-                </details>
-
-                {/* Supplier Filter */}
-                <details
-                  className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
-                  open={expandedFilters.supplier}
-                >
-                  <summary
-                    className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleFilter("supplier");
-                    }}
-                  >
-                    <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Supplier
-                    </p>
-                    <IconChevronDown
-                      size={20}
-                      className={`text-gray-600 dark:text-slate-400 transition-transform ${
-                        expandedFilters.supplier ? "rotate-180" : ""
-                      }`}
-                    />
-                  </summary>
-                  {expandedFilters.supplier && (
-                    <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Tech Supplies Co.</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Fashion Forward</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                        />
-                        <span>Global Imports</span>
+                        <span>Sin Stock</span>
                       </label>
                     </div>
                   )}
@@ -359,8 +489,9 @@ export function ProductCatalogPage() {
                 <Button
                   variant="ghost"
                   className="w-full text-primary hover:bg-primary/10"
+                  onClick={clearAllFilters}
                 >
-                  Clear All Filters
+                  Limpiar Filtros
                 </Button>
               </div>
             </div>
@@ -388,150 +519,187 @@ export function ProductCatalogPage() {
                             />
                           </th>
                           <th scope="col" className="px-6 py-3">
-                            Product
+                            Producto
                           </th>
                           <th scope="col" className="px-6 py-3">
                             SKU
                           </th>
                           <th scope="col" className="px-6 py-3">
-                            Price
+                            Marca
+                          </th>
+                          <th scope="col" className="px-6 py-3">
+                            Precio
                           </th>
                           <th scope="col" className="px-6 py-3">
                             Stock
                           </th>
                           <th scope="col" className="px-6 py-3">
-                            Status
+                            Estatus
                           </th>
                           <th scope="col" className="px-6 py-3">
-                            <span className="sr-only">Actions</span>
+                            <span className="sr-only">Acciones</span>
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {mockProducts.map((product) => (
-                          <tr
-                            key={product.id}
-                            className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                          >
-                            <td className="p-4">
-                              <input
-                                className="form-checkbox rounded text-primary focus:ring-primary/50 cursor-pointer"
-                                type="checkbox"
-                              />
-                            </td>
-                            <th
-                              scope="row"
-                              className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-10 h-10 rounded-md bg-cover bg-center flex-shrink-0"
-                                  style={{
-                                    backgroundImage: `url('${product.image}')`,
-                                  }}
-                                />
-                                <div>
-                                  <p>{product.name}</p>
-                                  <p className="text-xs text-slate-500">
-                                    {product.category}
-                                  </p>
-                                </div>
-                              </div>
-                            </th>
-                            <td className="px-6 py-4">{product.sku}</td>
-                            <td className="px-6 py-4">
-                              {formatPrice(product.price)}
-                            </td>
+                        {filteredProducts.length === 0 ? (
+                          <tr>
                             <td
-                              className={`px-6 py-4 ${
-                                product.stock <= 10 && product.stock > 0
-                                  ? "text-orange-600 dark:text-orange-400"
-                                  : ""
-                              }`}
+                              colSpan={8}
+                              className="text-center py-8 text-slate-500"
                             >
-                              {product.stock} units
-                              {product.stock <= 10 && product.stock > 0 && (
-                                <span className="ml-1">(Low)</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={getStatusBadgeClass(
-                                  product.isActive,
-                                  product.stock
-                                )}
-                              >
-                                {getStatusText(product.isActive)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <button className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                                <svg
-                                  className="w-5 h-5"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                                </svg>
-                              </button>
+                              No se encontraron productos
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredProducts.map((product) => (
+                            <tr
+                              key={product.id}
+                              className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                            >
+                              <td className="p-4">
+                                <input
+                                  className="form-checkbox rounded text-primary focus:ring-primary/50 cursor-pointer"
+                                  type="checkbox"
+                                />
+                              </td>
+                              <th
+                                scope="row"
+                                className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                    <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                                      {product.name
+                                        .substring(0, 2)
+                                        .toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p>{product.name}</p>
+                                    <p className="text-xs text-slate-500">
+                                      {product.category}
+                                    </p>
+                                  </div>
+                                </div>
+                              </th>
+                              <td className="px-6 py-4">{product.sku}</td>
+                              <td className="px-6 py-4">{product.brand}</td>
+                              <td className="px-6 py-4">
+                                {formatPrice(product.price)}
+                              </td>
+                              <td
+                                className={`px-6 py-4 ${
+                                  product.stock <= 10 && product.stock > 0
+                                    ? "text-orange-600 dark:text-orange-400"
+                                    : product.stock === 0
+                                    ? "text-red-600 dark:text-red-400"
+                                    : ""
+                                }`}
+                              >
+                                {product.stock} unidades
+                                {product.stock <= 10 && product.stock > 0 && (
+                                  <span className="ml-1">(Bajo)</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span
+                                  className={getStatusBadgeClass(
+                                    product.isActive,
+                                    product.stock
+                                  )}
+                                >
+                                  {getStatusText(
+                                    product.isActive,
+                                    product.stock
+                                  )}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <IconDots className="h-4 w-4" />
+                                      <span className="sr-only">
+                                        Abrir menú
+                                      </span>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditProduct(product)}
+                                      className="cursor-pointer"
+                                    >
+                                      <IconEdit className="mr-2 h-4 w-4" />
+                                      Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleDeleteProduct(product)
+                                      }
+                                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
+                                    >
+                                      <IconTrash className="mr-2 h-4 w-4" />
+                                      Eliminar
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
 
-                  {/* Pagination */}
-                  <nav
-                    aria-label="Table navigation"
-                    className="flex items-center justify-between p-4"
-                  >
+                  {/* Summary */}
+                  <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                     <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-                      Showing{" "}
+                      Mostrando{" "}
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        1-4
+                        {filteredProducts.length}
                       </span>{" "}
-                      of{" "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        100
-                      </span>
+                      {filteredProducts.length === 1 ? "producto" : "productos"}
+                      {products.length !== filteredProducts.length && (
+                        <span>
+                          {" "}
+                          de{" "}
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {products.length}
+                          </span>{" "}
+                          totales
+                        </span>
+                      )}
                     </span>
-                    <ul className="inline-flex -space-x-px text-sm h-8">
-                      <li>
-                        <button className="flex items-center justify-center px-3 h-8 ml-0 leading-tight text-slate-500 bg-white border border-slate-300 rounded-l-lg hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">
-                          Previous
-                        </button>
-                      </li>
-                      <li>
-                        <button className="flex items-center justify-center px-3 h-8 leading-tight text-slate-500 bg-white border border-slate-300 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">
-                          1
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          aria-current="page"
-                          className="flex items-center justify-center px-3 h-8 text-primary border border-slate-300 bg-primary/10 hover:bg-primary/20 hover:text-primary-700 dark:border-slate-700 dark:bg-slate-700 dark:text-white"
-                        >
-                          2
-                        </button>
-                      </li>
-                      <li>
-                        <button className="flex items-center justify-center px-3 h-8 leading-tight text-slate-500 bg-white border border-slate-300 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">
-                          3
-                        </button>
-                      </li>
-                      <li>
-                        <button className="flex items-center justify-center px-3 h-8 leading-tight text-slate-500 bg-white border border-slate-300 rounded-r-lg hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">
-                          Next
-                        </button>
-                      </li>
-                    </ul>
-                  </nav>
+                  </div>
                 </>
               )}
             </div>
           </div>
         </motion.div>
+
+        {/* Diálogos */}
+        <ProductFormDialog
+          open={showFormDialog}
+          product={selectedProduct}
+          onClose={handleFormClose}
+        />
+
+        <DeleteProductDialog
+          open={showDeleteDialog}
+          product={selectedProduct}
+          onConfirm={confirmDeleteProduct}
+          onCancel={() => {
+            setShowDeleteDialog(false);
+            setSelectedProduct(null);
+          }}
+          loading={deletingProduct}
+        />
       </DashboardLayout>
     </PageTransition>
   );

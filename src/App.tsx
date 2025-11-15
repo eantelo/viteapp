@@ -8,31 +8,38 @@ import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        <Route
-          path="/"
-          element={
-            <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
-          }
-        />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/catalog" element={<ProductCatalogPage />} />
-          <Route path="/customers" element={<CustomersPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={isAuthenticated ? "/dashboard" : "/login"}
+                replace
+              />
+            }
+          />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/catalog" element={<ProductCatalogPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+      <Toaster />
+    </>
   );
 }
 
