@@ -512,12 +512,6 @@ export function ProductCatalogPage() {
                     <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
                       <thead className="text-xs text-slate-700 dark:text-slate-300 uppercase bg-slate-50 dark:bg-slate-800">
                         <tr>
-                          <th scope="col" className="p-4">
-                            <input
-                              className="form-checkbox rounded text-primary focus:ring-primary/50 cursor-pointer"
-                              type="checkbox"
-                            />
-                          </th>
                           <th scope="col" className="px-6 py-3">
                             Producto
                           </th>
@@ -566,33 +560,15 @@ export function ProductCatalogPage() {
                               className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
                               aria-label={`Editar producto ${product.name}`}
                             >
-                              <td
-                                className="p-4"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <input
-                                  className="form-checkbox rounded text-primary focus:ring-primary/50 cursor-pointer"
-                                  type="checkbox"
-                                />
-                              </td>
                               <th
                                 scope="row"
                                 className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
                               >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-md bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                                    <span className="text-slate-500 dark:text-slate-400 text-xs font-semibold">
-                                      {product.name
-                                        .substring(0, 2)
-                                        .toUpperCase()}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <p>{product.name}</p>
-                                    <p className="text-xs text-slate-500">
-                                      {product.category}
-                                    </p>
-                                  </div>
+                                <div>
+                                  <p>{product.name}</p>
+                                  <p className="text-xs text-slate-500">
+                                    {product.category}
+                                  </p>
                                 </div>
                               </th>
                               <td className="px-6 py-4">{product.sku}</td>

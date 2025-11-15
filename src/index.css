@@ -147,4 +147,72 @@
     font-size: 26px !important;
     line-height: 1.4 !important;
   }
+
+  /* Toast styles con contraste WCAG AA (mínimo 4.5:1) */
+  .toast-custom {
+    @apply border shadow-lg;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .toast-title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .toast-description {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 2px;
+  }
+
+  /* Success toast: fondo verde con texto oscuro para máximo contraste */
+  .toast-success {
+    @apply bg-green-50 text-green-900 border-green-200;
+  }
+
+  .dark .toast-success {
+    @apply bg-green-950 text-green-50 border-green-800;
+  }
+
+  /* Error toast: fondo rojo con texto oscuro para máximo contraste */
+  .toast-error {
+    @apply bg-red-50 text-red-900 border-red-200;
+  }
+
+  .dark .toast-error {
+    @apply bg-red-950 text-red-50 border-red-800;
+  }
+
+  /* Warning toast: fondo amarillo con texto oscuro */
+  .toast-warning {
+    @apply bg-yellow-50 text-yellow-900 border-yellow-200;
+  }
+
+  .dark .toast-warning {
+    @apply bg-yellow-950 text-yellow-50 border-yellow-800;
+  }
+
+  /* Info toast: fondo azul con texto oscuro */
+  .toast-info {
+    @apply bg-blue-50 text-blue-900 border-blue-200;
+  }
+
+  .dark .toast-info {
+    @apply bg-blue-950 text-blue-50 border-blue-800;
+  }
+
+  .toast-action-button {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md text-sm font-medium transition-colors;
+  }
+
+  .toast-cancel-button {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1.5 rounded-md text-sm font-medium transition-colors;
+  }
+
+  .toast-close-button {
+    @apply border-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10;
+  }
 }
