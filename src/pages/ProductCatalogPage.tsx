@@ -17,7 +17,11 @@ import {
   IconChevronsRight,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
-import { getProducts, deleteProduct } from "@/api/productsApi";
+import {
+  getProducts,
+  deleteProduct,
+  deactivateProduct,
+} from "@/api/productsApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
 import { ProductFormDialog } from "@/components/products/ProductFormDialog";
@@ -296,6 +300,7 @@ export function ProductCatalogPage() {
     null
   );
   const [deletingProduct, setDeletingProduct] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Estados de paginación
@@ -465,6 +470,7 @@ export function ProductCatalogPage() {
     if (!selectedProduct) return;
 
     setDeletingProduct(true);
+    setDeleteError(null);
     try {
       await deleteProduct(selectedProduct.id);
       toast({
@@ -474,13 +480,50 @@ export function ProductCatalogPage() {
       await loadProducts();
       setShowDeleteDialog(false);
       setSelectedProduct(null);
+      setDeleteError(null);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "No se pudo eliminar el producto";
+
+      setDeleteError(errorMessage);
+
+      // Si el error indica ventas asociadas, no cerrar el diálogo
+      if (!errorMessage.toLowerCase().includes("ventas asociadas")) {
+        toast({
+          title: "Error al eliminar",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setDeletingProduct(false);
+    }
+  };
+
+  const confirmDeactivateProduct = async () => {
+    if (!selectedProduct) return;
+
+    setDeletingProduct(true);
+    setDeleteError(null);
+    try {
+      await deactivateProduct(selectedProduct.id);
+      toast({
+        title: "Producto desactivado",
+        description: `El producto "${selectedProduct.name}" ha sido desactivado correctamente.`,
+      });
+      await loadProducts();
+      setShowDeleteDialog(false);
+      setSelectedProduct(null);
+      setDeleteError(null);
     } catch (error) {
       toast({
-        title: "Error al eliminar",
+        title: "Error al desactivar",
         description:
           error instanceof Error
             ? error.message
-            : "No se pudo eliminar el producto",
+            : "No se pudo desactivar el producto",
         variant: "destructive",
       });
     } finally {
@@ -936,11 +979,14 @@ export function ProductCatalogPage() {
           open={showDeleteDialog}
           product={selectedProduct}
           onConfirm={confirmDeleteProduct}
+          onDeactivate={confirmDeactivateProduct}
           onCancel={() => {
             setShowDeleteDialog(false);
             setSelectedProduct(null);
+            setDeleteError(null);
           }}
           loading={deletingProduct}
+          error={deleteError}
         />
       </DashboardLayout>
     </PageTransition>

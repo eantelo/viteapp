@@ -76,6 +76,12 @@ export async function deleteProduct(id: string): Promise<void> {
   });
 }
 
+export async function deactivateProduct(id: string): Promise<void> {
+  return apiClient<void>(`/api/products/${id}/deactivate`, {
+    method: "POST",
+  });
+}
+
 export async function getCategories(): Promise<string[]> {
   return apiClient<string[]>("/api/products/categories");
 }
