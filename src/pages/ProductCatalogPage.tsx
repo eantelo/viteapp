@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import {
   IconEdit,
   IconTrash,
   IconDots,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts, deleteProduct } from "@/api/productsApi";
@@ -34,6 +38,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { IconFilter } from "@tabler/icons-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 // Componente de filtros reutilizable para mobile y desktop
 function FilterContent({
@@ -286,6 +298,10 @@ export function ProductCatalogPage() {
   const [deletingProduct, setDeletingProduct] = useState(false);
   const { toast } = useToast();
 
+  // Estados de paginación
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   const loadProducts = async (searchTerm?: string) => {
     try {
       setLoading(true);
@@ -394,6 +410,20 @@ export function ProductCatalogPage() {
     setSearch("");
   };
 
+  // Calcular productos paginados
+  const paginatedProducts = React.useMemo(() => {
+    const startIndex = pageIndex * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, pageIndex, pageSize]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+
+  // Resetear a la primera página cuando cambien los filtros
+  useEffect(() => {
+    setPageIndex(0);
+  }, [filteredProducts.length]);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -479,20 +509,20 @@ export function ProductCatalogPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Catálogo de Productos" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8"
+        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
       >
         {/* Page Heading */}
         <motion.header
-          className="flex flex-col gap-4 pb-4 md:pb-6"
+          className="flex flex-col gap-2 pb-2 md:pb-3"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
         >
-          <div className="flex flex-col gap-2">
-            <h1 className="text-gray-900 dark:text-white text-2xl md:text-3xl font-bold leading-tight">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-gray-900 dark:text-white text-xl md:text-2xl font-bold leading-tight">
               Catálogo de Productos
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base font-normal leading-normal">
+            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-normal leading-snug">
               Administra tus productos, actualiza detalles y controla el
               inventario.
             </p>
@@ -519,7 +549,7 @@ export function ProductCatalogPage() {
         </motion.header>
 
         <motion.div
-          className="flex flex-col lg:flex-row gap-4 lg:gap-8 mt-4"
+          className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{
@@ -605,43 +635,43 @@ export function ProductCatalogPage() {
                     <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
                       <thead className="text-xs text-slate-700 dark:text-slate-300 uppercase bg-slate-50 dark:bg-slate-800">
                         <tr>
-                          <th scope="col" className="px-4 md:px-6 py-3">
+                          <th scope="col" className="px-3 md:px-4 py-2">
                             Producto
                           </th>
                           <th
                             scope="col"
-                            className="hidden sm:table-cell px-4 md:px-6 py-3"
+                            className="hidden sm:table-cell px-3 md:px-4 py-2"
                           >
                             SKU
                           </th>
                           <th
                             scope="col"
-                            className="hidden md:table-cell px-4 md:px-6 py-3"
+                            className="hidden md:table-cell px-3 md:px-4 py-2"
                           >
                             Marca
                           </th>
-                          <th scope="col" className="px-4 md:px-6 py-3">
+                          <th scope="col" className="px-3 md:px-4 py-2">
                             Precio
                           </th>
                           <th
                             scope="col"
-                            className="hidden lg:table-cell px-4 md:px-6 py-3"
+                            className="hidden lg:table-cell px-3 md:px-4 py-2"
                           >
                             Stock
                           </th>
                           <th
                             scope="col"
-                            className="hidden sm:table-cell px-4 md:px-6 py-3"
+                            className="hidden sm:table-cell px-3 md:px-4 py-2"
                           >
                             Estatus
                           </th>
-                          <th scope="col" className="px-4 md:px-6 py-3">
+                          <th scope="col" className="px-3 md:px-4 py-2">
                             <span className="sr-only">Acciones</span>
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredProducts.length === 0 ? (
+                        {paginatedProducts.length === 0 ? (
                           <tr>
                             <td
                               colSpan={7}
@@ -651,7 +681,7 @@ export function ProductCatalogPage() {
                             </td>
                           </tr>
                         ) : (
-                          filteredProducts.map((product) => (
+                          paginatedProducts.map((product) => (
                             <tr
                               key={product.id}
                               onClick={() => handleEditProduct(product)}
@@ -667,7 +697,7 @@ export function ProductCatalogPage() {
                             >
                               <th
                                 scope="row"
-                                className="px-4 md:px-6 py-3 md:py-4 font-medium text-gray-900 dark:text-white"
+                                className="px-3 md:px-4 py-2 font-medium text-gray-900 dark:text-white"
                               >
                                 <div>
                                   <p className="text-sm md:text-base">
@@ -682,17 +712,17 @@ export function ProductCatalogPage() {
                                   </p>
                                 </div>
                               </th>
-                              <td className="hidden sm:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm">
+                              <td className="hidden sm:table-cell px-3 md:px-4 py-2 text-xs md:text-sm">
                                 {product.sku}
                               </td>
-                              <td className="hidden md:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm">
+                              <td className="hidden md:table-cell px-3 md:px-4 py-2 text-xs md:text-sm">
                                 {product.brand}
                               </td>
-                              <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium">
+                              <td className="px-3 md:px-4 py-2 text-xs md:text-sm font-medium">
                                 {formatPrice(product.price)}
                               </td>
                               <td
-                                className={`hidden lg:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm ${
+                                className={`hidden lg:table-cell px-3 md:px-4 py-2 text-xs md:text-sm ${
                                   product.stock <= 10 && product.stock > 0
                                     ? "text-orange-600 dark:text-orange-400"
                                     : product.stock === 0
@@ -705,7 +735,7 @@ export function ProductCatalogPage() {
                                   <span className="ml-1">(Bajo)</span>
                                 )}
                               </td>
-                              <td className="hidden sm:table-cell px-4 md:px-6 py-3 md:py-4">
+                              <td className="hidden sm:table-cell px-3 md:px-4 py-2">
                                 <span
                                   className={getStatusBadgeClass(
                                     product.isActive,
@@ -719,7 +749,7 @@ export function ProductCatalogPage() {
                                 </span>
                               </td>
                               <td
-                                className="px-4 md:px-6 py-3 md:py-4 text-right"
+                                className="px-3 md:px-4 py-2 text-right"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <DropdownMenu>
@@ -763,25 +793,131 @@ export function ProductCatalogPage() {
                     </table>
                   </div>
 
-                  {/* Summary */}
-                  <div className="p-3 md:p-4 border-t border-slate-200 dark:border-slate-700">
-                    <span className="text-xs md:text-sm font-normal text-slate-500 dark:text-slate-400">
+                  {/* Pagination Controls */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 md:p-3 border-t border-slate-200 dark:border-slate-700">
+                    {/* Summary */}
+                    <div className="text-xs md:text-sm font-normal text-slate-500 dark:text-slate-400">
                       Mostrando{" "}
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {pageIndex * pageSize + 1}
+                      </span>
+                      {" - "}
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {Math.min(
+                          (pageIndex + 1) * pageSize,
+                          filteredProducts.length
+                        )}
+                      </span>
+                      {" de "}
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {filteredProducts.length}
                       </span>{" "}
                       {filteredProducts.length === 1 ? "producto" : "productos"}
                       {products.length !== filteredProducts.length && (
-                        <span>
-                          {" "}
-                          de{" "}
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {products.length}
-                          </span>{" "}
-                          totales
+                        <span className="text-slate-400">
+                          {" ("}
+                          {products.length} totales{")"}
                         </span>
                       )}
-                    </span>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      {/* Page Size Selector */}
+                      <div className="hidden sm:flex items-center gap-2">
+                        <Label
+                          htmlFor="rows-per-page"
+                          className="text-xs md:text-sm font-medium whitespace-nowrap"
+                        >
+                          Por página
+                        </Label>
+                        <Select
+                          value={`${pageSize}`}
+                          onValueChange={(value) => {
+                            setPageSize(Number(value));
+                            setPageIndex(0);
+                          }}
+                        >
+                          <SelectTrigger
+                            size="sm"
+                            className="w-16 h-8"
+                            id="rows-per-page"
+                          >
+                            <SelectValue placeholder={pageSize} />
+                          </SelectTrigger>
+                          <SelectContent side="top">
+                            {[5, 10, 20, 30, 50].map((size) => (
+                              <SelectItem key={size} value={`${size}`}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Page Info */}
+                      <div className="text-xs md:text-sm font-medium whitespace-nowrap">
+                        Página {pageIndex + 1} de {totalPages || 1}
+                      </div>
+
+                      {/* Navigation Buttons */}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          className="hidden sm:flex h-8 w-8 p-0"
+                          size="icon"
+                          onClick={() => setPageIndex(0)}
+                          disabled={
+                            pageIndex === 0 || filteredProducts.length === 0
+                          }
+                          title="Primera página"
+                        >
+                          <span className="sr-only">Primera página</span>
+                          <IconChevronsLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          size="icon"
+                          onClick={() => setPageIndex(pageIndex - 1)}
+                          disabled={
+                            pageIndex === 0 || filteredProducts.length === 0
+                          }
+                          title="Página anterior"
+                        >
+                          <span className="sr-only">Página anterior</span>
+                          <IconChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          size="icon"
+                          onClick={() => setPageIndex(pageIndex + 1)}
+                          disabled={
+                            pageIndex >= totalPages - 1 ||
+                            filteredProducts.length === 0
+                          }
+                          title="Página siguiente"
+                        >
+                          <span className="sr-only">Página siguiente</span>
+                          <IconChevronRight className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="hidden sm:flex h-8 w-8 p-0"
+                          size="icon"
+                          onClick={() => setPageIndex(totalPages - 1)}
+                          disabled={
+                            pageIndex >= totalPages - 1 ||
+                            filteredProducts.length === 0
+                          }
+                          title="Última página"
+                        >
+                          <span className="sr-only">Última página</span>
+                          <IconChevronsRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
