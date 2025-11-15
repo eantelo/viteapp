@@ -135,7 +135,9 @@ export function ProductFormDialog({
 
         lastSuggestedNameRef.current = normalizedName;
         const hasData = Boolean(
-          suggestion.brand?.trim() || suggestion.category?.trim()
+          suggestion.brand?.trim() ||
+            suggestion.category?.trim() ||
+            suggestion.description?.trim()
         );
         setAiSuggestion(suggestion);
         setAiStatus(hasData ? "ready" : "idle");
@@ -146,6 +148,10 @@ export function ProductFormDialog({
 
         if (!category && suggestion.category) {
           setCategory(suggestion.category);
+        }
+
+        if (!description && suggestion.description) {
+          setDescription(suggestion.description);
         }
       } catch (err) {
         if (controller.signal.aborted) {
@@ -165,7 +171,7 @@ export function ProductFormDialog({
       controller.abort();
       clearTimeout(timeout);
     };
-  }, [normalizedName, open, isEditing, brand, category]);
+  }, [normalizedName, open, isEditing, brand, category, description]);
 
   const loadSuggestions = async () => {
     setLoadingSuggestions(true);
@@ -418,7 +424,29 @@ export function ProductFormDialog({
                           Usar categoría "{aiSuggestion.category}"
                         </Button>
                       )}
+                      {aiSuggestion.description && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            setDescription(aiSuggestion.description ?? "")
+                          }
+                        >
+                          Usar descripción sugerida
+                        </Button>
+                      )}
                     </div>
+                    {aiSuggestion.description && (
+                      <div className="rounded-md bg-white/60 px-3 py-2 text-slate-600 shadow-sm">
+                        <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                          Descripción sugerida
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          {aiSuggestion.description}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {aiStatus === "idle" &&

@@ -39,6 +39,7 @@ export interface ProductUpdateDto {
 export interface ProductMetadataSuggestion {
   brand: string | null;
   category: string | null;
+  description: string | null;
   confidence: number | null;
   source: string;
 }
