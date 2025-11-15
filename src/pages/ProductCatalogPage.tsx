@@ -555,9 +555,21 @@ export function ProductCatalogPage() {
                           filteredProducts.map((product) => (
                             <tr
                               key={product.id}
-                              className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                              onClick={() => handleEditProduct(product)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleEditProduct(product);
+                                }
+                              }}
+                              tabIndex={0}
+                              className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+                              aria-label={`Editar producto ${product.name}`}
                             >
-                              <td className="p-4">
+                              <td
+                                className="p-4"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <input
                                   className="form-checkbox rounded text-primary focus:ring-primary/50 cursor-pointer"
                                   type="checkbox"
@@ -615,7 +627,10 @@ export function ProductCatalogPage() {
                                   )}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-right">
+                              <td
+                                className="px-6 py-4 text-right"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
