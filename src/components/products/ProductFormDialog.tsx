@@ -11,12 +11,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import type {
   ProductDto,
   ProductCreateDto,
   ProductUpdateDto,
 } from "@/api/productsApi";
-import { createProduct, updateProduct } from "@/api/productsApi";
+import {
+  createProduct,
+  updateProduct,
+  getCategories,
+  getBrands,
+} from "@/api/productsApi";
 
 interface ProductFormDialogProps {
   open: boolean;
@@ -39,6 +45,9 @@ export function ProductFormDialog({
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const isEditing = product !== null;
 
@@ -64,8 +73,25 @@ export function ProductFormDialog({
         setIsActive(true);
       }
       setError(null);
+      loadSuggestions();
     }
   }, [open, product]);
+
+  const loadSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const [categoriesData, brandsData] = await Promise.all([
+        getCategories(),
+        getBrands(),
+      ]);
+      setCategories(categoriesData);
+      setBrands(brandsData);
+    } catch (err) {
+      console.error("Error loading suggestions:", err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,22 +212,26 @@ export function ProductFormDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="brand">Marca</Label>
-              <Input
-                id="brand"
+              <Combobox
                 value={brand}
-                onChange={(e) => setBrand(e.target.value)}
+                onValueChange={setBrand}
+                options={brands}
                 placeholder="Ej: Dell"
+                emptyText="Escribe para crear una nueva marca."
+                disabled={loadingSuggestions}
                 maxLength={120}
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="category">Categoría</Label>
-              <Input
-                id="category"
+              <Combobox
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onValueChange={setCategory}
+                options={categories}
                 placeholder="Ej: Laptops"
+                emptyText="Escribe para crear una nueva categoría."
+                disabled={loadingSuggestions}
                 maxLength={120}
               />
             </div>
