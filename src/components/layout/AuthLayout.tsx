@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -25,10 +26,24 @@ export function AuthLayout({
   highlight = "SalesNet Platform",
   className,
 }: AuthLayoutProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
+  const heroTransition = {
+    duration: prefersReducedMotion ? 0 : 0.6,
+    ease: prefersReducedMotion ? undefined : easing,
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 py-12 md:flex-row md:items-center">
-        <section className="flex-1 space-y-6">
+        <motion.section
+          className="flex-1 space-y-6"
+          initial={
+            prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }
+          }
+          animate={{ opacity: 1, y: 0 }}
+          transition={heroTransition}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.6em] text-blue-200">
             {highlight}
           </p>
@@ -50,8 +65,18 @@ export function AuthLayout({
               <li>Escala global con Azure Cosmos DB o PostgreSQL</li>
             </ul>
           </div>
-        </section>
-        <section className={cn("flex-1", className)}>
+        </motion.section>
+        <motion.section
+          className={cn("flex-1", className)}
+          initial={
+            prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }
+          }
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            ...heroTransition,
+            delay: prefersReducedMotion ? 0 : 0.1,
+          }}
+        >
           <Card className="bg-white/95 shadow-2xl">
             <CardHeader>
               <CardTitle>{title}</CardTitle>
@@ -60,7 +85,7 @@ export function AuthLayout({
             <CardContent>{children}</CardContent>
             {footer}
           </Card>
-        </section>
+        </motion.section>
       </div>
     </main>
   );

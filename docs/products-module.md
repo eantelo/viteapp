@@ -19,7 +19,7 @@ ProductFormDialog
 1. **ProductsPage** (`/src/pages/ProductsPage.tsx`)
    - Página principal del módulo de productos
    - Muestra una tabla con todos los productos
-   - Incluye búsqueda por nombre, SKU o código de barras
+   - Incluye búsqueda por nombre, marca, categoría, SKU o código de barras
    - Botones para crear, editar y eliminar productos
    - Indicadores visuales para stock bajo (≤10 unidades)
 
@@ -30,6 +30,8 @@ ProductFormDialog
    - Campos:
      - Nombre (obligatorio, máx 200 caracteres)
      - SKU (obligatorio, máx 100 caracteres)
+   - Marca (opcional, máx 120 caracteres)
+   - Categoría (opcional, máx 120 caracteres)
      - Código de Barras (opcional, máx 100 caracteres)
      - Precio (obligatorio, ≥0)
      - Stock (obligatorio, ≥0)
@@ -53,6 +55,8 @@ interface ProductDto {
   name: string;
   sku: string;
   barcode: string;
+   brand: string;
+   category: string;
   price: number;
   stock: number;
   isActive: boolean;
@@ -62,6 +66,8 @@ interface ProductCreateDto {
   name: string;
   sku: string;
   barcode: string;
+   brand: string;
+   category: string;
   price: number;
   stock: number;
 }
@@ -70,6 +76,8 @@ interface ProductUpdateDto {
   name: string;
   sku: string;
   barcode: string;
+   brand: string;
+   category: string;
   price: number;
   stock: number;
   isActive: boolean;
@@ -120,14 +128,15 @@ Se agregó el ítem "Productos" con icono `IconPackage` en el menú principal de
 ### Búsqueda
 - Campo de búsqueda con icono
 - Búsqueda al presionar Enter o botón "Buscar"
-- Búsqueda por nombre, SKU o código de barras
+- Búsqueda por nombre, marca, categoría, SKU o código de barras
 
 ### Tabla de productos
-- Columnas: Nombre, SKU, Código de Barras, Precio, Stock, Estado, Acciones
+- Columnas: Nombre, Marca, Categoría, SKU, Código de Barras, Precio, Stock, Estado, Acciones
 - Precio formateado en pesos mexicanos (MXN)
 - Stock con indicador visual para niveles bajos (≤10 en rojo)
 - Badge de estado (Activo/Inactivo)
 - Botones de editar y eliminar por fila
+- Hacer clic (o presionar Enter/Espacio con foco) sobre cualquier fila abre directamente el diálogo de edición con los datos precargados
 
 ### Estados de carga
 - Spinner durante carga de datos
@@ -173,6 +182,8 @@ Se utiliza `@tabler/icons-react`:
 Las validaciones definitivas se realizan en `Sales.Api` mediante DataAnnotations:
 - `Name`: Required, StringLength(200)
 - `Sku`: Required, StringLength(100)
+- `Brand`: StringLength(120)
+- `Category`: StringLength(120)
 - `Barcode`: StringLength(100)
 - `Price`: Range(0.00, 999999999999.99)
 - `Stock`: Range(0, int.MaxValue)
@@ -194,7 +205,7 @@ Las validaciones definitivas se realizan en `Sales.Api` mediante DataAnnotations
 2. **Filtros avanzados**: Agregar filtros por rango de precio, stock, estado
 3. **Exportación**: Exportar lista de productos a CSV/Excel
 4. **Imágenes**: Agregar soporte para imágenes de productos
-5. **Categorías**: Organizar productos por categorías
+5. **Catálogos enriquecidos**: Administrar catálogos maestros de marcas/categorías y filtros dependientes
 6. **Bulk actions**: Operaciones masivas (activar/desactivar múltiples productos)
 7. **Historial**: Ver historial de cambios de precio/stock
 8. **Alertas de stock**: Configurar alertas automáticas para stock bajo
@@ -224,6 +235,8 @@ Las validaciones definitivas se realizan en `Sales.Api` mediante DataAnnotations
 2. **Listar productos**
    - Sin búsqueda
    - Con búsqueda por nombre
+   - Con búsqueda por marca
+   - Con búsqueda por categoría
    - Con búsqueda por SKU
    - Con búsqueda por código de barras
 

@@ -32,6 +32,8 @@ export function ProductFormDialog({
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [isActive, setIsActive] = useState(true);
@@ -46,6 +48,8 @@ export function ProductFormDialog({
         setName(product.name);
         setSku(product.sku);
         setBarcode(product.barcode || "");
+        setBrand(product.brand || "");
+        setCategory(product.category || "");
         setPrice(product.price.toString());
         setStock(product.stock.toString());
         setIsActive(product.isActive);
@@ -53,6 +57,8 @@ export function ProductFormDialog({
         setName("");
         setSku("");
         setBarcode("");
+        setBrand("");
+        setCategory("");
         setPrice("");
         setStock("");
         setIsActive(true);
@@ -90,6 +96,8 @@ export function ProductFormDialog({
           name: name.trim(),
           sku: sku.trim(),
           barcode: barcode.trim(),
+          brand: brand.trim(),
+          category: category.trim(),
           price: priceValue,
           stock: stockValue,
           isActive,
@@ -101,6 +109,8 @@ export function ProductFormDialog({
           name: name.trim(),
           sku: sku.trim(),
           barcode: barcode.trim(),
+          brand: brand.trim(),
+          category: category.trim(),
           price: priceValue,
           stock: stockValue,
         };
@@ -171,6 +181,28 @@ export function ProductFormDialog({
                 placeholder="Ej: DELL-INSP-001"
                 maxLength={100}
                 required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="brand">Marca</Label>
+              <Input
+                id="brand"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="Ej: Dell"
+                maxLength={120}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="category">Categoría</Label>
+              <Input
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Ej: Laptops"
+                maxLength={120}
               />
             </div>
 

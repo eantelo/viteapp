@@ -123,6 +123,17 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Roboto", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
   }
 }
 
@@ -133,7 +144,7 @@
     line-height: 1.5 !important;
   }
   .sidebar-text-lg {
-    font-size: 26x !important;
+    font-size: 26px !important;
     line-height: 1.4 !important;
   }
 }

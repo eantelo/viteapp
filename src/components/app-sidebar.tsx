@@ -17,6 +17,7 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconLayoutGrid,
 } from "@tabler/icons-react";
 
 import { NavDocuments } from "@/components/nav-documents";
@@ -50,6 +51,11 @@ const data = {
       title: "Productos",
       url: "/products",
       icon: IconPackage,
+    },
+    {
+      title: "Catálogo",
+      url: "/catalog",
+      icon: IconLayoutGrid,
     },
     {
       title: "Clientes",

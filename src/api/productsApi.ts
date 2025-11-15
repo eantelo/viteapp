@@ -5,6 +5,8 @@ export interface ProductDto {
   name: string;
   sku: string;
   barcode: string;
+  brand: string;
+  category: string;
   price: number;
   stock: number;
   isActive: boolean;
@@ -14,6 +16,8 @@ export interface ProductCreateDto {
   name: string;
   sku: string;
   barcode: string;
+  brand: string;
+  category: string;
   price: number;
   stock: number;
 }
@@ -22,6 +26,8 @@ export interface ProductUpdateDto {
   name: string;
   sku: string;
   barcode: string;
+  brand: string;
+  category: string;
   price: number;
   stock: number;
   isActive: boolean;

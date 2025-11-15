@@ -66,7 +66,7 @@ export async function apiClient<TResponse>(
     payload = text ? JSON.parse(text) : undefined;
   } catch (parseError) {
     // Si no es JSON válido, usar el texto plano
-    console.error("Error parsing JSON response:", text);
+    console.error("Error parsing JSON response:", parseError, text);
     if (!response.ok) {
       const error: ApiError = new Error(
         text || `HTTP ${response.status}: ${response.statusText}`

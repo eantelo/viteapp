@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "@/api/authApi";
 import type { ApiError } from "@/api/apiClient";
 import { AuthLayout } from "@/components/layout/AuthLayout";
+import { PageTransition } from "@/components/motion/PageTransition";
 import { LoginForm } from "@/components/login-form";
 import { CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
@@ -83,33 +84,35 @@ export function LoginPage() {
   };
 
   return (
-    <AuthLayout
-      title="Inicia sesión"
-      subtitle="Bienvenido de vuelta a SalesNet"
-      footer={
-        <CardFooter>
-          ¿Aún no tienes cuenta?{" "}
-          <Link to="/register" className="font-semibold text-blue-600">
-            Crear cuenta
-          </Link>
-        </CardFooter>
-      }
-    >
-      <LoginForm
-        email={formState.email}
-        password={formState.password}
-        rememberDevice={rememberDevice}
-        showPassword={showPassword}
-        fieldErrors={fieldErrors}
-        errorMessage={errorMessage}
-        errorDetails={errorDetails}
-        isLoading={isLoading}
-        onSubmit={handleSubmit}
-        onEmailChange={(value) => handleChange("email", value)}
-        onPasswordChange={(value) => handleChange("password", value)}
-        onTogglePassword={() => setShowPassword((prev) => !prev)}
-        onRememberDeviceChange={(value) => setRememberDevice(value)}
-      />
-    </AuthLayout>
+    <PageTransition>
+      <AuthLayout
+        title="Inicia sesión"
+        subtitle="Bienvenido de vuelta a SalesNet"
+        footer={
+          <CardFooter>
+            ¿Aún no tienes cuenta?{" "}
+            <Link to="/register" className="font-semibold text-blue-600">
+              Crear cuenta
+            </Link>
+          </CardFooter>
+        }
+      >
+        <LoginForm
+          email={formState.email}
+          password={formState.password}
+          rememberDevice={rememberDevice}
+          showPassword={showPassword}
+          fieldErrors={fieldErrors}
+          errorMessage={errorMessage}
+          errorDetails={errorDetails}
+          isLoading={isLoading}
+          onSubmit={handleSubmit}
+          onEmailChange={(value) => handleChange("email", value)}
+          onPasswordChange={(value) => handleChange("password", value)}
+          onTogglePassword={() => setShowPassword((prev) => !prev)}
+          onRememberDeviceChange={(value) => setRememberDevice(value)}
+        />
+      </AuthLayout>
+    </PageTransition>
   );
 }
