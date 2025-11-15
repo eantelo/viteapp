@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ export function ProductFormDialog({
   onClose,
 }: ProductFormDialogProps) {
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
   const [brand, setBrand] = useState("");
@@ -55,6 +57,7 @@ export function ProductFormDialog({
     if (open) {
       if (product) {
         setName(product.name);
+        setDescription(product.description || "");
         setSku(product.sku);
         setBarcode(product.barcode || "");
         setBrand(product.brand || "");
@@ -64,6 +67,7 @@ export function ProductFormDialog({
         setIsActive(product.isActive);
       } else {
         setName("");
+        setDescription("");
         setSku("");
         setBarcode("");
         setBrand("");
@@ -142,6 +146,7 @@ export function ProductFormDialog({
       if (isEditing) {
         const dto: ProductUpdateDto = {
           name: name.trim(),
+          description: description.trim() || undefined,
           sku: sku.trim(),
           barcode: barcode.trim(),
           brand: brand.trim(),
@@ -155,6 +160,7 @@ export function ProductFormDialog({
       } else {
         const dto: ProductCreateDto = {
           name: name.trim(),
+          description: description.trim() || undefined,
           sku: sku.trim(),
           barcode: barcode.trim(),
           brand: brand.trim(),
@@ -220,6 +226,18 @@ export function ProductFormDialog({
                 placeholder="Ej: Laptop Dell Inspiron"
                 maxLength={200}
                 required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción detallada del producto (opcional)"
+                maxLength={1000}
+                rows={3}
               />
             </div>
 

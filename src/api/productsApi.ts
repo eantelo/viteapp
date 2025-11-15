@@ -3,6 +3,7 @@ import { apiClient } from "./apiClient";
 export interface ProductDto {
   id: string;
   name: string;
+  description: string | null;
   sku: string;
   barcode: string;
   brand: string;
@@ -14,6 +15,7 @@ export interface ProductDto {
 
 export interface ProductCreateDto {
   name: string;
+  description?: string;
   sku: string;
   barcode: string;
   brand: string;
@@ -24,6 +26,7 @@ export interface ProductCreateDto {
 
 export interface ProductUpdateDto {
   name: string;
+  description?: string;
   sku: string;
   barcode: string;
   brand: string;
