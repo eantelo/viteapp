@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ import {
   updateProduct,
   getCategories,
   getBrands,
+  suggestProductMetadata,
+  type ProductMetadataSuggestion,
 } from "@/api/productsApi";
 
 interface ProductFormDialogProps {
@@ -50,8 +52,21 @@ export function ProductFormDialog({
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [aiSuggestion, setAiSuggestion] =
+    useState<ProductMetadataSuggestion | null>(null);
+  const [aiStatus, setAiStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [aiError, setAiError] = useState<string | null>(null);
+  const lastSuggestedNameRef = useRef<string>("");
 
   const isEditing = product !== null;
+  const aiConfidencePercent = useMemo(() => {
+    if (aiSuggestion?.confidence == null) {
+      return null;
+    }
+    return Math.round(aiSuggestion.confidence * 100);
+  }, [aiSuggestion]);
 
   useEffect(() => {
     if (open) {
@@ -78,8 +93,79 @@ export function ProductFormDialog({
       }
       setError(null);
       loadSuggestions();
+      setAiSuggestion(null);
+      setAiStatus("idle");
+      setAiError(null);
+      lastSuggestedNameRef.current = "";
     }
   }, [open, product]);
+
+  const normalizedName = useMemo(() => name.trim(), [name]);
+
+  useEffect(() => {
+    if (!open || isEditing) {
+      return;
+    }
+
+    if (normalizedName.length < 4) {
+      setAiStatus("idle");
+      setAiSuggestion(null);
+      setAiError(null);
+      lastSuggestedNameRef.current = "";
+      return;
+    }
+
+    if (lastSuggestedNameRef.current === normalizedName) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      setAiStatus("loading");
+      setAiError(null);
+
+      try {
+        const suggestion = await suggestProductMetadata(
+          normalizedName,
+          controller.signal
+        );
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        lastSuggestedNameRef.current = normalizedName;
+        const hasData = Boolean(
+          suggestion.brand?.trim() || suggestion.category?.trim()
+        );
+        setAiSuggestion(suggestion);
+        setAiStatus(hasData ? "ready" : "idle");
+
+        if (!brand && suggestion.brand) {
+          setBrand(suggestion.brand);
+        }
+
+        if (!category && suggestion.category) {
+          setCategory(suggestion.category);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        console.error("Error fetching AI suggestion", err);
+        setAiStatus("error");
+        setAiError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo obtener la sugerencia"
+        );
+      }
+    }, 600);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [normalizedName, open, isEditing, brand, category]);
 
   const loadSuggestions = async () => {
     setLoadingSuggestions(true);
@@ -285,6 +371,67 @@ export function ProductFormDialog({
                 maxLength={120}
               />
             </div>
+
+            {!isEditing && (
+              <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                {aiStatus === "loading" && (
+                  <p className="flex items-center gap-2">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+                    Analizando el nombre para sugerir marca y categoría...
+                  </p>
+                )}
+                {aiStatus === "error" && (
+                  <p className="text-error">
+                    {aiError ?? "No se pudo generar una sugerencia automática"}
+                  </p>
+                )}
+                {aiStatus === "ready" && aiSuggestion && (
+                  <div className="space-y-1">
+                    <p className="text-slate-700 font-medium">
+                      Sugerencia automática
+                      {aiConfidencePercent !== null && (
+                        <span className="ml-1 text-[11px] font-normal text-slate-500">
+                          ({aiConfidencePercent}% de confianza)
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {aiSuggestion.brand && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() => setBrand(aiSuggestion.brand ?? "")}
+                        >
+                          Usar marca "{aiSuggestion.brand}"
+                        </Button>
+                      )}
+                      {aiSuggestion.category && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            setCategory(aiSuggestion.category ?? "")
+                          }
+                        >
+                          Usar categoría "{aiSuggestion.category}"
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {aiStatus === "idle" &&
+                  aiSuggestion &&
+                  !aiSuggestion.brand &&
+                  !aiSuggestion.category && (
+                    <p className="text-slate-500">
+                      No encontramos una sugerencia clara para este nombre.
+                      Puedes completar los campos manualmente.
+                    </p>
+                  )}
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="barcode">Código de Barras</Label>

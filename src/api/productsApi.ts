@@ -36,6 +36,13 @@ export interface ProductUpdateDto {
   isActive: boolean;
 }
 
+export interface ProductMetadataSuggestion {
+  brand: string | null;
+  category: string | null;
+  confidence: number | null;
+  source: string;
+}
+
 export async function getProducts(search?: string): Promise<ProductDto[]> {
   const query = search ? `?search=${encodeURIComponent(search)}` : "";
   return apiClient<ProductDto[]>(`/api/products${query}`);
@@ -88,4 +95,15 @@ export async function getCategories(): Promise<string[]> {
 
 export async function getBrands(): Promise<string[]> {
   return apiClient<string[]>("/api/products/brands");
+}
+
+export async function suggestProductMetadata(
+  name: string,
+  signal?: AbortSignal
+): Promise<ProductMetadataSuggestion> {
+  return apiClient<ProductMetadataSuggestion>("/api/products/suggestions", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+    signal,
+  });
 }
