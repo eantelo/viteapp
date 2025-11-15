@@ -26,6 +26,226 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { IconFilter } from "@tabler/icons-react";
+
+// Componente de filtros reutilizable para mobile y desktop
+function FilterContent({
+  search,
+  handleSearchChange,
+  expandedFilters,
+  toggleFilter,
+  availableCategories,
+  selectedFilters,
+  toggleFilterValue,
+  availableBrands,
+  clearAllFilters,
+}: {
+  search: string;
+  handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  expandedFilters: { category: boolean; brand: boolean; status: boolean };
+  toggleFilter: (section: "category" | "brand" | "status") => void;
+  availableCategories: string[];
+  selectedFilters: { category: string[]; brand: string[]; status: string[] };
+  toggleFilterValue: (
+    section: "category" | "brand" | "status",
+    value: string
+  ) => void;
+  availableBrands: string[];
+  clearAllFilters: () => void;
+}) {
+  return (
+    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+      {/* Search Bar */}
+      <div className="pb-3">
+        <label className="flex flex-col min-w-40 h-11 w-full">
+          <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
+            <div className="text-slate-500 dark:text-slate-400 flex bg-slate-100 dark:bg-slate-800 items-center justify-center pl-3 rounded-l-lg border-r-0">
+              <IconSearch size={20} />
+            </div>
+            <Input
+              className="rounded-l-none border-l-0 bg-slate-100 dark:bg-slate-800 h-full focus-visible:ring-0 focus-visible:ring-offset-0"
+              placeholder="Search products..."
+              value={search}
+              onChange={handleSearchChange}
+            />
+          </div>
+        </label>
+      </div>
+
+      {/* Filter Accordions */}
+      <div className="flex flex-col">
+        {/* Category Filter */}
+        <details
+          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          open={expandedFilters.category}
+        >
+          <summary
+            className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFilter("category");
+            }}
+          >
+            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+              Categoría
+            </p>
+            <IconChevronDown
+              size={20}
+              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+                expandedFilters.category ? "rotate-180" : ""
+              }`}
+            />
+          </summary>
+          {expandedFilters.category && (
+            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+              {availableCategories.length > 0 ? (
+                availableCategories.map((category) => (
+                  <label
+                    key={category}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      className="form-checkbox rounded text-primary focus:ring-primary/50"
+                      type="checkbox"
+                      checked={selectedFilters.category.includes(category)}
+                      onChange={() => toggleFilterValue("category", category)}
+                    />
+                    <span>{category}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400">
+                  No hay categorías disponibles
+                </p>
+              )}
+            </div>
+          )}
+        </details>
+
+        {/* Brand Filter */}
+        <details
+          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          open={expandedFilters.brand}
+        >
+          <summary
+            className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFilter("brand");
+            }}
+          >
+            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+              Marca
+            </p>
+            <IconChevronDown
+              size={20}
+              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+                expandedFilters.brand ? "rotate-180" : ""
+              }`}
+            />
+          </summary>
+          {expandedFilters.brand && (
+            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+              {availableBrands.length > 0 ? (
+                availableBrands.map((brand) => (
+                  <label
+                    key={brand}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      className="form-checkbox rounded text-primary focus:ring-primary/50"
+                      type="checkbox"
+                      checked={selectedFilters.brand.includes(brand)}
+                      onChange={() => toggleFilterValue("brand", brand)}
+                    />
+                    <span>{brand}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400">
+                  No hay marcas disponibles
+                </p>
+              )}
+            </div>
+          )}
+        </details>
+
+        {/* Status Filter */}
+        <details
+          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          open={expandedFilters.status}
+        >
+          <summary
+            className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleFilter("status");
+            }}
+          >
+            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+              Estatus
+            </p>
+            <IconChevronDown
+              size={20}
+              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+                expandedFilters.status ? "rotate-180" : ""
+              }`}
+            />
+          </summary>
+          {expandedFilters.status && (
+            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  className="form-checkbox rounded text-primary focus:ring-primary/50"
+                  type="checkbox"
+                  checked={selectedFilters.status.includes("active")}
+                  onChange={() => toggleFilterValue("status", "active")}
+                />
+                <span>Activo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  className="form-checkbox rounded text-primary focus:ring-primary/50"
+                  type="checkbox"
+                  checked={selectedFilters.status.includes("inactive")}
+                  onChange={() => toggleFilterValue("status", "inactive")}
+                />
+                <span>Inactivo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  className="form-checkbox rounded text-primary focus:ring-primary/50"
+                  type="checkbox"
+                  checked={selectedFilters.status.includes("out-of-stock")}
+                  onChange={() => toggleFilterValue("status", "out-of-stock")}
+                />
+                <span>Sin Stock</span>
+              </label>
+            </div>
+          )}
+        </details>
+      </div>
+
+      {/* Clear Filters Button */}
+      <div className="pt-3 border-t border-slate-200 dark:border-slate-700 mt-2">
+        <Button
+          variant="ghost"
+          className="w-full text-primary hover:bg-primary/10"
+          onClick={clearAllFilters}
+        >
+          Limpiar Filtros
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function ProductCatalogPage() {
   useDocumentTitle("Catálogo de Productos");
@@ -57,6 +277,7 @@ export function ProductCatalogPage() {
   });
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
@@ -258,41 +479,47 @@ export function ProductCatalogPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Catálogo de Productos" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-8"
+        className="flex flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8"
       >
         {/* Page Heading */}
         <motion.header
-          className="flex flex-wrap justify-between items-center gap-4 pb-6"
+          className="flex flex-col gap-4 pb-4 md:pb-6"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
         >
           <div className="flex flex-col gap-2">
-            <h1 className="text-gray-900 dark:text-white text-3xl font-bold leading-tight">
+            <h1 className="text-gray-900 dark:text-white text-2xl md:text-3xl font-bold leading-tight">
               Catálogo de Productos
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">
+            <p className="text-slate-500 dark:text-slate-400 text-sm md:text-base font-normal leading-normal">
               Administra tus productos, actualiza detalles y controla el
               inventario.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 md:size-default"
+            >
               <IconUpload size={18} />
-              <span>Importar</span>
+              <span className="hidden sm:inline">Importar</span>
             </Button>
             <Button
-              className="flex items-center gap-2"
+              size="sm"
+              className="flex items-center gap-2 md:size-default"
               onClick={handleCreateProduct}
             >
               <IconPlus size={18} />
-              <span>Crear Producto</span>
+              <span>Crear</span>
+              <span className="hidden sm:inline">Producto</span>
             </Button>
           </div>
         </motion.header>
 
         <motion.div
-          className="flex gap-8 mt-4"
+          className="flex flex-col lg:flex-row gap-4 lg:gap-8 mt-4"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{
@@ -300,205 +527,71 @@ export function ProductCatalogPage() {
             delay: prefersReducedMotion ? 0 : 0.08,
           }}
         >
-          {/* Filters Sidebar */}
-          <aside className="w-72 shrink-0">
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-              {/* Search Bar */}
-              <div className="pb-3">
-                <label className="flex flex-col min-w-40 h-11 w-full">
-                  <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-                    <div className="text-slate-500 dark:text-slate-400 flex bg-slate-100 dark:bg-slate-800 items-center justify-center pl-3 rounded-l-lg border-r-0">
-                      <IconSearch size={20} />
-                    </div>
-                    <Input
-                      className="rounded-l-none border-l-0 bg-slate-100 dark:bg-slate-800 h-full focus-visible:ring-0 focus-visible:ring-offset-0"
-                      placeholder="Search products..."
-                      value={search}
-                      onChange={handleSearchChange}
-                    />
-                  </div>
-                </label>
-              </div>
-
-              {/* Filter Accordions */}
-              <div className="flex flex-col">
-                {/* Category Filter */}
-                <details
-                  className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
-                  open={expandedFilters.category}
-                >
-                  <summary
-                    className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleFilter("category");
-                    }}
-                  >
-                    <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Categoría
-                    </p>
-                    <IconChevronDown
-                      size={20}
-                      className={`text-gray-600 dark:text-slate-400 transition-transform ${
-                        expandedFilters.category ? "rotate-180" : ""
-                      }`}
-                    />
-                  </summary>
-                  {expandedFilters.category && (
-                    <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
-                      {availableCategories.length > 0 ? (
-                        availableCategories.map((category) => (
-                          <label
-                            key={category}
-                            className="flex items-center gap-2 cursor-pointer"
-                          >
-                            <input
-                              className="form-checkbox rounded text-primary focus:ring-primary/50"
-                              type="checkbox"
-                              checked={selectedFilters.category.includes(
-                                category
-                              )}
-                              onChange={() =>
-                                toggleFilterValue("category", category)
-                              }
-                            />
-                            <span>{category}</span>
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-xs text-slate-400">
-                          No hay categorías disponibles
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </details>
-
-                {/* Brand Filter */}
-                <details
-                  className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
-                  open={expandedFilters.brand}
-                >
-                  <summary
-                    className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleFilter("brand");
-                    }}
-                  >
-                    <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Marca
-                    </p>
-                    <IconChevronDown
-                      size={20}
-                      className={`text-gray-600 dark:text-slate-400 transition-transform ${
-                        expandedFilters.brand ? "rotate-180" : ""
-                      }`}
-                    />
-                  </summary>
-                  {expandedFilters.brand && (
-                    <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
-                      {availableBrands.length > 0 ? (
-                        availableBrands.map((brand) => (
-                          <label
-                            key={brand}
-                            className="flex items-center gap-2 cursor-pointer"
-                          >
-                            <input
-                              className="form-checkbox rounded text-primary focus:ring-primary/50"
-                              type="checkbox"
-                              checked={selectedFilters.brand.includes(brand)}
-                              onChange={() => toggleFilterValue("brand", brand)}
-                            />
-                            <span>{brand}</span>
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-xs text-slate-400">
-                          No hay marcas disponibles
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </details>
-
-                {/* Status Filter */}
-                <details
-                  className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
-                  open={expandedFilters.status}
-                >
-                  <summary
-                    className="flex cursor-pointer items-center justify-between gap-6 py-2 list-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleFilter("status");
-                    }}
-                  >
-                    <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
-                      Estatus
-                    </p>
-                    <IconChevronDown
-                      size={20}
-                      className={`text-gray-600 dark:text-slate-400 transition-transform ${
-                        expandedFilters.status ? "rotate-180" : ""
-                      }`}
-                    />
-                  </summary>
-                  {expandedFilters.status && (
-                    <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                          checked={selectedFilters.status.includes("active")}
-                          onChange={() => toggleFilterValue("status", "active")}
-                        />
-                        <span>Activo</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                          checked={selectedFilters.status.includes("inactive")}
-                          onChange={() =>
-                            toggleFilterValue("status", "inactive")
-                          }
-                        />
-                        <span>Inactivo</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="form-checkbox rounded text-primary focus:ring-primary/50"
-                          type="checkbox"
-                          checked={selectedFilters.status.includes(
-                            "out-of-stock"
-                          )}
-                          onChange={() =>
-                            toggleFilterValue("status", "out-of-stock")
-                          }
-                        />
-                        <span>Sin Stock</span>
-                      </label>
-                    </div>
-                  )}
-                </details>
-              </div>
-
-              {/* Clear Filters Button */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-700 mt-2">
+          {/* Mobile Filter Button */}
+          <div className="lg:hidden">
+            <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+              <SheetTrigger asChild>
                 <Button
-                  variant="ghost"
-                  className="w-full text-primary hover:bg-primary/10"
-                  onClick={clearAllFilters}
+                  variant="outline"
+                  className="w-full flex items-center gap-2"
                 >
-                  Limpiar Filtros
+                  <IconFilter size={18} />
+                  <span>Filtros</span>
+                  {(selectedFilters.category.length > 0 ||
+                    selectedFilters.brand.length > 0 ||
+                    selectedFilters.status.length > 0 ||
+                    search.trim()) && (
+                    <span className="ml-auto bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                      {selectedFilters.category.length +
+                        selectedFilters.brand.length +
+                        selectedFilters.status.length +
+                        (search.trim() ? 1 : 0)}
+                    </span>
+                  )}
                 </Button>
-              </div>
-            </div>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-full sm:w-96 overflow-y-auto"
+              >
+                <SheetHeader>
+                  <SheetTitle>Filtros</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  {/* Filter content (will be extracted to component) */}
+                  <FilterContent
+                    search={search}
+                    handleSearchChange={handleSearchChange}
+                    expandedFilters={expandedFilters}
+                    toggleFilter={toggleFilter}
+                    availableCategories={availableCategories}
+                    selectedFilters={selectedFilters}
+                    toggleFilterValue={toggleFilterValue}
+                    availableBrands={availableBrands}
+                    clearAllFilters={clearAllFilters}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop Filters Sidebar */}
+          <aside className="hidden lg:block w-72 shrink-0">
+            <FilterContent
+              search={search}
+              handleSearchChange={handleSearchChange}
+              expandedFilters={expandedFilters}
+              toggleFilter={toggleFilter}
+              availableCategories={availableCategories}
+              selectedFilters={selectedFilters}
+              toggleFilterValue={toggleFilterValue}
+              availableBrands={availableBrands}
+              clearAllFilters={clearAllFilters}
+            />
           </aside>
 
           {/* Product Table */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -512,25 +605,37 @@ export function ProductCatalogPage() {
                     <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
                       <thead className="text-xs text-slate-700 dark:text-slate-300 uppercase bg-slate-50 dark:bg-slate-800">
                         <tr>
-                          <th scope="col" className="px-6 py-3">
+                          <th scope="col" className="px-4 md:px-6 py-3">
                             Producto
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th
+                            scope="col"
+                            className="hidden sm:table-cell px-4 md:px-6 py-3"
+                          >
                             SKU
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th
+                            scope="col"
+                            className="hidden md:table-cell px-4 md:px-6 py-3"
+                          >
                             Marca
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th scope="col" className="px-4 md:px-6 py-3">
                             Precio
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th
+                            scope="col"
+                            className="hidden lg:table-cell px-4 md:px-6 py-3"
+                          >
                             Stock
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th
+                            scope="col"
+                            className="hidden sm:table-cell px-4 md:px-6 py-3"
+                          >
                             Estatus
                           </th>
-                          <th scope="col" className="px-6 py-3">
+                          <th scope="col" className="px-4 md:px-6 py-3">
                             <span className="sr-only">Acciones</span>
                           </th>
                         </tr>
@@ -539,7 +644,7 @@ export function ProductCatalogPage() {
                         {filteredProducts.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={8}
+                              colSpan={7}
                               className="text-center py-8 text-slate-500"
                             >
                               No se encontraron productos
@@ -562,22 +667,32 @@ export function ProductCatalogPage() {
                             >
                               <th
                                 scope="row"
-                                className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap"
+                                className="px-4 md:px-6 py-3 md:py-4 font-medium text-gray-900 dark:text-white"
                               >
                                 <div>
-                                  <p>{product.name}</p>
+                                  <p className="text-sm md:text-base">
+                                    {product.name}
+                                  </p>
                                   <p className="text-xs text-slate-500">
                                     {product.category}
                                   </p>
+                                  {/* Mostrar SKU en mobile cuando la columna está oculta */}
+                                  <p className="text-xs text-slate-400 sm:hidden mt-1">
+                                    {product.sku}
+                                  </p>
                                 </div>
                               </th>
-                              <td className="px-6 py-4">{product.sku}</td>
-                              <td className="px-6 py-4">{product.brand}</td>
-                              <td className="px-6 py-4">
+                              <td className="hidden sm:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm">
+                                {product.sku}
+                              </td>
+                              <td className="hidden md:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm">
+                                {product.brand}
+                              </td>
+                              <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium">
                                 {formatPrice(product.price)}
                               </td>
                               <td
-                                className={`px-6 py-4 ${
+                                className={`hidden lg:table-cell px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm ${
                                   product.stock <= 10 && product.stock > 0
                                     ? "text-orange-600 dark:text-orange-400"
                                     : product.stock === 0
@@ -590,7 +705,7 @@ export function ProductCatalogPage() {
                                   <span className="ml-1">(Bajo)</span>
                                 )}
                               </td>
-                              <td className="px-6 py-4">
+                              <td className="hidden sm:table-cell px-4 md:px-6 py-3 md:py-4">
                                 <span
                                   className={getStatusBadgeClass(
                                     product.isActive,
@@ -604,7 +719,7 @@ export function ProductCatalogPage() {
                                 </span>
                               </td>
                               <td
-                                className="px-6 py-4 text-right"
+                                className="px-4 md:px-6 py-3 md:py-4 text-right"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <DropdownMenu>
@@ -649,8 +764,8 @@ export function ProductCatalogPage() {
                   </div>
 
                   {/* Summary */}
-                  <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                    <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+                  <div className="p-3 md:p-4 border-t border-slate-200 dark:border-slate-700">
+                    <span className="text-xs md:text-sm font-normal text-slate-500 dark:text-slate-400">
                       Mostrando{" "}
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {filteredProducts.length}
