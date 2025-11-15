@@ -4,6 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-size-xs: 10.24px;
+  --font-size-sm: 12.8px;
+  --font-size-base: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 25px;
+  --font-size-2xl: 31.25px;
+  --font-size-3xl: 39.06px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -116,5 +123,17 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Updated: 2025-11-14 - Tamaños aumentados para mejor legibilidad */
+  .sidebar-text {
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+  }
+  .sidebar-text-lg {
+    font-size: 26x !important;
+    line-height: 1.4 !important;
   }
 }

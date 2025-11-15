@@ -2,13 +2,13 @@
 
 ## Resumen
 
-Se agregaron las páginas de **login** y **registro** dentro de `src/pages` consumiendo los endpoints de `Sales.Api` (`/api/auth/login` y `/api/auth/register`). Ambas pantallas comparten un layout consistente (`AuthLayout`) y se apoyan en componentes reutilizables (`Button`, `Input`, `Label`, `Card`, `Alert`) implementados con la librería de **shadcn/ui**. El formulario de login ahora incluye toggles accesibles (mostrar/ocultar contraseña, recordar dispositivo) y mensajes de error alineados con los estilos de shadcn. Tras una autenticación exitosa se persiste el `AuthResponse` en `localStorage`, se programa la renovación automática vía `/api/auth/refresh-token`, y al cerrar sesión se llama a `/api/auth/revoke-token` antes de limpiar el estado local.
+Se agregaron las páginas de **login** y **registro** dentro de `src/pages` consumiendo los endpoints de `Sales.Api` (`/api/auth/login` y `/api/auth/register`). Ambas pantallas comparten un layout consistente (`AuthLayout`) y se apoyan en componentes reutilizables construidos con **shadcn/ui**. El formulario de login ahora se renderiza mediante el bloque `LoginForm` (basado en `@shadcn/login-03`), que combina `FieldGroup`, `Field`, `FieldSeparator` y botones outline para SSO social. Mantiene los toggles accesibles (mostrar/ocultar contraseña, recordar dispositivo) y muestra errores por campo usando `FieldError`. Tras una autenticación exitosa se persiste el `AuthResponse` en `localStorage`, se programa la renovación automática vía `/api/auth/refresh-token`, y al cerrar sesión se llama a `/api/auth/revoke-token` antes de limpiar el estado local.
 
 ## Rutas
 
 | Ruta        | Descripción                                 | Componentes clave                     |
 |-------------|---------------------------------------------|---------------------------------------|
-| `/login`    | Inicio de sesión con email + contraseña     | `LoginPage`, `AuthLayout`, `Input`     |
+| `/login`    | Inicio de sesión con email + contraseña     | `LoginPage`, `AuthLayout`, `LoginForm`     |
 | `/register` | Registro de tenant + primer usuario admin   | `RegisterPage`, `AuthLayout`, `Input`  |
 | `/dashboard`| Vista protegida con datos del token emitido | `DashboardPage`, `ProtectedRoute`      |
 
@@ -31,6 +31,8 @@ La ruta raíz (`/`) redirige automáticamente a `/dashboard` cuando hay sesión 
 
 ## Componentes reutilizables
 
+- `LoginForm`: bloque que encapsula la UI del login (botones sociales, separador, campos y recordatorio de dispositivo) y recibe el estado/controladores desde `LoginPage`.
+- `Field`, `FieldGroup`, `FieldSeparator`, `FieldError`: primitivos generados con shadcn/ui para mantener consistencia en formularios multicolumna.
 - `Button`, `Input`, `Label`, `Card`, `Alert`, `Spinner`: estilos basados en shadcn/ui + Tailwind, pensados para extender el diseño del portal.
 - `AuthLayout`: encapsula el hero lateral y la tarjeta del formulario para login/registro.
 - `ProtectedRoute`: wrapper sencillo para rutas privadas.

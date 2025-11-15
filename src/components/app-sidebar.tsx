@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  IconAddressBook,
   IconCamera,
   IconChartBar,
   IconDashboard,
@@ -11,6 +12,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
+  IconPackage,
   IconReport,
   IconSearch,
   IconSettings,
@@ -41,8 +43,18 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
+    },
+    {
+      title: "Productos",
+      url: "/products",
+      icon: IconPackage,
+    },
+    {
+      title: "Clientes",
+      url: "/customers",
+      icon: IconAddressBook,
     },
     {
       title: "Lifecycle",
@@ -161,7 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="#">
                 <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="sidebar-text-lg font-semibold">Acme Inc.</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

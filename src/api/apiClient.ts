@@ -59,12 +59,30 @@ export async function apiClient<TResponse>(
   }
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : undefined;
+
+  // Intentar parsear como JSON
+  let payload: unknown;
+  try {
+    payload = text ? JSON.parse(text) : undefined;
+  } catch (parseError) {
+    // Si no es JSON válido, usar el texto plano
+    console.error("Error parsing JSON response:", text);
+    if (!response.ok) {
+      const error: ApiError = new Error(
+        text || `HTTP ${response.status}: ${response.statusText}`
+      );
+      error.status = response.status;
+      error.details = text;
+      throw error;
+    }
+    // Si la respuesta es OK pero no es JSON, devolver el texto
+    return text as TResponse;
+  }
 
   if (!response.ok) {
     const error: ApiError = new Error(
       (payload as { message?: string } | undefined)?.message ??
-        "Unexpected error"
+        `HTTP ${response.status}: ${response.statusText}`
     );
     error.status = response.status;
     error.details = payload;
