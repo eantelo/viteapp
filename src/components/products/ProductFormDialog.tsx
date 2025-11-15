@@ -96,6 +96,28 @@ export function ProductFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("handleSubmit called", { name, sku, price, stock });
+
+    // Validar campos requeridos
+    if (!name.trim()) {
+      setError("El nombre del producto es requerido.");
+      return;
+    }
+
+    if (!sku.trim()) {
+      setError("El SKU es requerido.");
+      return;
+    }
+
+    if (!price.trim()) {
+      setError("El precio es requerido.");
+      return;
+    }
+
+    if (!stock.trim()) {
+      setError("El stock es requerido.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -190,6 +212,11 @@ export function ProductFormDialog({
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
                 placeholder="Ej: Laptop Dell Inspiron"
                 maxLength={200}
                 required
@@ -204,6 +231,11 @@ export function ProductFormDialog({
                 id="sku"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
                 placeholder="Ej: DELL-INSP-001"
                 maxLength={100}
                 required
@@ -242,6 +274,11 @@ export function ProductFormDialog({
                 id="barcode"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
                 placeholder="Ej: 7501234567890"
                 maxLength={100}
               />
@@ -259,6 +296,11 @@ export function ProductFormDialog({
                   min="0"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="0.00"
                   required
                 />
@@ -274,6 +316,11 @@ export function ProductFormDialog({
                   min="0"
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="0"
                   required
                 />

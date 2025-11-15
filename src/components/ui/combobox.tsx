@@ -54,6 +54,11 @@ export function Combobox({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Prevenir Enter siempre para evitar envío del formulario
+    if (e.key === "Enter") {
+      e.preventDefault();
+    }
+
     // Solo abrir el dropdown con flechas o cuando se empieza a escribir
     if (!open) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -63,6 +68,10 @@ export function Combobox({
       }
       // No abrir con Tab
       if (e.key === "Tab") {
+        return;
+      }
+      // Si presionan Enter sin dropdown abierto, solo prevenimos el submit
+      if (e.key === "Enter") {
         return;
       }
     }
