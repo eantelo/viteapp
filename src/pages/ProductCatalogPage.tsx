@@ -545,6 +545,10 @@ export function ProductCatalogPage() {
     setSelectedProduct(null);
   };
 
+  const applyMobileFilters = () => {
+    setShowMobileFilters(false);
+  };
+
   return (
     <PageTransition>
       <DashboardLayout
@@ -630,8 +634,7 @@ export function ProductCatalogPage() {
                 <SheetHeader>
                   <SheetTitle>Filtros</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4">
-                  {/* Filter content (will be extracted to component) */}
+                <div className="mt-4 flex flex-col gap-4">
                   <FilterContent
                     search={search}
                     handleSearchChange={handleSearchChange}
@@ -643,6 +646,13 @@ export function ProductCatalogPage() {
                     availableBrands={availableBrands}
                     clearAllFilters={clearAllFilters}
                   />
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center"
+                    onClick={applyMobileFilters}
+                  >
+                    Aplicar filtros
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
