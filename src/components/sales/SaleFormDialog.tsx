@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -41,23 +40,16 @@ interface SaleFormDialogProps {
 }
 
 interface SaleItemForm {
-  id?: string;
   productId: string;
   productName: string;
   quantity: number;
-  unitPrice: number;
-  discount: number;
+  price: number;
   subtotal: number;
 }
 
 export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
   const [customerId, setCustomerId] = useState("");
   const [saleDate, setSaleDate] = useState("");
-  const [status, setStatus] = useState<
-    "Pending" | "Invoiced" | "Shipped" | "Cancelled"
-  >("Pending");
-  const [notes, setNotes] = useState("");
-  const [isActive, setIsActive] = useState(true);
   const [items, setItems] = useState<SaleItemForm[]>([]);
 
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
@@ -82,28 +74,20 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     }
 
     if (sale) {
-      setCustomerId(sale.customerId);
-      setSaleDate(sale.saleDate.split("T")[0]);
-      setStatus(sale.status);
-      setNotes(sale.notes ?? "");
-      setIsActive(sale.isActive);
+      setCustomerId(sale.customerId ?? "");
+      setSaleDate(sale.date ? sale.date.split("T")[0] : "");
       setItems(
         sale.items.map((item) => ({
-          id: item.id,
           productId: item.productId,
           productName: item.productName ?? "",
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discount: item.discount,
-          subtotal: item.subtotal,
+          price: item.price,
+          subtotal: item.quantity * item.price,
         }))
       );
     } else {
       setCustomerId("");
       setSaleDate(new Date().toISOString().split("T")[0]);
-      setStatus("Pending");
-      setNotes("");
-      setIsActive(true);
       setItems([]);
     }
     setSelectedProduct("");
@@ -128,12 +112,8 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     }
   };
 
-  const calculateSubtotal = (
-    quantity: number,
-    unitPrice: number,
-    discount: number
-  ) => {
-    return quantity * unitPrice - discount;
+  const calculateSubtotal = (quantity: number, price: number) => {
+    return quantity * price;
   };
 
   const handleAddProduct = () => {
@@ -156,8 +136,7 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
       productId: product.id,
       productName: product.name,
       quantity: 1,
-      unitPrice: product.price,
-      discount: 0,
+      price: product.price,
       subtotal: product.price,
     };
 
@@ -178,15 +157,16 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     const newItems = [...items];
     const item = newItems[index];
 
-    if (field === "quantity" || field === "unitPrice" || field === "discount") {
+    if (field === "quantity") {
       const numValue =
         typeof value === "string" ? parseFloat(value) || 0 : value;
-      item[field] = numValue;
-      item.subtotal = calculateSubtotal(
-        item.quantity,
-        item.unitPrice,
-        item.discount
-      );
+      item.quantity = numValue;
+      item.subtotal = calculateSubtotal(item.quantity, item.price);
+    } else if (field === "price") {
+      const numValue =
+        typeof value === "string" ? parseFloat(value) || 0 : value;
+      item.price = numValue;
+      item.subtotal = calculateSubtotal(item.quantity, item.price);
     }
 
     setItems(newItems);
@@ -213,29 +193,22 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
       }
 
       const baseItems = items.map((item) => ({
-        id: item.id,
         productId: item.productId,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount,
       }));
 
       if (isEditing && sale) {
         const dto: SaleUpdateDto = {
+          date: new Date(saleDate).toISOString(),
           customerId,
-          saleDate: new Date(saleDate).toISOString(),
-          status,
           items: baseItems,
-          notes: notes.trim() || undefined,
-          isActive,
         };
         await updateSale(sale.id, dto);
       } else {
         const dto: SaleCreateDto = {
+          date: new Date(saleDate).toISOString(),
           customerId,
-          saleDate: new Date(saleDate).toISOString(),
-          items: baseItems.map(({ id, ...rest }) => rest),
-          notes: notes.trim() || undefined,
+          items: baseItems,
         };
         await createSale(dto);
       }
@@ -320,57 +293,6 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
               </div>
             </div>
 
-            {isEditing && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="sale-status">Estado</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(value) => setStatus(value as typeof status)}
-                  >
-                    <SelectTrigger id="sale-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pendiente</SelectItem>
-                      <SelectItem value="Invoiced">Facturada</SelectItem>
-                      <SelectItem value="Shipped">Enviada</SelectItem>
-                      <SelectItem value="Cancelled">Cancelada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-end pb-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="sale-is-active"
-                      checked={isActive}
-                      onCheckedChange={(checked) =>
-                        setIsActive(checked === true)
-                      }
-                    />
-                    <Label
-                      htmlFor="sale-is-active"
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      Orden activa
-                    </Label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="grid gap-2">
-              <Label htmlFor="sale-notes">Notas</Label>
-              <Input
-                id="sale-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas adicionales..."
-                maxLength={500}
-              />
-            </div>
-
             <div className="border-t pt-4">
               <div className="flex items-end gap-2 mb-4">
                 <div className="flex-1">
@@ -408,10 +330,11 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Producto</TableHead>
-                        <TableHead className="w-24">Cantidad</TableHead>
-                        <TableHead className="w-32">Precio Unit.</TableHead>
-                        <TableHead className="w-32">Descuento</TableHead>
-                        <TableHead className="w-32 text-right">
+                        <TableHead className="w-32">Cantidad</TableHead>
+                        <TableHead className="w-40 text-right">
+                          Precio Unit.
+                        </TableHead>
+                        <TableHead className="w-40 text-right">
                           Subtotal
                         </TableHead>
                         <TableHead className="w-16"></TableHead>
@@ -439,37 +362,8 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
                               className="h-8"
                             />
                           </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.unitPrice}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "unitPrice",
-                                  e.target.value
-                                )
-                              }
-                              className="h-8"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={item.discount}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "discount",
-                                  e.target.value
-                                )
-                              }
-                              className="h-8"
-                            />
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(item.price)}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
                             {formatCurrency(item.subtotal)}
@@ -488,7 +382,7 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
                         </TableRow>
                       ))}
                       <TableRow>
-                        <TableCell colSpan={4} className="text-right font-bold">
+                        <TableCell colSpan={3} className="text-right font-bold">
                           Total:
                         </TableCell>
                         <TableCell className="text-right font-bold text-lg">

@@ -44,7 +44,7 @@ import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
 
-type SaleStatus = "Pending" | "Invoiced" | "Shipped" | "Cancelled" | "";
+type SaleStatus = "Completed" | "Closed" | "Cancelled" | "";
 
 export function SalesPage() {
   useDocumentTitle("Órdenes de Venta");
@@ -190,9 +190,8 @@ export function SalesPage() {
         label: string;
       }
     > = {
-      Pending: { variant: "outline", label: "Pendiente" },
-      Invoiced: { variant: "secondary", label: "Facturada" },
-      Shipped: { variant: "default", label: "Enviada" },
+      Completed: { variant: "default", label: "Completada" },
+      Closed: { variant: "secondary", label: "Cerrada" },
       Cancelled: { variant: "destructive", label: "Cancelada" },
     };
 
@@ -284,9 +283,8 @@ export function SalesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value=" ">Todos</SelectItem>
-                      <SelectItem value="Pending">Pendiente</SelectItem>
-                      <SelectItem value="Invoiced">Facturada</SelectItem>
-                      <SelectItem value="Shipped">Enviada</SelectItem>
+                      <SelectItem value="Completed">Completada</SelectItem>
+                      <SelectItem value="Closed">Cerrada</SelectItem>
                       <SelectItem value="Cancelled">Cancelada</SelectItem>
                     </SelectContent>
                   </Select>
@@ -383,10 +381,10 @@ export function SalesPage() {
                                 {sale.customerName}
                               </TableCell>
                               <TableCell className="px-6 py-4">
-                                {formatDate(sale.saleDate)}
+                                {formatDate(sale.date)}
                               </TableCell>
                               <TableCell className="px-6 py-4 text-right font-semibold">
-                                {formatCurrency(sale.totalAmount)}
+                                {formatCurrency(sale.total)}
                               </TableCell>
                               <TableCell className="px-6 py-4">
                                 {getStatusBadge(sale.status)}
