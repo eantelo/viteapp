@@ -20,6 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   IconPlus,
   IconPencil,
@@ -28,8 +30,9 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconFilter,
-  IconX,
   IconEye,
+  IconRefresh,
+  IconCalendar,
 } from "@tabler/icons-react";
 import {
   Select,
@@ -45,6 +48,14 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
 
 type SaleStatus = "Completed" | "Closed" | "Cancelled" | "";
+
+interface SalesFilters {
+  status: SaleStatus;
+  dateFrom: string;
+  dateTo: string;
+  minAmount: string;
+  maxAmount: string;
+}
 
 export function SalesPage() {
   useDocumentTitle("Órdenes de Venta");
@@ -63,7 +74,13 @@ export function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<SaleStatus>("");
+  const [filters, setFilters] = useState<SalesFilters>({
+    status: "",
+    dateFrom: "",
+    dateTo: "",
+    minAmount: "",
+    maxAmount: "",
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<SaleDto | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,12 +106,47 @@ export function SalesPage() {
   const filteredSales = useMemo(() => {
     let result = [...sales];
 
-    if (statusFilter) {
-      result = result.filter((sale) => sale.status === statusFilter);
+    // Filtro de estado
+    if (filters.status) {
+      result = result.filter((sale) => sale.status === filters.status);
+    }
+
+    // Filtro de rango de fechas
+    if (filters.dateFrom) {
+      const fromDate = new Date(filters.dateFrom);
+      result = result.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return saleDate >= fromDate;
+      });
+    }
+
+    if (filters.dateTo) {
+      const toDate = new Date(filters.dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return saleDate <= toDate;
+      });
+    }
+
+    // Filtro de monto mínimo
+    if (filters.minAmount) {
+      const minAmount = parseFloat(filters.minAmount);
+      if (!isNaN(minAmount)) {
+        result = result.filter((sale) => sale.total >= minAmount);
+      }
+    }
+
+    // Filtro de monto máximo
+    if (filters.maxAmount) {
+      const maxAmount = parseFloat(filters.maxAmount);
+      if (!isNaN(maxAmount)) {
+        result = result.filter((sale) => sale.total <= maxAmount);
+      }
     }
 
     return result;
-  }, [sales, statusFilter]);
+  }, [sales, filters]);
 
   // Calcular ventas paginadas
   const paginatedSales = useMemo(() => {
@@ -202,9 +254,35 @@ export function SalesPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const clearStatusFilter = () => {
-    setStatusFilter("");
+  const clearAllFilters = () => {
+    setFilters({
+      status: "",
+      dateFrom: "",
+      dateTo: "",
+      minAmount: "",
+      maxAmount: "",
+    });
     setCurrentPage(1);
+  };
+
+  const hasActiveFilters = () => {
+    return (
+      filters.status !== "" ||
+      filters.dateFrom !== "" ||
+      filters.dateTo !== "" ||
+      filters.minAmount !== "" ||
+      filters.maxAmount !== ""
+    );
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.status) count++;
+    if (filters.dateFrom) count++;
+    if (filters.dateTo) count++;
+    if (filters.minAmount) count++;
+    if (filters.maxAmount) count++;
+    return count;
   };
 
   return (
@@ -236,7 +314,9 @@ export function SalesPage() {
           </Button>
         </motion.div>
 
+        {/* Layout con filtros laterales */}
         <motion.div
+          className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{
@@ -244,15 +324,191 @@ export function SalesPage() {
             delay: prefersReducedMotion ? 0 : 0.08,
           }}
         >
+          {/* Panel de filtros */}
+          <Card className="bg-white dark:bg-gray-900/50 shadow-sm border-gray-200 dark:border-gray-800 h-fit">
+            <CardHeader className="border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <IconFilter size={20} className="text-primary" />
+                  <CardTitle className="text-lg">Filtros</CardTitle>
+                </div>
+                {hasActiveFilters() && (
+                  <Badge variant="secondary" className="text-xs">
+                    {getActiveFiltersCount()}
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              {/* Filtro de Estado */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="status-filter"
+                  className="text-sm font-semibold"
+                >
+                  Estado
+                </Label>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      status: value as SaleStatus,
+                    }));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger
+                    id="status-filter"
+                    className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                  >
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=" ">Todos</SelectItem>
+                    <SelectItem value="Completed">Completada</SelectItem>
+                    <SelectItem value="Closed">Cerrada</SelectItem>
+                    <SelectItem value="Cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              {/* Filtro de Rango de Fechas */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <IconCalendar size={16} />
+                  Rango de Fechas
+                </Label>
+                <div className="space-y-2">
+                  <div>
+                    <Label
+                      htmlFor="date-from"
+                      className="text-xs text-gray-500"
+                    >
+                      Desde
+                    </Label>
+                    <Input
+                      id="date-from"
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          dateFrom: e.target.value,
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mt-1 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="date-to" className="text-xs text-gray-500">
+                      Hasta
+                    </Label>
+                    <Input
+                      id="date-to"
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          dateTo: e.target.value,
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mt-1 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Filtro de Monto */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Rango de Monto</Label>
+                <div className="space-y-2">
+                  <div>
+                    <Label
+                      htmlFor="min-amount"
+                      className="text-xs text-gray-500"
+                    >
+                      Mínimo ($)
+                    </Label>
+                    <Input
+                      id="min-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={filters.minAmount}
+                      onChange={(e) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          minAmount: e.target.value,
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mt-1 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="max-amount"
+                      className="text-xs text-gray-500"
+                    >
+                      Máximo ($)
+                    </Label>
+                    <Input
+                      id="max-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={filters.maxAmount}
+                      onChange={(e) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          maxAmount: e.target.value,
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mt-1 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Botón Limpiar Filtros */}
+              {hasActiveFilters() && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="w-full gap-2"
+                  >
+                    <IconRefresh size={16} />
+                    Limpiar Filtros
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Contenido principal */}
           <Card className="bg-white dark:bg-gray-900/50 shadow-sm border-gray-200 dark:border-gray-800">
             <CardHeader className="border-b border-gray-200 dark:border-gray-800">
               <CardTitle>Listado de Órdenes</CardTitle>
               <CardDescription>
-                Todas las órdenes de venta registradas en el sistema
+                {filteredSales.length === sales.length
+                  ? `${sales.length} órdenes en total`
+                  : `${filteredSales.length} de ${sales.length} órdenes`}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              {/* Barra de búsqueda y filtros */}
+              {/* Barra de búsqueda */}
               <div className="flex flex-col md:flex-row gap-4 mb-4">
                 <div className="relative flex-1">
                   <IconSearch
@@ -267,45 +523,15 @@ export function SalesPage() {
                     className="pl-10 bg-gray-100 dark:bg-gray-800 border-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={statusFilter}
-                    onValueChange={(value) => {
-                      setStatusFilter(value as SaleStatus);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-[180px] bg-gray-100 dark:bg-gray-800 border-none">
-                      <div className="flex items-center gap-2">
-                        <IconFilter size={16} />
-                        <SelectValue placeholder="Estado" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value=" ">Todos</SelectItem>
-                      <SelectItem value="Completed">Completada</SelectItem>
-                      <SelectItem value="Closed">Cerrada</SelectItem>
-                      <SelectItem value="Cancelled">Cancelada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleSearch} variant="secondary">
-                    Buscar
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSearch}
+                  variant="secondary"
+                  className="gap-2"
+                >
+                  <IconSearch size={16} />
+                  Buscar
+                </Button>
               </div>
-
-              {/* Filtros activos */}
-              {statusFilter && (
-                <div className="flex gap-2 mb-4 flex-wrap">
-                  <button
-                    onClick={clearStatusFilter}
-                    className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-primary/10 px-2.5 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
-                  >
-                    <span>Estado: {statusFilter}</span>
-                    <IconX size={14} />
-                  </button>
-                </div>
-              )}
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -315,7 +541,7 @@ export function SalesPage() {
                 <div className="text-center py-12 text-error">{error}</div>
               ) : filteredSales.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  {statusFilter
+                  {hasActiveFilters()
                     ? "No se encontraron órdenes con los filtros aplicados"
                     : "No se encontraron órdenes de venta"}
                 </div>
