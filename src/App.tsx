@@ -6,6 +6,7 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CustomersPage } from "@/pages/CustomersPage";
+import { SalesPage } from "@/pages/SalesPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
@@ -31,6 +32,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/sales" element={<SalesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/catalog" element={<ProductCatalogPage />} />
             <Route path="/customers" element={<CustomersPage />} />
