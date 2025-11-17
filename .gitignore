@@ -22,3 +22,31 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vite / build
+.vite/
+build/
+out/
+
+# Cache
+.cache/
+/.parcel-cache
+/.next
+
+# Environment
+.env
+.env.*.local
+.env.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Tests / coverage
+coverage/
+nyc_output/
+
+# Misc
+.history/
+.turbo/
+.pnp.*
+
