@@ -69,6 +69,11 @@ const data = {
       url: "/reports/inventario",
       icon: IconReport,
     },
+    {
+      title: "Clientes",
+      url: "/reports/clientes",
+      icon: IconReport,
+    },
   ],
 };
 
