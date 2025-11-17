@@ -44,9 +44,14 @@ export interface ProductMetadataSuggestion {
   source: string;
 }
 
-export async function getProducts(search?: string): Promise<ProductDto[]> {
+export async function getProducts(
+  search?: string,
+  options?: { signal?: AbortSignal }
+): Promise<ProductDto[]> {
   const query = search ? `?search=${encodeURIComponent(search)}` : "";
-  return apiClient<ProductDto[]>(`/api/products${query}`);
+  return apiClient<ProductDto[]>(`/api/products${query}`, {
+    signal: options?.signal,
+  });
 }
 
 export async function getProductById(id: string): Promise<ProductDto> {

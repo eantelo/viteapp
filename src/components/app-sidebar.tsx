@@ -8,6 +8,7 @@ import {
   IconLayoutGrid,
   IconReceipt,
   IconInnerShadowTop,
+  IconCashRegister,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -41,6 +42,11 @@ const data = {
       title: "Ventas",
       url: "/sales",
       icon: IconReceipt,
+    },
+    {
+      title: "Punto de Venta",
+      url: "/pos",
+      icon: IconCashRegister,
     },
     {
       title: "Productos",
