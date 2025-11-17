@@ -115,7 +115,7 @@ export function PointOfSalePage() {
   } = usePointOfSale({
     onSaleCreated: (sale) => {
       toast({
-        title: "Venta registrada",
+        title: "Venta Registrada",
         description: `Folio #${sale.saleNumber} guardado correctamente`,
       });
     },
