@@ -92,6 +92,7 @@ La página consume el servicio `getProducts` de `@/api/productsApi` para obtener
 - [ ] Implementar paginación real con datos de la API
 - [ ] Agregar ordenamiento de columnas
 - [ ] Implementar búsqueda en tiempo real
+- [x] Exportar productos filtrados a CSV
 
 ## Dependencias
 
@@ -152,11 +153,28 @@ La página se agrega al sidebar principal:
 - Los filtros están implementados visualmente pero no están funcionales
 - La paginación es mock; se debe implementar con datos reales
 
+## Exportación a CSV
+
+- Botón **Exportar CSV** en el header (junto a Importar y Crear Producto).
+- Solo se habilita cuando hay resultados en la vista filtrada actual.
+- Genera un archivo `productos_YYYYMMDD_HHmmss.csv` con las columnas:
+  - `Id`
+  - `Nombre`
+  - `Descripción`
+  - `SKU`
+  - `Código de barras`
+  - `Marca`
+  - `Categoría`
+  - `Precio`
+  - `Stock`
+  - `Estatus` (Activo, Inactivo, Sin Stock)
+- La exportación se realiza en el cliente, respetando filtros y búsqueda aplicados.
+- Se muestra un toast de confirmación con el total de productos exportados.
+
 ## Futuras mejoras
 
 1. **Drag & Drop**: Permitir reordenar productos
 2. **Vista de cuadrícula**: Agregar toggle para cambiar entre tabla y cards
 3. **Filtros avanzados**: Agregar rangos de precio, fecha de creación, etc.
-4. **Export**: Permitir exportar productos filtrados
-5. **Vistas guardadas**: Guardar combinaciones de filtros
-6. **Quick actions**: Acciones rápidas sin abrir diálogos
+4. **Vistas guardadas**: Guardar combinaciones de filtros
+5. **Quick actions**: Acciones rápidas sin abrir diálogos

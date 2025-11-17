@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import {
   IconPlus,
   IconUpload,
+  IconDownload,
   IconSearch,
   IconChevronDown,
   IconEdit,
@@ -301,6 +302,7 @@ export function ProductCatalogPage() {
   );
   const [deletingProduct, setDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
 
   // Estados de paginación
@@ -424,6 +426,8 @@ export function ProductCatalogPage() {
 
   const totalPages = Math.ceil(filteredProducts.length / pageSize);
 
+  const isExportDisabled = exporting || filteredProducts.length === 0;
+
   // Resetear a la primera página cuando cambien los filtros
   useEffect(() => {
     setPageIndex(0);
@@ -449,6 +453,103 @@ export function ProductCatalogPage() {
   const getStatusText = (isActive: boolean, stock: number) => {
     if (stock === 0) return "Sin Stock";
     return isActive ? "Activo" : "Inactivo";
+  };
+
+  const handleExportCsv = () => {
+    if (filteredProducts.length === 0) {
+      toast({
+        title: "Sin datos para exportar",
+        description: "No hay productos que coincidan con los filtros actuales.",
+      });
+      return;
+    }
+
+    setExporting(true);
+
+    try {
+      const exportedProducts = [...filteredProducts];
+      const headers = [
+        "Id",
+        "Nombre",
+        "Descripción",
+        "SKU",
+        "Código de barras",
+        "Marca",
+        "Categoría",
+        "Precio",
+        "Stock",
+        "Estatus",
+      ];
+
+      const serializeCell = (value: string | number | null | undefined) => {
+        const stringValue =
+          value === null || value === undefined ? "" : String(value);
+        const normalized = stringValue.replace(/\r?\n/g, " ");
+        const escaped = normalized.replace(/"/g, '""');
+        return `"${escaped}"`;
+      };
+
+      const rows = exportedProducts.map((product) => {
+        const status = getStatusText(product.isActive, product.stock);
+
+        return [
+          product.id,
+          product.name,
+          product.description ?? "",
+          product.sku,
+          product.barcode,
+          product.brand,
+          product.category,
+          product.price.toFixed(2),
+          product.stock,
+          status,
+        ];
+      });
+
+      const csvRows = [headers, ...rows].map((row) =>
+        row.map(serializeCell).join(",")
+      );
+
+      const csvContent = "\uFEFF" + csvRows.join("\r\n");
+      const blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+
+      const url = URL.createObjectURL(blob);
+      const now = new Date();
+      const pad = (value: number) => value.toString().padStart(2, "0");
+      const fileName = `productos_${now.getFullYear()}${pad(
+        now.getMonth() + 1
+      )}${pad(now.getDate())}_${pad(now.getHours())}${pad(
+        now.getMinutes()
+      )}${pad(now.getSeconds())}.csv`;
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+
+      toast({
+        title: "Exportación completada",
+        description: `Se exportaron ${exportedProducts.length} productos.`,
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error durante la exportación.";
+      toast({
+        title: "Error al exportar",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleCreateProduct = () => {
@@ -575,6 +676,35 @@ export function ProductCatalogPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 md:size-default"
+              onClick={handleExportCsv}
+              disabled={isExportDisabled}
+              aria-busy={exporting}
+              title={
+                isExportDisabled && !exporting
+                  ? "No hay productos para exportar con los filtros actuales."
+                  : undefined
+              }
+            >
+              {exporting ? (
+                <>
+                  <span
+                    className="inline-flex h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
+                    aria-hidden="true"
+                  />
+                  <span>Exportando...</span>
+                </>
+              ) : (
+                <>
+                  <IconDownload size={18} />
+                  <span>Exportar</span>
+                  <span className="hidden sm:inline">CSV</span>
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               size="sm"
