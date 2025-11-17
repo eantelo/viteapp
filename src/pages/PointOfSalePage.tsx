@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconBarcode,
   IconMinus,
@@ -55,6 +55,21 @@ function formatSku(sku?: string) {
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
   const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const focusScanInput = useCallback(() => {
+    searchInputRef.current?.focus();
+  }, []);
+  const selectScanInput = useCallback(() => {
+    const input = searchInputRef.current;
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }, []);
+
+  useEffect(() => {
+    focusScanInput();
+  }, [focusScanInput]);
 
   const {
     items,
@@ -108,16 +123,19 @@ export function PointOfSalePage() {
   const formatCurrency = (value: number) => currencyFormatter.format(value);
 
   const handleLookupSubmit = async () => {
-    if (!searchTerm.trim()) {
+    const code = searchTerm.trim();
+    if (!code || isLookupPending) {
+      focusScanInput();
       return;
     }
-    const product = await addProductByLookup(searchTerm);
+    const product = await addProductByLookup(code);
     if (!product) {
       toast({
         title: "Producto no encontrado",
         description: "Verifica el código de barras o la búsqueda.",
         variant: "destructive",
       });
+      selectScanInput();
       return;
     }
 
@@ -125,6 +143,7 @@ export function PointOfSalePage() {
       title: "Producto agregado",
       description: `${product.name} añadido a la orden`,
     });
+    focusScanInput();
   };
 
   const handleSelectProduct = (product: ProductDto) => {
@@ -134,6 +153,7 @@ export function PointOfSalePage() {
       description: `${product.name} añadido a la orden`,
     });
     setSearchTerm("");
+    focusScanInput();
   };
 
   const handleHold = () => {
@@ -210,16 +230,18 @@ export function PointOfSalePage() {
                       <IconBarcode className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="pos-search"
+                        ref={searchInputRef}
                         value={searchTerm}
                         placeholder="Escanea código o busca por nombre"
                         onChange={(event) => setSearchTerm(event.target.value)}
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
                             event.preventDefault();
-                            void handleLookupSubmit();
+                            if (!isLookupPending) {
+                              void handleLookupSubmit();
+                            }
                           }
                         }}
-                        disabled={isLookupPending}
                         className="pl-11"
                       />
                     </div>
