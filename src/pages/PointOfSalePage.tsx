@@ -37,10 +37,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
+import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import type { ProductDto } from "@/api/productsApi";
+import { type PaymentMethodType } from "@/api/salesApi";
 
 function formatSku(sku?: string) {
   return sku ? sku.toUpperCase() : "—";
@@ -66,6 +68,7 @@ export function PointOfSalePage() {
   }, [focusScanInput]);
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const {
     items,
@@ -108,6 +111,8 @@ export function PointOfSalePage() {
         description: `Folio #${sale.saleNumber} guardado correctamente`,
       });
     },
+    // Punto de Venta: no aplicar impuestos al total
+    includeTax: false,
   });
 
   const currencyFormatter = useMemo(
@@ -179,17 +184,16 @@ export function PointOfSalePage() {
     });
   };
 
-  const handleCharge = async () => {
-    try {
-      await submitSale();
-    } catch (error) {
-      toast({
-        title: "No pudimos cobrar",
-        description:
-          error instanceof Error ? error.message : "Intenta nuevamente",
-        variant: "destructive",
-      });
-    }
+  const handleCharge = () => {
+    setIsPaymentDialogOpen(true);
+  };
+
+  const handlePaymentConfirm = async (
+    paymentMethod: PaymentMethodType,
+    amountReceived: number,
+    reference: string
+  ) => {
+    await submitSale(paymentMethod, amountReceived, reference);
   };
 
   const handleDiscountChange = (value: string) => {
@@ -546,14 +550,16 @@ export function PointOfSalePage() {
                     className="h-9"
                   />
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Impuesto ({(taxRate * 100).toFixed(2)}%)
-                  </span>
-                  <span className="font-semibold">
-                    {formatCurrency(taxAmount)}
-                  </span>
-                </div>
+                {taxRate > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Impuesto ({(taxRate * 100).toFixed(2)}%)
+                    </span>
+                    <span className="font-semibold">
+                      {formatCurrency(taxAmount)}
+                    </span>
+                  </div>
+                )}
                 <Separator className="my-3" />
                 <div className="flex items-center justify-between">
                   <div>
@@ -635,6 +641,13 @@ export function PointOfSalePage() {
         open={isCustomerDialogOpen}
         customer={null}
         onClose={handleCustomerDialogClose}
+      />
+      <PaymentDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        total={total}
+        onConfirm={handlePaymentConfirm}
+        isSubmitting={isSubmitting}
       />
     </PageTransition>
   );

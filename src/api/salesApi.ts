@@ -1,10 +1,37 @@
 import { apiClient } from "./apiClient";
 
+export const PaymentMethod = {
+  Cash: 0,
+  Card: 1,
+  Voucher: 2,
+  Transfer: 3,
+  Other: 4,
+} as const;
+
+export type PaymentMethodType =
+  (typeof PaymentMethod)[keyof typeof PaymentMethod];
+
 export interface SaleItemDto {
   productId: string;
   productName?: string;
   quantity: number;
   price: number;
+}
+
+export interface PaymentCreateDto {
+  method: PaymentMethodType;
+  amount: number;
+  amountReceived?: number;
+  reference?: string;
+}
+
+export interface PaymentDto {
+  id: string;
+  method: PaymentMethodType;
+  amount: number;
+  amountReceived?: number;
+  change?: number;
+  reference?: string;
 }
 
 export interface SaleDto {
@@ -16,6 +43,7 @@ export interface SaleDto {
   total: number;
   status: "Completed" | "Closed" | "Cancelled";
   items: SaleItemDto[];
+  payments: PaymentDto[];
 }
 
 export interface SaleCreateDto {
@@ -25,6 +53,7 @@ export interface SaleCreateDto {
     productId: string;
     quantity: number;
   }>;
+  payments?: PaymentCreateDto[];
 }
 
 export interface SaleUpdateDto {

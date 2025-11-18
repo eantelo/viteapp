@@ -5,7 +5,12 @@ import { getProductByBarcode, getProducts } from "@/api/productsApi";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { SaleDto } from "@/api/salesApi";
-import { createSale } from "@/api/salesApi";
+import {
+  createSale,
+  PaymentMethod,
+  type PaymentCreateDto,
+  type PaymentMethodType,
+} from "@/api/salesApi";
 
 export interface PosLineItem {
   productId: string;
@@ -28,12 +33,18 @@ interface HeldOrderSnapshot {
 
 export interface UsePointOfSaleOptions {
   /**
+   * Whether POS should include taxes when calculating totals. Defaults to true.
+   * Set to false in the Punto de Venta page to exclude taxes from totals.
+   */
+  includeTax?: boolean;
+  /**
    * Optional callback when a sale is persisted.
    */
   onSaleCreated?: (sale: SaleDto) => void;
 }
 
 export function usePointOfSale(options?: UsePointOfSaleOptions) {
+  const includeTax = options?.includeTax ?? true;
   const onSaleCreated = options?.onSaleCreated;
   const [items, setItems] = useState<PosLineItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -278,9 +289,12 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     [appliedDiscount, subtotal]
   );
 
+  // If includeTax is false (e.g., in the POS flows), effective tax is 0.
+  const effectiveTaxRate = includeTax ? TAX_RATE : 0;
+
   const taxAmount = useMemo(
-    () => Number((taxableBase * TAX_RATE).toFixed(2)),
-    [taxableBase]
+    () => Number((taxableBase * effectiveTaxRate).toFixed(2)),
+    [taxableBase, effectiveTaxRate]
   );
 
   const total = useMemo(
@@ -300,34 +314,66 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     );
   }, [customers, customerSearchTerm]);
 
-  const submitSale = useCallback(async () => {
-    if (!customerId) {
-      throw new Error("Selecciona un cliente antes de cobrar");
-    }
+  const submitSale = useCallback(
+    async (
+      paymentMethod?: PaymentMethodType,
+      amountReceived?: number,
+      paymentReference?: string
+    ) => {
+      if (!customerId) {
+        throw new Error("Selecciona un cliente antes de cobrar");
+      }
 
-    if (items.length === 0) {
-      throw new Error("Agrega al menos un producto a la orden");
-    }
+      if (items.length === 0) {
+        throw new Error("Agrega al menos un producto a la orden");
+      }
 
-    setIsSubmitting(true);
-    try {
-      const sale = await createSale({
-        date: new Date().toISOString(),
-        customerId,
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      });
+      if (
+        paymentMethod !== undefined &&
+        paymentMethod === PaymentMethod.Cash &&
+        typeof amountReceived === "number" &&
+        amountReceived < total
+      ) {
+        throw new Error("El monto recibido debe ser mayor o igual al total");
+      }
 
-      clearOrder();
-      setHeldOrder(null);
-      onSaleCreated?.(sale);
-      return sale;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [clearOrder, customerId, items, onSaleCreated]);
+      setIsSubmitting(true);
+      try {
+        const payments: PaymentCreateDto[] =
+          paymentMethod !== undefined
+            ? [
+                {
+                  method: paymentMethod,
+                  amount: total,
+                  amountReceived:
+                    paymentMethod === PaymentMethod.Cash
+                      ? amountReceived
+                      : undefined,
+                  reference: paymentReference?.trim() || undefined,
+                },
+              ]
+            : [];
+
+        const sale = await createSale({
+          date: new Date().toISOString(),
+          customerId,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+          payments,
+        });
+
+        clearOrder();
+        setHeldOrder(null);
+        onSaleCreated?.(sale);
+        return sale;
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [clearOrder, customerId, items, total, onSaleCreated]
+  );
 
   return {
     items,
@@ -358,7 +404,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     setDiscount,
     appliedDiscount,
     taxAmount,
-    taxRate: TAX_RATE,
+    taxRate: effectiveTaxRate,
     total,
     submitSale,
     isSubmitting,
