@@ -8,6 +8,11 @@ export interface CustomerDto {
   address?: string | null;
   taxId?: string | null;
   isActive: boolean;
+  lastPurchaseDate?: string | null;
+  lastPurchaseAmount?: number;
+  totalPurchases?: number;
+  loyaltyPoints?: number;
+  pendingDebt?: number;
 }
 
 export interface CustomerCreateDto {

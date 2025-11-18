@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   IconTrash,
   IconUser,
@@ -7,6 +7,7 @@ import {
   IconPlayerPlay,
   IconCreditCardPay,
   IconPackage,
+  IconHelp,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -28,9 +29,14 @@ import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
 import { OrderProductTablePos } from "@/components/sales/OrderProductTablePos";
+import { KeyboardShortcutsModal } from "@/components/keyboard/KeyboardShortcutsModal";
+import { KeyPressIndicator } from "@/components/keyboard/KeyPressIndicator";
+import { ShortcutBadge } from "@/components/keyboard/ShortcutBadge";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
 import { type PaymentMethodType } from "@/api/salesApi";
 
@@ -40,6 +46,14 @@ export function PointOfSalePage() {
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
+
+  // Referencias para elementos enfocables
+  const customerSearchInputRef = useRef<HTMLInputElement>(null);
+  const discountInputRef = useRef<HTMLInputElement>(null);
+
+  // Hook para indicadores visuales
+  const { recentKeyPress, triggerIndicator } = useKeyPressIndicator();
 
   const {
     items,
@@ -189,8 +203,125 @@ export function PointOfSalePage() {
     }
   };
 
+  // Configurar atajos de teclado globales
+  const { allShortcuts } = useKeyboardShortcuts([
+    {
+      key: "F1",
+      label: "F1",
+      description: "Mostrar ayuda de atajos",
+      handler: () => {
+        triggerIndicator("F1");
+        setIsShortcutsHelpOpen(true);
+      },
+    },
+    {
+      key: "F2",
+      label: "F2",
+      description: "Focus en búsqueda de productos",
+      handler: () => {
+        triggerIndicator("F2");
+        // Enfocar el elemento de búsqueda de productos
+        const searchInput = document.querySelector(
+          'input[placeholder*="Escanea"]'
+        ) as HTMLInputElement;
+        searchInput?.focus();
+      },
+    },
+    {
+      key: "F3",
+      label: "F3",
+      description: "Buscar/Crear cliente",
+      handler: () => {
+        triggerIndicator("F3");
+        customerSearchInputRef.current?.focus();
+        customerSearchInputRef.current?.select();
+      },
+    },
+    {
+      key: "F4",
+      label: "F4",
+      description: "Aplicar descuento",
+      handler: () => {
+        triggerIndicator("F4");
+        discountInputRef.current?.focus();
+        discountInputRef.current?.select();
+      },
+    },
+    {
+      key: "F8",
+      label: "F8",
+      description: "Poner orden en espera",
+      enabled: items.length > 0,
+      handler: () => {
+        triggerIndicator("F8");
+        handleHold();
+      },
+    },
+    {
+      key: "F9",
+      label: "F9",
+      description: "Proceder a cobrar",
+      enabled: items.length > 0 && customerId !== null,
+      handler: () => {
+        triggerIndicator("F9");
+        handleCharge();
+      },
+    },
+    {
+      key: "F12",
+      label: "F12",
+      description: "Abrir cajón",
+      handler: () => {
+        triggerIndicator("F12");
+        // TODO: Implementar apertura de cajón si hay hardware disponible
+        toast({
+          title: "Cajón",
+          description: "Funcionalidad de apertura de cajón en desarrollo",
+        });
+      },
+    },
+    {
+      key: "Escape",
+      label: "ESC",
+      description: "Cancelar/Limpiar orden actual",
+      enabled: items.length > 0,
+      handler: () => {
+        triggerIndicator("ESC");
+        handleClear();
+      },
+    },
+    {
+      key: "Ctrl+N",
+      label: "Ctrl+N",
+      description: "Nueva venta",
+      enabled: items.length > 0,
+      handler: () => {
+        triggerIndicator("Ctrl+N");
+        handleClear();
+      },
+    },
+    {
+      key: "Ctrl+H",
+      label: "Ctrl+H",
+      description: "Ver historial",
+      handler: () => {
+        triggerIndicator("Ctrl+H");
+        // TODO: Navegar a historial de ventas
+        toast({
+          title: "Historial",
+          description: "Navegando a historial de ventas...",
+        });
+      },
+    },
+  ]);
+
   return (
     <PageTransition>
+      <KeyPressIndicator
+        show={!!recentKeyPress}
+        keyLabel={recentKeyPress?.key || ""}
+      />
+
       <DashboardLayout
         breadcrumbs={[
           { label: "Panel principal", href: "/dashboard" },
@@ -198,6 +329,19 @@ export function PointOfSalePage() {
         ]}
         className="flex flex-1 flex-col gap-6 p-4"
       >
+        {/* Botón flotante para ayuda */}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsShortcutsHelpOpen(true)}
+            className="gap-2"
+          >
+            <IconHelp className="size-4" />
+            <span className="text-xs">F1 - Atajos</span>
+          </Button>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <div className="flex flex-col gap-6">
             <Card className="shadow-sm">
@@ -209,9 +353,12 @@ export function PointOfSalePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="pos-search">
-                    Búsqueda rápida con autocompletado
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pos-search">
+                      Búsqueda rápida con autocompletado
+                    </Label>
+                    <ShortcutBadge shortcut="F2" variant="outline" />
+                  </div>
                   <ProductAutoComplete
                     value={searchTerm}
                     onChange={setSearchTerm}
@@ -292,9 +439,13 @@ export function PointOfSalePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="customer-search">Buscar cliente</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="customer-search">Buscar cliente</Label>
+                    <ShortcutBadge shortcut="F3" variant="outline" />
+                  </div>
                   <div className="flex gap-2">
                     <Input
+                      ref={customerSearchInputRef}
                       id="customer-search"
                       value={customerSearchTerm}
                       onChange={(e) => setCustomerSearchTerm(e.target.value)}
@@ -387,11 +538,15 @@ export function PointOfSalePage() {
                 <div className="flex flex-col gap-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Descuento</span>
+                    <ShortcutBadge shortcut="F4" variant="outline" />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="font-semibold">
                       {formatCurrency(appliedDiscount)}
                     </span>
                   </div>
                   <Input
+                    ref={discountInputRef}
                     type="number"
                     min="0"
                     step="0.01"
@@ -431,25 +586,37 @@ export function PointOfSalePage() {
             </Card>
 
             <Card className="shadow-sm">
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-6">
                 <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 group relative"
                     onClick={handleHold}
                     disabled={items.length === 0}
+                    title="F8 para poner en espera"
                   >
                     <IconPlayerPause className="size-4" />
                     Poner en espera
+                    <ShortcutBadge
+                      shortcut="F8"
+                      variant="outline"
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 group relative"
                     onClick={handleClear}
                     disabled={items.length === 0}
+                    title="ESC para limpiar"
                   >
                     <IconTrash className="size-4" />
                     Limpiar
+                    <ShortcutBadge
+                      shortcut="ESC"
+                      variant="outline"
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
                   </Button>
                 </div>
                 {hasHeldOrder && (
@@ -463,10 +630,11 @@ export function PointOfSalePage() {
                   </Button>
                 )}
                 <Button
-                  className="w-full"
+                  className="w-full group relative"
                   size="lg"
                   onClick={handleCharge}
                   disabled={isSubmitting || items.length === 0 || !customerId}
+                  title="F9 para proceder al pago"
                 >
                   {isSubmitting ? (
                     <>
@@ -477,6 +645,10 @@ export function PointOfSalePage() {
                     <>
                       <IconCreditCardPay className="size-5" />
                       Cobrar {formatCurrency(total)}
+                      <ShortcutBadge
+                        shortcut="F9"
+                        className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
                     </>
                   )}
                 </Button>
@@ -501,6 +673,11 @@ export function PointOfSalePage() {
         total={total}
         onConfirm={handlePaymentConfirm}
         isSubmitting={isSubmitting}
+      />
+      <KeyboardShortcutsModal
+        open={isShortcutsHelpOpen}
+        onOpenChange={setIsShortcutsHelpOpen}
+        shortcuts={allShortcuts}
       />
     </PageTransition>
   );
