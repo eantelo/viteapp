@@ -21,134 +21,134 @@ import {
   IconTrash,
   IconPencil,
 } from "@tabler/icons-react";
-import type { ProductDto } from "@/api/productsApi";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
-interface SaleItemForm {
+interface PosItem {
   productId: string;
-  productName: string;
+  name: string;
+  sku?: string;
   quantity: number;
   price: number;
-  subtotal: number;
+  stock: number;
 }
 
-interface OrderProductTableProps {
-  items: SaleItemForm[];
-  products: ProductDto[];
-  onRemoveItem: (index: number) => void;
-  onItemChange: (
-    index: number,
-    field: keyof SaleItemForm,
-    value: string | number
-  ) => void;
-  onEditProduct?: (index: number, product: ProductDto) => void;
+interface OrderProductTablePosProps {
+  items: PosItem[];
+  onIncrement: (productId: string) => void;
+  onDecrement: (productId: string) => void;
+  onRemoveItem: (productId: string) => void;
+  onQuantityChange?: (productId: string, quantity: number) => void;
+  onEditProduct?: (productId: string) => void;
   formatCurrency: (amount: number) => string;
 }
 
-export function OrderProductTable({
+export function OrderProductTablePos({
   items,
-  products,
+  onIncrement,
+  onDecrement,
   onRemoveItem,
-  onItemChange,
+  onQuantityChange,
   onEditProduct,
   formatCurrency,
-}: OrderProductTableProps) {
-  const [editingQuantityIndex, setEditingQuantityIndex] = useState<
-    number | null
-  >(null);
+}: OrderProductTablePosProps) {
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingQuantity, setEditingQuantity] = useState<number>(0);
 
-  const getProductDetails = (productId: string) => {
-    return products.find((p) => p.id === productId);
+  const handleIncrement = (
+    productId: string,
+    currentQuantity: number,
+    stock: number
+  ) => {
+    if (stock > 0 && currentQuantity >= stock) {
+      return; // No incrementar si ya alcanzó el máximo
+    }
+    onIncrement(productId);
   };
 
-  const handleIncrement = (index: number, currentQuantity: number) => {
-    onItemChange(index, "quantity", currentQuantity + 1);
-  };
-
-  const handleDecrement = (index: number, currentQuantity: number) => {
+  const handleDecrement = (productId: string, currentQuantity: number) => {
     if (currentQuantity > 1) {
-      onItemChange(index, "quantity", currentQuantity - 1);
+      onDecrement(productId);
     }
   };
 
-  const handleQuantityInputChange = (index: number, value: string) => {
+  const handleStartEdit = (productId: string, currentQuantity: number) => {
+    setEditingProductId(productId);
+    setEditingQuantity(currentQuantity);
+  };
+
+  const handleConfirmEdit = (productId: string, stock: number) => {
+    if (editingQuantity > 0 && editingQuantity <= stock) {
+      onQuantityChange?.(productId, editingQuantity);
+    }
+    setEditingProductId(null);
+  };
+
+  const handleQuantityInputChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
-    if (numValue > 0) {
-      onItemChange(index, "quantity", numValue);
-    }
+    setEditingQuantity(numValue);
   };
-
-  const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 
   return (
     <TooltipProvider>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50 dark:bg-gray-900">
+          <TableHeader className="bg-slate-50 dark:bg-slate-900">
+            <TableRow>
               <TableHead className="min-w-[200px]">Producto</TableHead>
               <TableHead className="min-w-[140px] text-center">
                 Cantidad
               </TableHead>
-              <TableHead className="min-w-[120px] text-right">
-                Precio Unit.
-              </TableHead>
-              <TableHead className="min-w-[120px] text-right">
-                Subtotal
-              </TableHead>
-              <TableHead className="min-w-[80px] text-center">
-                Acciones
-              </TableHead>
+              <TableHead className="min-w-[100px] text-right">Precio</TableHead>
+              <TableHead className="min-w-[120px] text-right">Total</TableHead>
+              <TableHead className="min-w-20 text-center">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item, index) => {
-              const product = getProductDetails(item.productId);
+            {items.map((item) => {
+              const isAtMaxStock =
+                item.stock > 0 && item.quantity >= item.stock;
 
               return (
                 <TableRow
-                  key={index}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-900"
+                  key={item.productId}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-900 align-middle"
                 >
                   {/* Columna de Producto */}
                   <TableCell>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="cursor-help">
-                          <p className="font-semibold text-gray-900 dark:text-gray-100">
-                            {item.productName}
-                          </p>
-                          {product && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              SKU: {product.sku}
+                        <div className="flex items-center gap-3 cursor-help">
+                          <Avatar className="bg-primary/10 text-primary">
+                            <AvatarFallback>
+                              {item.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">
+                              {item.name}
                             </p>
-                          )}
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              SKU {item.sku ? item.sku.toUpperCase() : "—"}
+                            </p>
+                          </div>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-xs">
                         <div className="space-y-2">
-                          <p className="font-semibold">{item.productName}</p>
-                          {product && (
-                            <>
-                              <p className="text-xs">
-                                <span className="font-medium">SKU:</span>{" "}
-                                {product.sku}
-                              </p>
-                              <p className="text-xs max-w-xs break-words">
-                                <span className="font-medium">
-                                  Descripción:
-                                </span>{" "}
-                                {product.sku || "Sin descripción"}
-                              </p>
-                              <p className="text-xs">
-                                <span className="font-medium">Stock:</span>{" "}
-                                {product.stock} unidades
-                              </p>
-                              <p className="text-xs">
-                                <span className="font-medium">Precio:</span>{" "}
-                                {formatCurrency(product.price)}
-                              </p>
-                            </>
-                          )}
+                          <p className="font-semibold">{item.name}</p>
+                          <p className="text-xs">
+                            <span className="font-medium">SKU:</span>{" "}
+                            {item.sku ? item.sku.toUpperCase() : "N/A"}
+                          </p>
+                          <p className="text-xs">
+                            <span className="font-medium">Stock:</span>{" "}
+                            {item.stock} unidades
+                          </p>
+                          <p className="text-xs">
+                            <span className="font-medium">Precio:</span>{" "}
+                            {formatCurrency(item.price)}
+                          </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -161,26 +161,30 @@ export function OrderProductTable({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDecrement(index, item.quantity)}
+                        onClick={() =>
+                          handleDecrement(item.productId, item.quantity)
+                        }
                         className="h-11 w-11 p-0 flex items-center justify-center rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         title="Disminuir cantidad"
                       >
                         <IconMinus size={20} />
                       </Button>
 
-                      {editingQuantityIndex === index ? (
+                      {editingProductId === item.productId ? (
                         <Input
                           type="number"
                           min="1"
                           step="1"
-                          value={item.quantity}
+                          value={editingQuantity}
                           onChange={(e) =>
-                            handleQuantityInputChange(index, e.target.value)
+                            handleQuantityInputChange(e.target.value)
                           }
-                          onBlur={() => setEditingQuantityIndex(null)}
+                          onBlur={() =>
+                            handleConfirmEdit(item.productId, item.stock)
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                              setEditingQuantityIndex(null);
+                              handleConfirmEdit(item.productId, item.stock);
                             }
                           }}
                           autoFocus
@@ -188,7 +192,9 @@ export function OrderProductTable({
                         />
                       ) : (
                         <div
-                          onClick={() => setEditingQuantityIndex(index)}
+                          onClick={() =>
+                            handleStartEdit(item.productId, item.quantity)
+                          }
                           className="w-16 text-center font-semibold text-lg cursor-pointer px-2 py-2 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                           title="Click para editar cantidad"
                         >
@@ -200,40 +206,55 @@ export function OrderProductTable({
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => handleIncrement(index, item.quantity)}
-                        className="h-11 w-11 p-0 flex items-center justify-center rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        onClick={() =>
+                          handleIncrement(
+                            item.productId,
+                            item.quantity,
+                            item.stock
+                          )
+                        }
+                        disabled={isAtMaxStock}
+                        className={cn(
+                          "h-11 w-11 p-0 flex items-center justify-center rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                          isAtMaxStock && "opacity-50 cursor-not-allowed"
+                        )}
                         title="Aumentar cantidad"
                       >
                         <IconPlus size={20} />
                       </Button>
                     </div>
+                    {isAtMaxStock && (
+                      <p className="text-center text-xs text-orange-500 mt-1">
+                        Stock máximo alcanzado
+                      </p>
+                    )}
                   </TableCell>
 
-                  {/* Columna de Precio Unitario */}
+                  {/* Columna de Precio */}
                   <TableCell className="text-right font-medium">
                     <span className="text-gray-700 dark:text-gray-300">
                       {formatCurrency(item.price)}
                     </span>
                   </TableCell>
 
-                  {/* Columna de Subtotal */}
+                  {/* Columna de Total */}
                   <TableCell className="text-right font-semibold text-base">
                     <span className="text-gray-900 dark:text-gray-100">
-                      {formatCurrency(item.subtotal)}
+                      {formatCurrency(item.price * item.quantity)}
                     </span>
                   </TableCell>
 
                   {/* Columna de Acciones */}
                   <TableCell>
                     <div className="flex items-center justify-center gap-1">
-                      {product && onEditProduct && (
+                      {onEditProduct && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={() => onEditProduct(index, product)}
+                              onClick={() => onEditProduct(item.productId)}
                               className="h-10 w-10 p-0 hover:text-primary"
                               title="Editar producto"
                             >
@@ -252,7 +273,7 @@ export function OrderProductTable({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => onRemoveItem(index)}
+                            onClick={() => onRemoveItem(item.productId)}
                             className="h-10 w-10 p-0 hover:text-error"
                             title="Eliminar producto"
                           >
@@ -268,19 +289,6 @@ export function OrderProductTable({
                 </TableRow>
               );
             })}
-
-            {/* Fila de Total */}
-            <TableRow className="bg-gray-50 dark:bg-gray-900 font-bold">
-              <TableCell colSpan={4} className="text-right py-4">
-                <span className="text-gray-700 dark:text-gray-300">Total:</span>
-              </TableCell>
-              <TableCell className="text-right text-lg py-4">
-                <span className="text-gray-900 dark:text-gray-100">
-                  {formatCurrency(totalAmount)}
-                </span>
-              </TableCell>
-              <TableCell></TableCell>
-            </TableRow>
           </TableBody>
         </Table>
       </div>
@@ -289,7 +297,7 @@ export function OrderProductTable({
       {items.length === 0 && (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400 border rounded-md mt-4">
           <p className="text-base">
-            No hay productos agregados. Selecciona productos desde arriba.
+            No hay productos agregados. Escanea un código o busca un producto.
           </p>
         </div>
       )}

@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  IconMinus,
-  IconPlus,
   IconTrash,
   IconUser,
   IconRefresh,
@@ -21,14 +19,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -37,15 +27,12 @@ import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
+import { OrderProductTablePos } from "@/components/sales/OrderProductTablePos";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import type { ProductDto } from "@/api/productsApi";
 import { type PaymentMethodType } from "@/api/salesApi";
-
-function formatSku(sku?: string) {
-  return sku ? sku.toUpperCase() : "—";
-}
 
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
@@ -261,91 +248,35 @@ export function PointOfSalePage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border">
-                    <Table>
-                      <TableHeader className="bg-slate-50">
-                        <TableRow>
-                          <TableHead>Producto</TableHead>
-                          <TableHead className="text-center">
-                            Cantidad
-                          </TableHead>
-                          <TableHead className="text-right">Precio</TableHead>
-                          <TableHead className="text-right">Total</TableHead>
-                          <TableHead className="w-14" />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item) => (
-                          <TableRow key={item.productId} className="align-top">
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <Avatar className="bg-primary/10 text-primary">
-                                  <AvatarFallback>
-                                    {item.name.slice(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="font-semibold leading-tight">
-                                    {item.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    SKU {formatSku(item.sku)}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  size="icon-sm"
-                                  variant="ghost"
-                                  onClick={() => decrementItem(item.productId)}
-                                >
-                                  <IconMinus className="size-4" />
-                                </Button>
-                                <span className="w-8 text-center font-semibold">
-                                  {item.quantity}
-                                </span>
-                                <Button
-                                  size="icon-sm"
-                                  variant="ghost"
-                                  onClick={() => incrementItem(item.productId)}
-                                  disabled={
-                                    item.stock > 0 &&
-                                    item.quantity >= item.stock
-                                  }
-                                >
-                                  <IconPlus className="size-4" />
-                                </Button>
-                              </div>
-                              {item.stock > 0 &&
-                                item.quantity >= item.stock && (
-                                  <p className="text-center text-xs text-orange-500">
-                                    Stock máximo alcanzado
-                                  </p>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(item.price)}
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrency(item.price * item.quantity)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-destructive"
-                                onClick={() => removeItem(item.productId)}
-                              >
-                                <IconTrash className="size-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <OrderProductTablePos
+                    items={items.map((item) => ({
+                      productId: item.productId,
+                      name: item.name,
+                      sku: item.sku,
+                      quantity: item.quantity,
+                      price: item.price,
+                      stock: item.stock,
+                    }))}
+                    onIncrement={incrementItem}
+                    onDecrement={decrementItem}
+                    onRemoveItem={removeItem}
+                    onQuantityChange={(productId: string, quantity: number) => {
+                      const item = items.find((i) => i.productId === productId);
+                      if (item) {
+                        const difference = quantity - item.quantity;
+                        if (difference > 0) {
+                          for (let i = 0; i < difference; i++) {
+                            incrementItem(productId);
+                          }
+                        } else {
+                          for (let i = 0; i < -difference; i++) {
+                            decrementItem(productId);
+                          }
+                        }
+                      }
+                    }}
+                    formatCurrency={formatCurrency}
+                  />
                 )}
               </CardContent>
             </Card>
