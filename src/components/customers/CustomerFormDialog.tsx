@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import type {
   CustomerCreateDto,
   CustomerDto,
@@ -22,6 +24,12 @@ interface CustomerFormDialogProps {
   open: boolean;
   customer: CustomerDto | null;
   onClose: (saved: boolean) => void;
+}
+
+interface FieldValidation {
+  isValid: boolean;
+  isTouched: boolean;
+  error?: string;
 }
 
 export function CustomerFormDialog({
@@ -37,6 +45,15 @@ export function CustomerFormDialog({
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Field validation state
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+    phone: false,
+    address: false,
+    taxId: false,
+  });
 
   const isEditing = customer !== null;
 
@@ -61,7 +78,58 @@ export function CustomerFormDialog({
       setIsActive(true);
     }
     setError(null);
+    setTouched({
+      name: false,
+      email: false,
+      phone: false,
+      address: false,
+      taxId: false,
+    });
   }, [open, customer]);
+
+  // Validations
+  const validations = useMemo(() => {
+    const nameValid = name.trim().length > 0;
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const phoneValid = phone.trim().length === 0 || phone.trim().length >= 10;
+    const addressValid = true; // Optional field
+    const taxIdValid = true; // Optional field
+
+    return {
+      name: {
+        isValid: nameValid,
+        isTouched: touched.name,
+        error:
+          touched.name && !nameValid ? "El nombre es obligatorio" : undefined,
+      },
+      email: {
+        isValid: emailValid,
+        isTouched: touched.email,
+        error:
+          touched.email && !emailValid ? "Ingresa un email válido" : undefined,
+      },
+      phone: {
+        isValid: phoneValid,
+        isTouched: touched.phone,
+        error:
+          touched.phone && !phoneValid
+            ? "El teléfono debe tener al menos 10 dígitos"
+            : undefined,
+      },
+      address: {
+        isValid: addressValid,
+        isTouched: touched.address,
+        error: undefined,
+      },
+      taxId: {
+        isValid: taxIdValid,
+        isTouched: touched.taxId,
+        error: undefined,
+      },
+    };
+  }, [name, email, phone, address, taxId, touched]);
+
+  const isFormValid = validations.name.isValid && validations.email.isValid;
 
   const normalizeOptional = (value: string) => {
     const trimmed = value.trim();
@@ -119,6 +187,18 @@ export function CustomerFormDialog({
     }
   };
 
+  const handleFieldBlur = (field: keyof typeof touched) => {
+    setTouched((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
+  };
+
+  const getFieldClasses = (validation: FieldValidation) => {
+    if (!validation.isTouched) return "";
+    return validation.isValid ? "border-green-500" : "border-destructive";
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
       <DialogContent className="sm:max-w-[560px]">
@@ -136,69 +216,115 @@ export function CustomerFormDialog({
 
           <div className="grid gap-4 py-4">
             {error && (
-              <div className="text-sm text-error bg-error/10 px-3 py-2 rounded-md">
+              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                <IconAlertCircle className="size-4 shrink-0" />
                 {error}
               </div>
             )}
 
+            {/* Nombre */}
             <div className="grid gap-2">
               <Label htmlFor="customer-name">
-                Nombre <span className="text-error">*</span>
+                Nombre <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="customer-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Ej: Comercializadora ABC"
-                maxLength={200}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="customer-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onBlur={() => handleFieldBlur("name")}
+                  placeholder="Ej: Comercializadora ABC"
+                  maxLength={200}
+                  required
+                  className={cn("pr-9", getFieldClasses(validations.name))}
+                />
+                {validations.name.isTouched && validations.name.isValid && (
+                  <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                )}
+              </div>
+              {validations.name.error && (
+                <p className="text-xs text-destructive">
+                  {validations.name.error}
+                </p>
+              )}
             </div>
 
+            {/* Email */}
             <div className="grid gap-2">
               <Label htmlFor="customer-email">
-                Email <span className="text-error">*</span>
+                Email <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="customer-email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="ventas@cliente.com"
-                maxLength={320}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="customer-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  onBlur={() => handleFieldBlur("email")}
+                  placeholder="ventas@cliente.com"
+                  maxLength={320}
+                  required
+                  className={cn("pr-9", getFieldClasses(validations.email))}
+                />
+                {validations.email.isTouched && validations.email.isValid && (
+                  <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                )}
+              </div>
+              {validations.email.error && (
+                <p className="text-xs text-destructive">
+                  {validations.email.error}
+                </p>
+              )}
             </div>
 
+            {/* Teléfono */}
             <div className="grid gap-2">
-              <Label htmlFor="customer-phone">Telefono</Label>
-              <Input
-                id="customer-phone"
-                type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-                placeholder="+52 55 0000 0000"
-                maxLength={30}
-              />
+              <Label htmlFor="customer-phone">Teléfono</Label>
+              <div className="relative">
+                <Input
+                  id="customer-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  onBlur={() => handleFieldBlur("phone")}
+                  placeholder="+52 55 0000 0000"
+                  maxLength={30}
+                  className={cn("pr-9", getFieldClasses(validations.phone))}
+                />
+                {validations.phone.isTouched &&
+                  validations.phone.isValid &&
+                  phone.trim() && (
+                    <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                  )}
+              </div>
+              {validations.phone.error && (
+                <p className="text-xs text-destructive">
+                  {validations.phone.error}
+                </p>
+              )}
             </div>
 
+            {/* Dirección */}
             <div className="grid gap-2">
-              <Label htmlFor="customer-address">Direccion</Label>
+              <Label htmlFor="customer-address">Dirección</Label>
               <Input
                 id="customer-address"
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
+                onBlur={() => handleFieldBlur("address")}
                 placeholder="Calle, numero, ciudad"
                 maxLength={250}
               />
             </div>
 
+            {/* RFC / Tax ID */}
             <div className="grid gap-2">
               <Label htmlFor="customer-tax-id">RFC / Tax ID</Label>
               <Input
                 id="customer-tax-id"
                 value={taxId}
                 onChange={(event) => setTaxId(event.target.value)}
+                onBlur={() => handleFieldBlur("taxId")}
                 placeholder="XAXX010101000"
                 maxLength={30}
               />
@@ -230,7 +356,7 @@ export function CustomerFormDialog({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !isFormValid}>
               {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
             </Button>
           </DialogFooter>

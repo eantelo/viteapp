@@ -320,9 +320,10 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
       amountReceived?: number,
       paymentReference?: string
     ) => {
-      if (!customerId) {
-        throw new Error("Selecciona un cliente antes de cobrar");
-      }
+      // Allow sales without a specific customer (generic customer)
+      // if (customerId) {
+      //   throw new Error("Selecciona un cliente antes de cobrar");
+      // }
 
       if (items.length === 0) {
         throw new Error("Agrega al menos un producto a la orden");
@@ -356,7 +357,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
         const sale = await createSale({
           date: new Date().toISOString(),
-          customerId,
+          customerId: customerId || "", // Allow empty string for generic customer
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,

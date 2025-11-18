@@ -8,6 +8,7 @@ import {
   IconCreditCardPay,
   IconPackage,
   IconHelp,
+  IconUserPlus,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -26,6 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
+import { CustomerCard } from "@/components/customers/CustomerDetailCard";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
 import { OrderProductTablePos } from "@/components/sales/OrderProductTablePos";
@@ -47,6 +49,8 @@ export function PointOfSalePage() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
+  const [isGenericCustomer, setIsGenericCustomer] = useState(false);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
 
   // Referencias para elementos enfocables
   const customerSearchInputRef = useRef<HTMLInputElement>(null);
@@ -188,10 +192,6 @@ export function PointOfSalePage() {
     }
   };
 
-  const handleCreateCustomer = () => {
-    setIsCustomerDialogOpen(true);
-  };
-
   const handleCustomerDialogClose = async (saved: boolean) => {
     setIsCustomerDialogOpen(false);
     if (saved) {
@@ -261,7 +261,7 @@ export function PointOfSalePage() {
       key: "F9",
       label: "F9",
       description: "Proceder a cobrar",
-      enabled: items.length > 0 && customerId !== null,
+      enabled: items.length > 0 && (customerId !== "" || isGenericCustomer),
       handler: () => {
         triggerIndicator("F9");
         handleCharge();
@@ -434,35 +434,42 @@ export function PointOfSalePage() {
               <CardHeader className="pb-3">
                 <CardTitle>Cliente</CardTitle>
                 <CardDescription>
-                  Busca o crea un cliente para la venta
+                  Busca, crea o vende sin cliente identificado
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Busqueda con autocomplete */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="customer-search">Buscar cliente</Label>
+                    <Label>Buscar cliente</Label>
                     <ShortcutBadge shortcut="F3" variant="outline" />
                   </div>
                   <div className="flex gap-2">
                     <Input
                       ref={customerSearchInputRef}
-                      id="customer-search"
                       value={customerSearchTerm}
                       onChange={(e) => setCustomerSearchTerm(e.target.value)}
                       placeholder="Nombre o email del cliente"
+                      className="flex-1"
+                      onFocus={() => setCustomerSearchOpen(true)}
                     />
-                    <Button variant="outline" onClick={handleCreateCustomer}>
-                      <IconUser className="size-4" />
-                      Nuevo
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsCustomerDialogOpen(true)}
+                      title="Crear nuevo cliente"
+                    >
+                      <IconUserPlus className="size-4" />
                     </Button>
                   </div>
                 </div>
 
-                {customerSearchTerm.trim() && (
-                  <div className="rounded-lg border border-dashed bg-slate-50 p-3 dark:bg-slate-900/30 max-h-40 overflow-y-auto">
+                {/* Dropdown de búsqueda */}
+                {customerSearchOpen && customerSearchTerm.trim() && (
+                  <div className="rounded-lg border border-dashed bg-slate-50 dark:bg-slate-900/30 max-h-40 overflow-y-auto p-3">
                     {filteredCustomers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No se encontraron clientes. Crea uno nuevo.
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        No se encontraron clientes
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -470,26 +477,37 @@ export function PointOfSalePage() {
                           <button
                             key={customer.id}
                             type="button"
-                            onClick={() => setCustomerId(customer.id)}
+                            onClick={() => {
+                              setCustomerId(customer.id);
+                              setCustomerSearchTerm("");
+                              setCustomerSearchOpen(false);
+                              setIsGenericCustomer(false);
+                            }}
                             className={`flex w-full items-center gap-3 rounded-md border border-transparent bg-white p-2 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 dark:bg-slate-900 ${
                               customerId === customer.id
                                 ? "border-primary bg-primary/5"
                                 : ""
                             }`}
                           >
-                            <Avatar className="bg-primary/10 text-primary">
-                              <AvatarFallback>
+                            <Avatar className="bg-primary/10 text-primary size-8 shrink-0">
+                              <AvatarFallback className="text-xs">
                                 {customer.name.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                                 {customer.name}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {customer.email}
                               </p>
                             </div>
+                            {customer.totalPurchases &&
+                              customer.totalPurchases > 0 && (
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  {customer.totalPurchases}x
+                                </span>
+                              )}
                           </button>
                         ))}
                       </div>
@@ -497,27 +515,88 @@ export function PointOfSalePage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <IconUser className="size-4" />
-                    <span>
-                      {customerId
-                        ? customers.find((c) => c.id === customerId)?.name
-                        : "Sin cliente seleccionado"}
-                    </span>
+                {/* Botón para cliente genérico */}
+                <Button
+                  variant={isGenericCustomer ? "default" : "outline"}
+                  className="w-full justify-center"
+                  onClick={() => {
+                    setIsGenericCustomer(!isGenericCustomer);
+                    if (!isGenericCustomer) {
+                      setCustomerId("");
+                      setCustomerSearchTerm("");
+                      setCustomerSearchOpen(false);
+                    }
+                  }}
+                >
+                  <IconUser className="size-4 mr-2" />
+                  {isGenericCustomer
+                    ? "Cliente genérico seleccionado"
+                    : "Venta rápida sin cliente"}
+                </Button>
+
+                {/* Card con información del cliente seleccionado */}
+                {isGenericCustomer ? (
+                  <div className="rounded-lg border border-dashed p-4 text-center bg-slate-50 dark:bg-slate-900/30">
+                    <IconUser className="size-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Cliente genérico/Sin cliente
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Venta rápida sin identificación
+                    </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      void reloadCustomers();
-                    }}
-                    disabled={customersLoading}
-                  >
-                    <IconRefresh className="size-4" />
-                    Actualizar
-                  </Button>
-                </div>
+                ) : customerId ? (
+                  <div className="space-y-3">
+                    {/* Mostrar card del cliente seleccionado */}
+                    {customers.find((c) => c.id === customerId) && (
+                      <>
+                        <CustomerCard
+                          customer={
+                            customers.find((c) => c.id === customerId) || null
+                          }
+                          onViewHistory={() => {
+                            toast({
+                              title: "Historial",
+                              description:
+                                "Visualización de historial en desarrollo",
+                            });
+                          }}
+                          onEdit={() => setIsCustomerDialogOpen(true)}
+                          onRemove={() => {
+                            setCustomerId("");
+                            setCustomerSearchTerm("");
+                          }}
+                          formatCurrency={formatCurrency}
+                          className="shadow-sm"
+                        />
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed p-4 text-center bg-slate-50 dark:bg-slate-900/30">
+                    <IconUser className="size-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Sin cliente seleccionado
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Busca o crea un cliente para continuar
+                    </p>
+                  </div>
+                )}
+
+                {/* Botón para recargar clientes */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    void reloadCustomers();
+                  }}
+                  disabled={customersLoading}
+                >
+                  <IconRefresh className="size-4 mr-2" />
+                  Actualizar clientes
+                </Button>
               </CardContent>
             </Card>
 
@@ -633,7 +712,11 @@ export function PointOfSalePage() {
                   className="w-full group relative"
                   size="lg"
                   onClick={handleCharge}
-                  disabled={isSubmitting || items.length === 0 || !customerId}
+                  disabled={
+                    isSubmitting ||
+                    items.length === 0 ||
+                    (!customerId && !isGenericCustomer)
+                  }
                   title="F9 para proceder al pago"
                 >
                   {isSubmitting ? (
@@ -652,9 +735,10 @@ export function PointOfSalePage() {
                     </>
                   )}
                 </Button>
-                {!customerId && (
+                {!customerId && !isGenericCustomer && (
                   <p className="text-center text-sm text-destructive">
-                    Selecciona un cliente para habilitar el cobro
+                    Selecciona un cliente o usa la venta rápida para habilitar
+                    el cobro
                   </p>
                 )}
               </CardContent>
