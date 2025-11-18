@@ -53,6 +53,7 @@ Se puede inyectar un callback opcional `onSaleCreated` (usado en la página para
 1. **Persistencia de órdenes en espera**: actualmente se almacenan en memoria; podría serializarse en `localStorage` o en un endpoint dedicado.
 2. **Descuentos avanzados**: hoy es un campo manual. Se puede extender para soportar cupones o combos validados server-side.
 3. **Selección de cliente rápida**: ✅ **IMPLEMENTADO** - Búsqueda local con filtro por nombre/email y creación inline.
-4. **Pagos**: ✅ **IMPLEMENTADO** - Selector de método de pago con cálculo de cambio para efectivo y referencias opcionales.
+4. **Cambio de cliente**: ✅ **IMPLEMENTADO** - Funcionalidad para remover/cambiar cliente seleccionado. Ver [documentación detallada](./pos-remove-customer-feature.md).
+5. **Pagos**: ✅ **IMPLEMENTADO** - Selector de método de pago con cálculo de cambio para efectivo y referencias opcionales.
 
 Esta documentación debe acompañar cualquier cambio futuro en el flujo POS para mantener alineados al frontend y a `Sales.Api`.

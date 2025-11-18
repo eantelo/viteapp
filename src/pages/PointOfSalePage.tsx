@@ -9,6 +9,7 @@ import {
   IconPackage,
   IconHelp,
   IconUserPlus,
+  IconUserX,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -229,6 +230,18 @@ export function PointOfSalePage() {
     setCustomerSearchOpen(false);
     setIsGenericCustomer(false);
     setSelectedCustomerIndex(-1);
+  };
+
+  const handleRemoveCustomer = () => {
+    setCustomerId("");
+    setCustomerSearchTerm("");
+    setIsGenericCustomer(false);
+    setCustomerSearchOpen(false);
+    setSelectedCustomerIndex(-1);
+    toast({
+      title: "Cliente removido",
+      description: "Puedes seleccionar otro cliente o usar venta rápida",
+    });
   };
 
   const handleCustomerSearchKeyDown = (
@@ -631,13 +644,19 @@ export function PointOfSalePage() {
                             });
                           }}
                           onEdit={() => setIsCustomerDialogOpen(true)}
-                          onRemove={() => {
-                            setCustomerId("");
-                            setCustomerSearchTerm("");
-                          }}
+                          onRemove={handleRemoveCustomer}
                           formatCurrency={formatCurrency}
                           className="shadow-sm"
                         />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={handleRemoveCustomer}
+                        >
+                          <IconUserX className="size-4 mr-2" />
+                          Cambiar cliente
+                        </Button>
                       </>
                     )}
                   </div>
