@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import {
   IconTrash,
   IconUser,
@@ -51,10 +51,12 @@ export function PointOfSalePage() {
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
   const [isGenericCustomer, setIsGenericCustomer] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [selectedCustomerIndex, setSelectedCustomerIndex] = useState(-1);
 
   // Referencias para elementos enfocables
   const customerSearchInputRef = useRef<HTMLInputElement>(null);
   const discountInputRef = useRef<HTMLInputElement>(null);
+  const customerDropdownRef = useRef<HTMLDivElement>(null);
 
   // Hook para indicadores visuales
   const { recentKeyPress, triggerIndicator } = useKeyPressIndicator();
@@ -103,6 +105,24 @@ export function PointOfSalePage() {
     // Punto de Venta: no aplicar impuestos al total
     includeTax: false,
   });
+
+  // Effect para hacer scroll al elemento seleccionado en el dropdown de clientes
+  useEffect(() => {
+    if (
+      selectedCustomerIndex >= 0 &&
+      customerDropdownRef.current &&
+      customerSearchOpen
+    ) {
+      const buttons = customerDropdownRef.current.querySelectorAll("button");
+      const selectedButton = buttons[selectedCustomerIndex];
+      if (selectedButton) {
+        selectedButton.scrollIntoView({
+          block: "nearest",
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [selectedCustomerIndex, customerSearchOpen]);
 
   const currencyFormatter = useMemo(
     () =>
@@ -200,6 +220,46 @@ export function PointOfSalePage() {
         title: "Cliente creado",
         description: "El nuevo cliente ha sido agregado",
       });
+    }
+  };
+
+  const handleSelectCustomer = (customerId: string) => {
+    setCustomerId(customerId);
+    setCustomerSearchTerm("");
+    setCustomerSearchOpen(false);
+    setIsGenericCustomer(false);
+    setSelectedCustomerIndex(-1);
+  };
+
+  const handleCustomerSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (!customerSearchOpen || filteredCustomers.length === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedCustomerIndex((prev) =>
+          prev < filteredCustomers.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedCustomerIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredCustomers.length - 1
+        );
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedCustomerIndex >= 0) {
+          handleSelectCustomer(filteredCustomers[selectedCustomerIndex].id);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setCustomerSearchOpen(false);
+        setSelectedCustomerIndex(-1);
+        break;
     }
   };
 
@@ -448,10 +508,18 @@ export function PointOfSalePage() {
                     <Input
                       ref={customerSearchInputRef}
                       value={customerSearchTerm}
-                      onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerSearchTerm(e.target.value);
+                        setSelectedCustomerIndex(-1);
+                      }}
+                      onKeyDown={handleCustomerSearchKeyDown}
                       placeholder="Nombre o email del cliente"
                       className="flex-1"
                       onFocus={() => setCustomerSearchOpen(true)}
+                      onBlur={() => {
+                        // Delay to allow button clicks to register
+                        setTimeout(() => setCustomerSearchOpen(false), 200);
+                      }}
                     />
                     <Button
                       variant="outline"
@@ -466,27 +534,28 @@ export function PointOfSalePage() {
 
                 {/* Dropdown de búsqueda */}
                 {customerSearchOpen && customerSearchTerm.trim() && (
-                  <div className="rounded-lg border border-dashed bg-slate-50 dark:bg-slate-900/30 max-h-40 overflow-y-auto p-3">
+                  <div
+                    ref={customerDropdownRef}
+                    className="rounded-lg border border-dashed bg-slate-50 dark:bg-slate-900/30 max-h-40 overflow-y-auto p-3"
+                  >
                     {filteredCustomers.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-2">
                         No se encontraron clientes
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        {filteredCustomers.map((customer) => (
+                        {filteredCustomers.map((customer, index) => (
                           <button
                             key={customer.id}
                             type="button"
-                            onClick={() => {
-                              setCustomerId(customer.id);
-                              setCustomerSearchTerm("");
-                              setCustomerSearchOpen(false);
-                              setIsGenericCustomer(false);
-                            }}
-                            className={`flex w-full items-center gap-3 rounded-md border border-transparent bg-white p-2 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 dark:bg-slate-900 ${
-                              customerId === customer.id
-                                ? "border-primary bg-primary/5"
-                                : ""
+                            onClick={() => handleSelectCustomer(customer.id)}
+                            onMouseEnter={() => setSelectedCustomerIndex(index)}
+                            className={`flex w-full items-center gap-3 rounded-md border p-2 text-left shadow-sm transition ${
+                              selectedCustomerIndex === index
+                                ? "border-primary bg-primary/10 dark:bg-primary/20"
+                                : customerId === customer.id
+                                ? "border-primary bg-primary/5 dark:bg-primary/10"
+                                : "border-transparent bg-white hover:border-primary hover:bg-primary/5 dark:bg-slate-900"
                             }`}
                           >
                             <Avatar className="bg-primary/10 text-primary size-8 shrink-0">
