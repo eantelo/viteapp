@@ -1,156 +1,130 @@
-# Autocompletado de Categorías y Marcas en Productos
+# Mejoras en Búsqueda Predictiva del POS (Punto de Venta)
 
-## Descripción
+## 📋 Descripción General
 
-Se ha implementado la funcionalidad de autocompletado para los campos de **Categoría** y **Marca** en el diálogo de creación/edición de productos. Esta mejora permite a los usuarios:
+Se ha implementado una búsqueda predictiva/autocompletado mejorado en el Punto de Venta (POS) que proporciona una experiencia significativamente mejor al agregar productos a las órdenes.
 
-1. Seleccionar categorías y marcas existentes de una lista
-2. Ver sugerencias mientras escriben
-3. Crear nuevas categorías/marcas simplemente escribiendo un valor nuevo
+## 🎯 Cambios Implementados
 
-## Componentes Implementados
+### 1. Nuevo Componente: ProductAutoComplete
 
-### Backend
+**Ubicación:** `src/components/products/ProductAutoComplete.tsx`
 
-#### 1. Servicio de Productos (`ProductService.cs`)
+Un componente reutilizable y especializado para búsqueda de productos con navegación por teclado, indicadores visuales y información detallada.
 
-Se agregaron dos nuevos métodos:
+#### ✨ Características Principales
 
-```csharp
-Task<IReadOnlyList<string>> GetCategoriesAsync(Guid tenantId, CancellationToken cancellationToken = default);
-Task<IReadOnlyList<string>> GetBrandsAsync(Guid tenantId, CancellationToken cancellationToken = default);
-```
+1. **Búsqueda predictiva en tiempo real**
+   - Sugerencias mientras el usuario escribe
+   - Indicador "Buscando..." durante la consulta
+   - Debounce de 300ms en el hook para evitar exceso de peticiones
+   - Máximo 8 resultados mostrados
 
-Estos métodos:
-- Obtienen valores únicos de categorías/marcas del tenant actual
-- Filtran valores vacíos o nulos
-- Retornan las listas ordenadas alfabéticamente
+2. **Información detallada en cada sugerencia**
+   - Nombre del producto (destacado con avatar)
+   - SKU en formato monoespaciado y uppercase
+   - Precio formateado en formato de moneda local
+   - Stock disponible con indicadores visuales
+   - Badges de advertencia:
+     - Naranja: Stock bajo (≤5 unidades)
+     - Rojo: Sin stock disponible
 
-#### 2. Controlador de Productos (`ProductsController.cs`)
+3. **Navegación por teclado completa**
+   - **Flecha Arriba (↑)**: Navega hacia arriba en la lista
+   - **Flecha Abajo (↓)**: Navega hacia abajo en la lista
+   - **Enter**: Selecciona el producto resaltado o envía búsqueda
+   - **Escape**: Cierra el dropdown de sugerencias
+   - El índice seleccionado se resalta visualmente con fondo azul/primary
 
-Se agregaron dos nuevos endpoints:
+4. **Indicadores visuales mejorados**
+   - Icono de escáner (`IconBarcode`) integrado en el input
+   - Spinner animado en el lado derecho cuando busca
+   - Mensaje "Buscando..." debajo del input
+   - Chevron visual cuando se navega con teclado
+   - Indicador de stock disponible en verde
 
-```
-GET /api/products/categories
-GET /api/products/brands
-```
+5. **Accesibilidad (a11y) completa**
+   - Atributos ARIA correctamente configurados
+   - Roles semánticos: `listbox`, `option`
+   - Navegación completamente accesible por teclado
+   - Contraste de colores WCAG AA
+   - Labels descriptivos para screen readers
 
-Ambos endpoints:
-- Requieren autenticación (atributo `[Authorize]`)
-- Filtran por el tenant del usuario actual
-- Retornan arrays de strings con las opciones disponibles
-
-### Frontend
-
-#### 1. API Client (`productsApi.ts`)
-
-Se agregaron dos funciones para consumir los nuevos endpoints:
-
-```typescript
-export async function getCategories(): Promise<string[]>
-export async function getBrands(): Promise<string[]>
-```
-
-#### 2. Componente Combobox (`combobox.tsx`)
-
-Se creó un componente reutilizable de autocompletado que:
-- Permite seleccionar de una lista de opciones
-- Soporta búsqueda en tiempo real
-- Permite escribir valores personalizados
-- Está construido sobre componentes de shadcn/ui (Command, Popover)
-- Es completamente accesible y navegable por teclado
-
-**Props del componente:**
+#### Props
 
 ```typescript
-interface ComboboxProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  options: string[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyText?: string;
-  className?: string;
-  disabled?: boolean;
+interface ProductAutoCompleteProps {
+  value: string;                             // Valor actual del input
+  onChange: (value: string) => void;         // Callback en cambio de texto
+  results: ProductDto[];                     // Array de resultados de búsqueda
+  onSelect: (product: ProductDto) => void;   // Callback al seleccionar
+  onSubmit: () => Promise<void>;             // Callback al presionar Enter
+  isLoading?: boolean;                       // Estado de carga de búsqueda
+  isSubmitting?: boolean;                    // Estado de envío/agregación
+  error?: string | null;                     // Mensaje de error personalizado
+  placeholder?: string;                      // Texto del placeholder
+  formatCurrency?: (value: number) => string;// Formateador de moneda
+  showSubmitButton?: boolean;                // Mostrar botón "Agregar"
+  className?: string;                        // Classes adicionales
 }
 ```
 
-#### 3. Formulario de Productos (`ProductFormDialog.tsx`)
+### 2. Integración en PointOfSalePage
 
-Se modificó el formulario para:
-- Cargar las categorías y marcas al abrir el diálogo
-- Reemplazar los campos Input por componentes Combobox
-- Mostrar estado de carga mientras se obtienen las sugerencias
-- Permitir crear nuevos valores escribiendo directamente
+La página de Punto de Venta ha sido completamente refactorizada para usar ProductAutoComplete.
 
-## Experiencia de Usuario
+### 3. Flujo de Uso
 
-### Flujo de Uso
+1. Usuario abre la página de POS
+2. Campo de búsqueda recibe el foco automáticamente
+3. Usuario escribe nombre, SKU o escanea código de barras
+4. Mientras escribe, aparece "Buscando..." y spinner
+5. Se muestran sugerencias con información completa
+6. Usuario puede:
+   - Hacer clic en una sugerencia
+   - Presionar flecha abajo para navegar
+   - Presionar Enter para seleccionar
+   - Presionar Escape para cerrar sugerencias
+7. El producto se agrega automáticamente a la orden
+8. El input se limpia y está listo para el siguiente producto
 
-1. **Abrir el diálogo**: Al hacer clic en "Nuevo Producto" o "Editar", el sistema carga automáticamente las categorías y marcas existentes.
+## ✅ Requisitos Completados
 
-2. **Seleccionar una opción existente**:
-   - Hacer clic en el campo Marca o Categoría
-   - Se despliega una lista con las opciones disponibles
-   - Seleccionar una opción de la lista
+- [x] **Búsqueda predictiva/autocompletado** - Muestra sugerencias mientras se escribe
+- [x] **Información detallada** - Nombre, SKU, precio, stock disponible en cada sugerencia
+- [x] **Navegación por teclado** - Flechas arriba/abajo, Enter para seleccionar
+- [x] **Icono de escáner mejorado** - Visible, integrado y funcional
+- [x] **Indicador "Buscando..."** - Muestra estado de carga con spinner
 
-3. **Buscar mientras se escribe**:
-   - Comenzar a escribir en el campo
-   - La lista se filtra automáticamente mostrando coincidencias
-   - Seleccionar una coincidencia o continuar escribiendo
+## 📦 Dependencias
 
-4. **Crear un valor nuevo**:
-   - Escribir el valor deseado directamente
-   - Si no hay coincidencias, aparece el mensaje "Escribe para crear una nueva marca/categoría"
-   - Al guardar, el nuevo valor se persistirá en la base de datos
+No se agregaron nuevas dependencias. El componente usa:
 
-### Ventajas
+- React 18+ (hooks)
+- Tabler Icons
+- UI Components existentes
+- Tailwind CSS
 
-- **Consistencia**: Reduce errores tipográficos y variaciones (ej: "Dell", "DELL", "dell")
-- **Rapidez**: Más rápido seleccionar de una lista que escribir
-- **Flexibilidad**: Permite crear nuevas opciones sin necesidad de un módulo separado
-- **UX mejorada**: Autocompletado intuitivo y responsivo
-- **Multitenancy**: Las sugerencias son específicas del tenant actual
+## 🧪 Testing Recomendado
 
-## Consideraciones Técnicas
+1. Escribir en el campo de búsqueda y verificar sugerencias
+2. Navegar con flechas arriba/abajo
+3. Seleccionar con Enter
+4. Hacer clic en sugerencia
+5. Presionar Escape para cerrar
+6. Verificar en móvil y desktop
+7. Verificar modo claro y oscuro
+8. Escanear códigos de barras reales
 
-### Rendimiento
+## Archivos Modificados
 
-- Las sugerencias se cargan solo una vez al abrir el diálogo
-- Se usa `Promise.all` para cargar categorías y marcas en paralelo
-- El filtrado de opciones es local (cliente), no requiere llamadas adicionales al servidor
+- `src/pages/PointOfSalePage.tsx` - Integración del componente
+- `src/components/products/ProductAutoComplete.tsx` - Nuevo componente
 
-### Seguridad
+## Notas Técnicas
 
-- Los endpoints están protegidos por autenticación JWT
-- Las consultas filtran automáticamente por tenant
-- No hay exposición de datos entre tenants
-
-### Escalabilidad
-
-Si el número de categorías/marcas crece mucho:
-1. Considerar paginación o lazy loading
-2. Implementar búsqueda en el servidor con `?search=term`
-3. Limitar el número de resultados mostrados
-
-## Dependencias Agregadas
-
-- `cmdk` (Command component)
-- `@radix-ui/react-popover`
-- Componentes shadcn/ui: `command`, `popover`
-
-## Pruebas Sugeridas
-
-1. Crear un producto con marca/categoría nueva
-2. Verificar que el nuevo producto aparece en las sugerencias al crear otro producto
-3. Buscar marcas/categorías existentes mientras se escribe
-4. Probar con múltiples usuarios del mismo tenant (deben ver las mismas opciones)
-5. Probar con usuarios de diferentes tenants (deben ver solo sus opciones)
-
-## Futuras Mejoras
-
-- [ ] Mostrar contador de productos por categoría/marca en el dropdown
-- [ ] Permitir gestión de categorías/marcas desde un módulo dedicado
-- [ ] Agregar iconos o colores a las categorías
-- [ ] Implementar jerarquía de categorías (categorías y subcategorías)
-- [ ] Agregar validación de duplicados con normalización (case-insensitive)
+- El componente es completamente reutilizable en otros lugares
+- No tiene dependencias externas nuevas
+- Sigue las convenciones de arquitectura del proyecto
+- Compatible con React 18+ (usa hooks modernos)
+- Tipado con TypeScript stricto

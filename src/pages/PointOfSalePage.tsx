@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  IconBarcode,
   IconMinus,
   IconPlus,
   IconTrash,
@@ -33,11 +32,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
+import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -51,21 +50,6 @@ function formatSku(sku?: string) {
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
   const { toast } = useToast();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const focusScanInput = useCallback(() => {
-    searchInputRef.current?.focus();
-  }, []);
-  const selectScanInput = useCallback(() => {
-    const input = searchInputRef.current;
-    if (input) {
-      input.focus();
-      input.select();
-    }
-  }, []);
-
-  useEffect(() => {
-    focusScanInput();
-  }, [focusScanInput]);
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -129,7 +113,6 @@ export function PointOfSalePage() {
   const handleLookupSubmit = async () => {
     const code = searchTerm.trim();
     if (!code || isLookupPending) {
-      focusScanInput();
       return;
     }
     const product = await addProductByLookup(code);
@@ -139,7 +122,6 @@ export function PointOfSalePage() {
         description: "Verifica el código de barras o la búsqueda.",
         variant: "destructive",
       });
-      selectScanInput();
       return;
     }
 
@@ -147,7 +129,6 @@ export function PointOfSalePage() {
       title: "Producto agregado",
       description: `${product.name} añadido a la orden`,
     });
-    focusScanInput();
   };
 
   const handleSelectProduct = (product: ProductDto) => {
@@ -157,7 +138,6 @@ export function PointOfSalePage() {
       description: `${product.name} añadido a la orden`,
     });
     setSearchTerm("");
-    focusScanInput();
   };
 
   const handleHold = () => {
@@ -242,81 +222,23 @@ export function PointOfSalePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <Label htmlFor="pos-search">Búsqueda rápida</Label>
-                  <div className="flex flex-col gap-3 md:flex-row">
-                    <div className="relative flex-1">
-                      <IconBarcode className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="pos-search"
-                        ref={searchInputRef}
-                        value={searchTerm}
-                        placeholder="Escanea código o busca por nombre"
-                        onChange={(event) => setSearchTerm(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            if (!isLookupPending) {
-                              void handleLookupSubmit();
-                            }
-                          }
-                        }}
-                        className="pl-11"
-                      />
-                    </div>
-                    <Button
-                      onClick={() => {
-                        void handleLookupSubmit();
-                      }}
-                      disabled={isLookupPending || !searchTerm.trim()}
-                    >
-                      {isLookupPending && <Spinner size="sm" />}
-                      <span>Agregar</span>
-                    </Button>
-                  </div>
+                  <Label htmlFor="pos-search">
+                    Búsqueda rápida con autocompletado
+                  </Label>
+                  <ProductAutoComplete
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    results={searchResults}
+                    onSelect={handleSelectProduct}
+                    onSubmit={handleLookupSubmit}
+                    isLoading={isSearchLoading}
+                    isSubmitting={isLookupPending}
+                    error={searchError}
+                    placeholder="Escanea código o busca por nombre"
+                    formatCurrency={formatCurrency}
+                    showSubmitButton={true}
+                  />
                 </div>
-
-                {searchTerm.trim() && (
-                  <div className="rounded-lg border border-dashed bg-slate-50 p-3 dark:bg-slate-900/30">
-                    {isSearchLoading ? (
-                      <div className="space-y-2">
-                        {[0, 1, 2].map((index) => (
-                          <Skeleton key={index} className="h-12 w-full" />
-                        ))}
-                      </div>
-                    ) : searchResults.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        {searchError ?? "No encontramos coincidencias"}
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {searchResults.map((product) => (
-                          <button
-                            key={product.id}
-                            type="button"
-                            onClick={() => handleSelectProduct(product)}
-                            className="flex w-full items-center gap-3 rounded-md border border-transparent bg-white p-2 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 dark:bg-slate-900"
-                          >
-                            <Avatar className="bg-primary/10 text-primary">
-                              <AvatarFallback>
-                                {product.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                SKU {formatSku(product.sku)} ·{" "}
-                                {formatCurrency(product.price)}
-                              </p>
-                            </div>
-                            <IconPackage className="hidden size-5 text-muted-foreground md:block" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </CardContent>
             </Card>
 
