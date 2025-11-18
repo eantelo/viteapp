@@ -415,16 +415,18 @@ export function SalesHistoryPage() {
                   Método de Pago
                 </Label>
                 <Select
-                  value={paymentMethod?.toString() || ""}
+                  value={paymentMethod?.toString() || "all"}
                   onValueChange={(value) =>
-                    setPaymentMethod(value ? parseInt(value) : undefined)
+                    setPaymentMethod(
+                      value === "all" ? undefined : parseInt(value)
+                    )
                   }
                 >
                   <SelectTrigger id="payment-method">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="0">Efectivo</SelectItem>
                     <SelectItem value="1">Tarjeta</SelectItem>
                     <SelectItem value="2">Voucher</SelectItem>
