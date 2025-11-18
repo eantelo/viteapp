@@ -321,17 +321,7 @@ export function ProductFormDialog({
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Descripción</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descripción detallada del producto (opcional)"
-                maxLength={1000}
-                rows={3}
-              />
-            </div>
+
 
             <div className="grid gap-2">
               <Label htmlFor="sku">
@@ -352,31 +342,7 @@ export function ProductFormDialog({
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="brand">Marca</Label>
-              <Combobox
-                value={brand}
-                onValueChange={setBrand}
-                options={brands}
-                placeholder="Ej: Dell"
-                emptyText="Escribe para crear una nueva marca."
-                disabled={loadingSuggestions}
-                maxLength={120}
-              />
-            </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="category">Categoría</Label>
-              <Combobox
-                value={category}
-                onValueChange={setCategory}
-                options={categories}
-                placeholder="Ej: Laptops"
-                emptyText="Escribe para crear una nueva categoría."
-                disabled={loadingSuggestions}
-                maxLength={120}
-              />
-            </div>
 
             {!isEditing && (
               <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -535,6 +501,44 @@ export function ProductFormDialog({
                 </Label>
               </div>
             )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="brand">Marca</Label>
+              <Combobox
+                value={brand}
+                onValueChange={setBrand}
+                options={brands}
+                placeholder="Ej: Dell"
+                emptyText="Escribe para crear una nueva marca."
+                disabled={loadingSuggestions}
+                maxLength={120}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="category">Categoría</Label>
+              <Combobox
+                value={category}
+                onValueChange={setCategory}
+                options={categories}
+                placeholder="Ej: Laptops"
+                emptyText="Escribe para crear una nueva categoría."
+                disabled={loadingSuggestions}
+                maxLength={120}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción detallada del producto (opcional)"
+                maxLength={1000}
+                rows={3}
+              />
+            </div>
           </div>
 
           <DialogFooter>

@@ -1,6 +1,7 @@
 import { AnimatePresence } from "framer-motion";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ProductsPage } from "@/pages/ProductsPage";
@@ -10,26 +11,16 @@ import { SalesPage } from "@/pages/SalesPage";
 import { SalesHistoryPage } from "@/pages/SalesHistoryPage";
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
-import { useAuth } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 
 function App() {
-  const { isAuthenticated } = useAuth();
   const location = useLocation();
 
   return (
     <>
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
-          <Route
-            path="/"
-            element={
-              <Navigate
-                to={isAuthenticated ? "/dashboard" : "/login"}
-                replace
-              />
-            }
-          />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>

@@ -7,7 +7,6 @@ import { AuthLayout } from "@/components/layout/AuthLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
-import { CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/Spinner";
@@ -19,6 +18,8 @@ import {
   validatePassword,
   validateTenantCode,
 } from "@/lib/validation";
+import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type RegisterField = "tenantCode" | "email" | "password";
 type RegisterFieldErrors = Partial<Record<RegisterField, string>>;
@@ -39,6 +40,7 @@ export function RegisterPage() {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (field: RegisterField, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
@@ -106,111 +108,117 @@ export function RegisterPage() {
         title="Crear una cuenta"
         subtitle="Registra un tenant y tu primer usuario administrador"
         footer={
-          <CardFooter>
+          <div className="text-muted-foreground">
             ¿Ya tienes credenciales?{" "}
-            <Link to="/login" className="font-semibold text-blue-600">
+            <Link to="/login" className="font-semibold text-primary hover:underline">
               Inicia sesión
             </Link>
-          </CardFooter>
+          </div>
         }
       >
-        <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-          {errorMessage && (
-            <Alert
-              variant="error"
-              message={errorMessage}
-              items={errorDetails}
-            />
-          )}
-          <div className="space-y-2">
-            <Label htmlFor={tenantInputId}>
-              Código del tenant <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={tenantInputId}
-              name="tenantCode"
-              placeholder="mi-empresa"
-              value={formState.tenantCode}
-              onChange={(event) =>
-                handleChange("tenantCode", event.target.value)
-              }
-              required
-              aria-invalid={Boolean(fieldErrors.tenantCode)}
-              aria-describedby={
-                fieldErrors.tenantCode ? `${tenantInputId}-error` : undefined
-              }
-            />
-            <p className="text-sm text-slate-500">
-              Identificador único para tu organización
-            </p>
-            {fieldErrors.tenantCode && (
-              <p id={`${tenantInputId}-error`} className="text-sm text-red-600">
-                {fieldErrors.tenantCode}
-              </p>
+        <div className="grid gap-6">
+            {errorMessage && (
+                <Alert
+                variant="error"
+                message={errorMessage}
+                items={errorDetails}
+                />
             )}
-          </div>
+            <form onSubmit={handleSubmit} noValidate>
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor={tenantInputId}>Código del tenant</Label>
+                        <div className="relative">
+                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id={tenantInputId}
+                                name="tenantCode"
+                                placeholder="mi-empresa"
+                                value={formState.tenantCode}
+                                onChange={(event) =>
+                                    handleChange("tenantCode", event.target.value)
+                                }
+                                required
+                                className={cn("pl-9", fieldErrors.tenantCode && "border-red-500 focus-visible:ring-red-500")}
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Identificador único para tu organización
+                        </p>
+                        {fieldErrors.tenantCode && (
+                            <p className="text-sm text-red-500">
+                                {fieldErrors.tenantCode}
+                            </p>
+                        )}
+                    </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={emailInputId}>
-              Correo corporativo <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={emailInputId}
-              name="email"
-              type="email"
-              placeholder="founder@miempresa.com"
-              autoComplete="email"
-              value={formState.email}
-              onChange={(event) => handleChange("email", event.target.value)}
-              required
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={
-                fieldErrors.email ? `${emailInputId}-error` : undefined
-              }
-            />
-            {fieldErrors.email && (
-              <p id={`${emailInputId}-error`} className="text-sm text-red-600">
-                {fieldErrors.email}
-              </p>
-            )}
-          </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor={emailInputId}>Correo corporativo</Label>
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id={emailInputId}
+                                name="email"
+                                type="email"
+                                placeholder="founder@miempresa.com"
+                                autoComplete="email"
+                                value={formState.email}
+                                onChange={(event) => handleChange("email", event.target.value)}
+                                required
+                                className={cn("pl-9", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")}
+                            />
+                        </div>
+                        {fieldErrors.email && (
+                            <p className="text-sm text-red-500">
+                                {fieldErrors.email}
+                            </p>
+                        )}
+                    </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={passwordInputId}>
-              Contraseña <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={passwordInputId}
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-              value={formState.password}
-              onChange={(event) => handleChange("password", event.target.value)}
-              required
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={
-                fieldErrors.password ? `${passwordInputId}-error` : undefined
-              }
-            />
-            {fieldErrors.password && (
-              <p
-                id={`${passwordInputId}-error`}
-                className="text-sm text-red-600"
-              >
-                {fieldErrors.password}
-              </p>
-            )}
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Spinner size="sm" className="text-current" />}
-            {isLoading ? "Creando cuenta..." : "Crear cuenta"}
-          </Button>
-          <p className="text-center text-xs text-slate-500">
-            Al continuar aceptas los términos del servicio y reconoces las
-            políticas de privacidad del tenant.
-          </p>
-        </form>
+                    <div className="grid gap-2">
+                        <Label htmlFor={passwordInputId}>Contraseña</Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id={passwordInputId}
+                                name="password"
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                autoComplete="new-password"
+                                value={formState.password}
+                                onChange={(event) => handleChange("password", event.target.value)}
+                                required
+                                className={cn("pl-9 pr-9", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                ) : (
+                                    <Eye className="h-4 w-4" />
+                                )}
+                            </button>
+                        </div>
+                        {fieldErrors.password && (
+                            <p className="text-sm text-red-500">
+                                {fieldErrors.password}
+                            </p>
+                        )}
+                    </div>
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading && <Spinner size="sm" className="mr-2 text-current" />}
+                        {isLoading ? "Creando cuenta..." : "Crear cuenta"}
+                    </Button>
+                </div>
+            </form>
+            <div className="text-center text-xs text-muted-foreground">
+                Al continuar aceptas los términos del servicio y reconoces las políticas de privacidad del tenant.
+            </div>
+        </div>
       </AuthLayout>
     </PageTransition>
   );

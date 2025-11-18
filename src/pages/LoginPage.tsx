@@ -6,7 +6,6 @@ import type { ApiError } from "@/api/apiClient";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { LoginForm } from "@/components/login-form";
-import { CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { extractProblemDetails } from "@/lib/errors";
@@ -89,12 +88,12 @@ export function LoginPage() {
         title="Inicia sesión"
         subtitle="Bienvenido de vuelta a SalesNet"
         footer={
-          <CardFooter>
+          <div className="text-muted-foreground">
             ¿Aún no tienes cuenta?{" "}
-            <Link to="/register" className="font-semibold text-blue-600">
+            <Link to="/register" className="font-semibold text-primary hover:underline">
               Crear cuenta
             </Link>
-          </CardFooter>
+          </div>
         }
       >
         <LoginForm

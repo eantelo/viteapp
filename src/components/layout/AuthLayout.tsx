@@ -1,12 +1,6 @@
 import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AuthLayoutProps {
@@ -26,67 +20,63 @@ export function AuthLayout({
   highlight = "SalesNet Platform",
   className,
 }: AuthLayoutProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const heroTransition = {
-    duration: prefersReducedMotion ? 0 : 0.6,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
-
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 py-12 md:flex-row md:items-center">
-        <motion.section
-          className="flex-1 space-y-6"
-          initial={
-            prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }
-          }
-          animate={{ opacity: 1, y: 0 }}
-          transition={heroTransition}
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.6em] text-blue-200">
-            {highlight}
-          </p>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              El punto de partida para tus ventas multitenant
-            </h1>
-            <p className="text-base text-slate-300">
-              Gestiona usuarios, tenants y sesiones seguras desde un solo lugar.
-              Conecta con Sales.Api para acceder a reportes en tiempo real,
-              inventarios y flujo de ventas.
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      {/* Left Side - Hero/Branding */}
+      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
+        <div className="absolute inset-0 bg-zinc-900">
+           {/* Abstract Background Pattern */}
+           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay" />
+           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/80 to-zinc-900/20" />
+        </div>
+        
+        <div className="relative z-20 flex items-center text-lg font-medium tracking-tight">
+          <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 backdrop-blur">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          SalesNet
+        </div>
+        
+        <div className="relative z-20 mt-auto">
+          <blockquote className="space-y-2">
+            <p className="text-lg font-medium leading-relaxed">
+              &ldquo;{highlight}&rdquo;
             </p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200 backdrop-blur">
-            <p className="font-semibold text-white">Beneficios clave</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-200">
-              <li>Autenticación con JWT y refresh tokens</li>
-              <li>Seguridad multitenant lista para producción</li>
-              <li>Escala global con Azure Cosmos DB o PostgreSQL</li>
-            </ul>
-          </div>
-        </motion.section>
-        <motion.section
-          className={cn("flex-1", className)}
-          initial={
-            prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }
-          }
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            ...heroTransition,
-            delay: prefersReducedMotion ? 0 : 0.1,
-          }}
-        >
-          <Card className="bg-white/95 shadow-2xl">
-            <CardHeader>
-              <CardTitle>{title}</CardTitle>
-              {subtitle && <CardDescription>{subtitle}</CardDescription>}
-            </CardHeader>
-            <CardContent>{children}</CardContent>
-            {footer}
-          </Card>
-        </motion.section>
+            <p className="text-sm text-zinc-400">
+              Gestiona tu negocio con la plataforma ERP más avanzada y segura del mercado.
+            </p>
+          </blockquote>
+        </div>
       </div>
-    </main>
+
+      {/* Right Side - Form */}
+      <div className="lg:p-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className={cn("mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]", className)}
+        >
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+              {title}
+            </h1>
+            {subtitle && (
+              <p className="text-sm text-muted-foreground">
+                {subtitle}
+              </p>
+            )}
+          </div>
+          
+          {children}
+          
+          {footer && (
+             <div className="px-8 text-center text-sm text-muted-foreground">
+                {footer}
+             </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
   );
 }
