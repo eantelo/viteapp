@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ interface SalesFilters {
 
 export function SalesPage() {
   useDocumentTitle("Órdenes de Venta");
+  const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -308,10 +310,20 @@ export function SalesPage() {
               Gestión completa de órdenes de venta
             </p>
           </div>
-          <Button onClick={handleCreate} className="gap-2">
-            <IconPlus size={20} />
-            <span>Nueva Orden</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/sales/history")}
+              className="gap-2"
+            >
+              <IconCalendar size={20} />
+              <span>Historial</span>
+            </Button>
+            <Button onClick={handleCreate} className="gap-2">
+              <IconPlus size={20} />
+              <span>Nueva Orden</span>
+            </Button>
+          </div>
         </motion.div>
 
         {/* Layout con filtros laterales */}

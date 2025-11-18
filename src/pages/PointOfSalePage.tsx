@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   IconTrash,
   IconUser,
@@ -9,6 +10,7 @@ import {
   IconHelp,
   IconUserPlus,
   IconUserX,
+  IconHistory,
 } from "@tabler/icons-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -46,6 +48,7 @@ import { type PaymentMethodType } from "@/api/salesApi";
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -127,6 +130,52 @@ export function PointOfSalePage() {
       }
     }
   }, [selectedCustomerIndex, customerSearchOpen]);
+
+  // Effect para cargar productos de venta repetida
+  useEffect(() => {
+    const repeatSaleItems = localStorage.getItem("repeatSaleItems");
+    if (repeatSaleItems) {
+      try {
+        const items = JSON.parse(repeatSaleItems);
+        // Agregar cada producto al carrito
+        items.forEach(
+          (item: {
+            productId: string;
+            productName: string;
+            quantity: number;
+            price: number;
+          }) => {
+            const product: ProductDto = {
+              id: item.productId,
+              name: item.productName,
+              description: null,
+              sku: "",
+              barcode: "",
+              brand: "",
+              category: "",
+              price: item.price,
+              stock: item.quantity,
+              isActive: true,
+            };
+            // Agregar la cantidad especificada
+            for (let i = 0; i < item.quantity; i++) {
+              addProductToOrder(product);
+            }
+          }
+        );
+
+        toast({
+          title: "Venta repetida",
+          description: `${items.length} productos cargados desde la venta anterior`,
+        });
+
+        // Limpiar después de cargar
+        localStorage.removeItem("repeatSaleItems");
+      } catch (error) {
+        console.error("Error al cargar productos de venta repetida:", error);
+      }
+    }
+  }, [addProductToOrder, toast]);
 
   const currencyFormatter = useMemo(
     () =>
@@ -324,6 +373,15 @@ export function PointOfSalePage() {
       },
     },
     {
+      key: "F5",
+      label: "F5",
+      description: "Ver historial de ventas",
+      handler: () => {
+        triggerIndicator("F5");
+        navigate("/sales/history");
+      },
+    },
+    {
       key: "F8",
       label: "F8",
       description: "Poner orden en espera",
@@ -421,6 +479,15 @@ export function PointOfSalePage() {
               </Badge>
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/sales/history")}
+            className="gap-2"
+          >
+            <IconHistory className="size-4" />
+            <span className="text-xs">F5 - Historial</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"

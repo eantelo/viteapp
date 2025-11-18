@@ -7,6 +7,7 @@ import { ProductsPage } from "@/pages/ProductsPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
+import { SalesHistoryPage } from "@/pages/SalesHistoryPage";
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +34,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/sales/history" element={<SalesHistoryPage />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/pos" element={<PointOfSalePage />} />
             <Route path="/products" element={<ProductsPage />} />

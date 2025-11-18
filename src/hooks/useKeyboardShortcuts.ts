@@ -5,6 +5,7 @@ export type KeyboardShortcutKey =
   | "F2"
   | "F3"
   | "F4"
+  | "F5"
   | "F8"
   | "F9"
   | "F12"
@@ -51,6 +52,12 @@ const SHORTCUTS_CONFIG: Record<
     label: "F4",
     description: "Aplicar descuento",
     code: "F4",
+  },
+  F5: {
+    key: "F5",
+    label: "F5",
+    description: "Ver historial de ventas",
+    code: "F5",
   },
   F8: {
     key: "F8",

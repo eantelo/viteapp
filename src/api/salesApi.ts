@@ -100,3 +100,63 @@ export async function deleteSale(id: string): Promise<void> {
     method: "DELETE",
   });
 }
+
+// Historial de ventas y estadísticas
+export interface SalesHistoryParams {
+  dateFrom?: string;
+  dateTo?: string;
+  customerId?: string;
+  paymentMethod?: number;
+  minAmount?: number;
+  maxAmount?: number;
+  limit?: number;
+}
+
+export interface SalesStatistics {
+  totalSales: number;
+  transactionCount: number;
+  averageTicket: number;
+  salesByHour: Array<{
+    hour: number;
+    amount: number;
+    count: number;
+  }>;
+  salesByPaymentMethod: Array<{
+    method: number;
+    methodName: string;
+    amount: number;
+    count: number;
+  }>;
+}
+
+export async function getSalesHistory(
+  params: SalesHistoryParams = {}
+): Promise<SaleDto[]> {
+  const searchParams = new URLSearchParams();
+
+  if (params.dateFrom) searchParams.append("dateFrom", params.dateFrom);
+  if (params.dateTo) searchParams.append("dateTo", params.dateTo);
+  if (params.customerId) searchParams.append("customerId", params.customerId);
+  if (params.paymentMethod !== undefined)
+    searchParams.append("paymentMethod", params.paymentMethod.toString());
+  if (params.minAmount !== undefined)
+    searchParams.append("minAmount", params.minAmount.toString());
+  if (params.maxAmount !== undefined)
+    searchParams.append("maxAmount", params.maxAmount.toString());
+  if (params.limit) searchParams.append("limit", params.limit.toString());
+
+  const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  return apiClient<SaleDto[]>(`/api/sales/history${query}`);
+}
+
+export async function getSalesStatistics(
+  dateFrom?: string,
+  dateTo?: string
+): Promise<SalesStatistics> {
+  const params = new URLSearchParams();
+  if (dateFrom) params.append("dateFrom", dateFrom);
+  if (dateTo) params.append("dateTo", dateTo);
+
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return apiClient<SalesStatistics>(`/api/sales/statistics${query}`);
+}
