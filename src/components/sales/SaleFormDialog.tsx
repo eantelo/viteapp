@@ -17,21 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconPlus } from "@tabler/icons-react";
 import type { SaleDto, SaleCreateDto, SaleUpdateDto } from "@/api/salesApi";
 import { createSale, updateSale } from "@/api/salesApi";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts } from "@/api/productsApi";
+import { OrderProductTable } from "./OrderProductTable";
 
 interface SaleFormDialogProps {
   open: boolean;
@@ -172,8 +165,6 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     setItems(newItems);
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -229,6 +220,11 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     if (!loading) {
       onClose(false);
     }
+  };
+
+  const handleEditProduct = (index: number, product: ProductDto) => {
+    // Esta función puede usarse para abrir un panel de edición detallada del producto en el futuro
+    console.log("Editar producto:", product, "en índice:", index);
   };
 
   const formatCurrency = (amount: number) => {
@@ -325,74 +321,14 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
               </div>
 
               {items.length > 0 && (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Producto</TableHead>
-                        <TableHead className="w-32">Cantidad</TableHead>
-                        <TableHead className="w-40 text-right">
-                          Precio Unit.
-                        </TableHead>
-                        <TableHead className="w-40 text-right">
-                          Subtotal
-                        </TableHead>
-                        <TableHead className="w-16"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">
-                            {item.productName}
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "quantity",
-                                  e.target.value
-                                )
-                              }
-                              className="h-8"
-                            />
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(item.price)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(item.subtotal)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveItem(index)}
-                              className="text-error hover:text-error/90"
-                            >
-                              <IconTrash size={16} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-right font-bold">
-                          Total:
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-lg">
-                          {formatCurrency(totalAmount)}
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
+                <OrderProductTable
+                  items={items}
+                  products={products}
+                  onRemoveItem={handleRemoveItem}
+                  onItemChange={handleItemChange}
+                  onEditProduct={handleEditProduct}
+                  formatCurrency={formatCurrency}
+                />
               )}
 
               {items.length === 0 && (
