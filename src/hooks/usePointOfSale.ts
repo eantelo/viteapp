@@ -4,11 +4,8 @@ import type { ProductDto } from "@/api/productsApi";
 import { getProductByBarcode, getProducts } from "@/api/productsApi";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
-import type { SaleDto, PaymentCreateDto } from "@/api/salesApi";
+import type { SaleDto } from "@/api/salesApi";
 import { createSale } from "@/api/salesApi";
-import type { PosHoldDto, PosHoldUpsertDto } from "@/api/posApi";
-import { getPosHolds, savePosHold } from "@/api/posApi";
-import { useAuth } from "@/context/AuthContext";
 
 export interface PosLineItem {
   productId: string;
@@ -21,9 +18,7 @@ export interface PosLineItem {
   brand?: string;
 }
 
-const DEFAULT_TAX_RATE = Number(
-  (import.meta as any).env?.VITE_DEFAULT_TAX_RATE ?? 0.0825
-);
+const TAX_RATE = 0.0825;
 
 interface HeldOrderSnapshot {
   items: PosLineItem[];
@@ -52,66 +47,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   const [customerId, setCustomerId] = useState("");
 
   const [discount, setDiscount] = useState(0);
+  const [heldOrder, setHeldOrder] = useState<HeldOrderSnapshot | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Payment dialog state
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
-    "Cash" | "Card" | "Voucher" | "Transfer" | "Other"
-  >("Cash");
-  const [amountReceived, setAmountReceived] = useState<number | null>(null);
-  const [paymentReference, setPaymentReference] = useState("");
-
-  // Holds management
-  const [holds, setHolds] = useState<PosHoldDto[]>([]);
-  const [holdsLoading, setHoldsLoading] = useState(false);
-
-  // Tenant/User scoped storage keys
-  const { auth } = useAuth();
-  const storageScope = `${auth?.tenantId ?? "global"}:${
-    auth?.userId ?? "anon"
-  }`;
-  const HELD_ORDER_KEY = `pos:heldOrder:${storageScope}`;
-  const TAX_RATE_KEY = `pos:taxRate:${auth?.tenantId ?? "global"}`;
-
-  // Tax rate configurable per tenant (persisted)
-  const readTaxRateFromStorage = useCallback(() => {
-    const raw =
-      typeof window !== "undefined" ? localStorage.getItem(TAX_RATE_KEY) : null;
-    const parsed = raw != null ? Number(raw) : NaN;
-    return Number.isFinite(parsed) ? parsed : DEFAULT_TAX_RATE;
-  }, [TAX_RATE_KEY]);
-
-  const [taxRate, setTaxRate] = useState<number>(readTaxRateFromStorage);
-
-  // Reload tax rate when tenant changes
-  useEffect(() => {
-    setTaxRate(readTaxRateFromStorage());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth?.tenantId]);
-
-  // Persist tax rate changes
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(TAX_RATE_KEY, String(taxRate));
-    }
-  }, [TAX_RATE_KEY, taxRate]);
-
-  // Load holds list on mount/tenant change
-  useEffect(() => {
-    async function loadHolds() {
-      setHoldsLoading(true);
-      try {
-        const data = await getPosHolds();
-        setHolds(data);
-      } catch (error) {
-        console.error("Failed to load holds", error);
-      } finally {
-        setHoldsLoading(false);
-      }
-    }
-    loadHolds();
-  }, [auth?.tenantId, auth?.userId]);
 
   const loadCustomers = useCallback(async () => {
     setCustomersLoading(true);
@@ -305,48 +242,23 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     setDiscount(0);
   }, []);
 
-  const holdOrder = useCallback(async () => {
+  const holdOrder = useCallback(() => {
     if (items.length === 0) {
       return;
     }
-    setHoldsLoading(true);
-    try {
-      const dto: PosHoldUpsertDto = {
-        customerId,
-        discount,
-        notes: null,
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-        })),
-      };
-      const saved = await savePosHold(dto);
-      setHolds((current) => [saved, ...current]);
-      clearOrder();
-    } catch (error) {
-      console.error("Failed to save hold", error);
-    } finally {
-      setHoldsLoading(false);
-    }
+    setHeldOrder({ items, customerId, discount });
+    clearOrder();
   }, [clearOrder, customerId, discount, items]);
 
   const resumeHeldOrder = useCallback(() => {
-    // Try to restore from localStorage
-    if (typeof window !== "undefined") {
-      const raw = localStorage.getItem(HELD_ORDER_KEY);
-      if (raw) {
-        try {
-          const snapshot = JSON.parse(raw) as HeldOrderSnapshot;
-          setItems(snapshot.items);
-          setCustomerId(snapshot.customerId);
-          setDiscount(snapshot.discount);
-          localStorage.removeItem(HELD_ORDER_KEY);
-        } catch {
-          // Invalid snapshot, ignore
-        }
-      }
+    if (!heldOrder) {
+      return;
     }
-  }, [HELD_ORDER_KEY]);
+    setItems(heldOrder.items);
+    setCustomerId(heldOrder.customerId);
+    setDiscount(heldOrder.discount);
+    setHeldOrder(null);
+  }, [heldOrder]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -366,8 +278,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   );
 
   const taxAmount = useMemo(
-    () => Number((taxableBase * taxRate).toFixed(2)),
-    [taxableBase, taxRate]
+    () => Number((taxableBase * TAX_RATE).toFixed(2)),
+    [taxableBase]
   );
 
   const total = useMemo(
@@ -386,23 +298,6 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
     setIsSubmitting(true);
     try {
-      const payments: PaymentCreateDto[] = [];
-
-      if (selectedPaymentMethod === "Cash") {
-        const received = amountReceived ?? total;
-        payments.push({
-          method: "Cash",
-          amount: total,
-          amountReceived: received,
-        });
-      } else {
-        payments.push({
-          method: selectedPaymentMethod,
-          amount: total,
-          reference: paymentReference || undefined,
-        });
-      }
-
       const sale = await createSale({
         date: new Date().toISOString(),
         customerId,
@@ -410,29 +305,16 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
           productId: item.productId,
           quantity: item.quantity,
         })),
-        payments,
       });
 
       clearOrder();
-      setIsPaymentDialogOpen(false);
-      setAmountReceived(null);
-      setPaymentReference("");
-      setSelectedPaymentMethod("Cash");
+      setHeldOrder(null);
       onSaleCreated?.(sale);
       return sale;
     } finally {
       setIsSubmitting(false);
     }
-  }, [
-    clearOrder,
-    customerId,
-    items,
-    selectedPaymentMethod,
-    amountReceived,
-    paymentReference,
-    total,
-    onSaleCreated,
-  ]);
+  }, [clearOrder, customerId, items, onSaleCreated]);
 
   return {
     items,
@@ -454,28 +336,16 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     clearOrder,
     holdOrder,
     resumeHeldOrder,
-    hasHeldOrder: false, // Placeholder - can be enhanced later
-    holds,
-    holdsLoading,
+    hasHeldOrder: Boolean(heldOrder),
     subtotal,
     discount,
     setDiscount,
     appliedDiscount,
     taxAmount,
-    taxRate,
-    setTaxRate,
+    taxRate: TAX_RATE,
     total,
     submitSale,
     isSubmitting,
     reloadCustomers: loadCustomers,
-    // Payment dialog state and handlers
-    isPaymentDialogOpen,
-    setIsPaymentDialogOpen,
-    selectedPaymentMethod,
-    setSelectedPaymentMethod,
-    amountReceived,
-    setAmountReceived,
-    paymentReference,
-    setPaymentReference,
   };
 }

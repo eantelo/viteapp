@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   IconBarcode,
   IconMinus,
@@ -47,7 +47,6 @@ import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import type { ProductDto } from "@/api/productsApi";
-import { PaymentDialog } from "@/components/pos/PaymentDialog";
 
 function formatSku(sku?: string) {
   return sku ? sku.toUpperCase() : "—";
@@ -99,23 +98,14 @@ export function PointOfSalePage() {
     appliedDiscount,
     taxAmount,
     taxRate,
-    setTaxRate,
     total,
     submitSale,
     isSubmitting,
     reloadCustomers,
-    isPaymentDialogOpen,
-    setIsPaymentDialogOpen,
-    selectedPaymentMethod,
-    setSelectedPaymentMethod,
-    amountReceived,
-    setAmountReceived,
-    paymentReference,
-    setPaymentReference,
   } = usePointOfSale({
     onSaleCreated: (sale) => {
       toast({
-        title: "Venta Registrada",
+        title: "Venta registrada",
         description: `Folio #${sale.saleNumber} guardado correctamente`,
       });
     },
@@ -131,18 +121,6 @@ export function PointOfSalePage() {
   );
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
-
-  const [selectedResultIndex, setSelectedResultIndex] = useState<number | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (searchTerm.trim() && searchResults.length > 0) {
-      setSelectedResultIndex(0);
-    } else {
-      setSelectedResultIndex(null);
-    }
-  }, [searchResults, searchTerm]);
 
   const handleLookupSubmit = async () => {
     const code = searchTerm.trim();
@@ -179,9 +157,6 @@ export function PointOfSalePage() {
   };
 
   const handleHold = () => {
-    if (items.length === 0) {
-      return;
-    }
     holdOrder();
     toast({
       title: "Orden en espera",
@@ -190,9 +165,6 @@ export function PointOfSalePage() {
   };
 
   const handleResume = () => {
-    if (!hasHeldOrder) {
-      return;
-    }
     resumeHeldOrder();
     toast({
       title: "Orden restaurada",
@@ -208,18 +180,7 @@ export function PointOfSalePage() {
     });
   };
 
-  const handleCharge = () => {
-    if (items.length === 0 || !customerId) {
-      return;
-    }
-    setIsPaymentDialogOpen(true);
-  };
-
-  const handlePaymentConfirm = async (
-    _method: string,
-    _amountReceived?: number,
-    _reference?: string
-  ) => {
+  const handleCharge = async () => {
     try {
       await submitSale();
     } catch (error) {
@@ -242,82 +203,6 @@ export function PointOfSalePage() {
       setDiscount(numeric);
     }
   };
-
-  const handleTaxRateChange = (value: string) => {
-    if (!value) {
-      setTaxRate(0);
-      return;
-    }
-    const numeric = Number(value);
-    if (!Number.isNaN(numeric)) {
-      const next = Math.max(0, numeric) / 100;
-      setTaxRate(next);
-    }
-  };
-
-  const handleGlobalKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      // Atajos globales solo para la página de POS
-      // F2 o Ctrl+L: enfocar y seleccionar el input de búsqueda
-      if (
-        event.key === "F2" ||
-        (event.ctrlKey && (event.key === "l" || event.key === "L"))
-      ) {
-        event.preventDefault();
-        selectScanInput();
-        return;
-      }
-
-      // Ctrl+Enter: intentar cobrar
-      if (event.ctrlKey && event.key === "Enter") {
-        event.preventDefault();
-        if (!isSubmitting) {
-          void handleCharge();
-        }
-        return;
-      }
-
-      // Ctrl+H / Ctrl+Shift+H: poner en espera / reanudar orden
-      if (event.ctrlKey && (event.key === "h" || event.key === "H")) {
-        event.preventDefault();
-        if (event.shiftKey) {
-          handleResume();
-        } else {
-          handleHold();
-        }
-        return;
-      }
-
-      // Esc: limpiar campo de búsqueda cuando tiene foco
-      if (event.key === "Escape") {
-        const searchInput = searchInputRef.current;
-        if (
-          searchInput &&
-          document.activeElement === searchInput &&
-          searchTerm
-        ) {
-          event.preventDefault();
-          setSearchTerm("");
-        }
-      }
-    },
-    [
-      handleCharge,
-      handleHold,
-      handleResume,
-      isSubmitting,
-      searchTerm,
-      selectScanInput,
-      setSearchTerm,
-    ]
-  );
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleGlobalKeyDown);
-    };
-  }, [handleGlobalKeyDown]);
 
   return (
     <PageTransition>
@@ -350,44 +235,8 @@ export function PointOfSalePage() {
                         placeholder="Escanea código o busca por nombre"
                         onChange={(event) => setSearchTerm(event.target.value)}
                         onKeyDown={(event) => {
-                          if (
-                            event.key === "ArrowDown" &&
-                            searchResults.length > 0
-                          ) {
-                            event.preventDefault();
-                            setSelectedResultIndex((current) => {
-                              if (current === null) return 0;
-                              const next = current + 1;
-                              return next >= searchResults.length ? 0 : next;
-                            });
-                            return;
-                          }
-
-                          if (
-                            event.key === "ArrowUp" &&
-                            searchResults.length > 0
-                          ) {
-                            event.preventDefault();
-                            setSelectedResultIndex((current) => {
-                              if (current === null)
-                                return searchResults.length - 1;
-                              const next = current - 1;
-                              return next < 0 ? searchResults.length - 1 : next;
-                            });
-                            return;
-                          }
-
                           if (event.key === "Enter") {
                             event.preventDefault();
-                            if (
-                              searchResults.length > 0 &&
-                              selectedResultIndex !== null
-                            ) {
-                              const product =
-                                searchResults[selectedResultIndex];
-                              handleSelectProduct(product);
-                              return;
-                            }
                             if (!isLookupPending) {
                               void handleLookupSubmit();
                             }
@@ -422,37 +271,30 @@ export function PointOfSalePage() {
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        {searchResults.map((product, index) => {
-                          const isSelected = index === selectedResultIndex;
-                          return (
-                            <button
-                              key={product.id}
-                              type="button"
-                              onClick={() => handleSelectProduct(product)}
-                              className={`flex w-full items-center gap-3 rounded-md border bg-white p-2 text-left shadow-sm transition dark:bg-slate-900 ${
-                                isSelected
-                                  ? "border-primary bg-primary/10"
-                                  : "border-transparent hover:border-primary hover:bg-primary/5"
-                              }`}
-                            >
-                              <Avatar className="bg-primary/10 text-primary">
-                                <AvatarFallback>
-                                  {product.name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                  {product.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  SKU {formatSku(product.sku)} ·{" "}
-                                  {formatCurrency(product.price)}
-                                </p>
-                              </div>
-                              <IconPackage className="hidden size-5 text-muted-foreground md:block" />
-                            </button>
-                          );
-                        })}
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => handleSelectProduct(product)}
+                            className="flex w-full items-center gap-3 rounded-md border border-transparent bg-white p-2 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 dark:bg-slate-900"
+                          >
+                            <Avatar className="bg-primary/10 text-primary">
+                              <AvatarFallback>
+                                {product.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                {product.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                SKU {formatSku(product.sku)} ·{" "}
+                                {formatCurrency(product.price)}
+                              </p>
+                            </div>
+                            <IconPackage className="hidden size-5 text-muted-foreground md:block" />
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -654,27 +496,13 @@ export function PointOfSalePage() {
                     className="h-9"
                   />
                 </div>
-                <div className="flex flex-col gap-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">
-                      Impuesto ({(taxRate * 100).toFixed(2)}%)
-                    </span>
-                    <span className="font-semibold">
-                      {formatCurrency(taxAmount)}
-                    </span>
-                  </div>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={taxRate === 0 ? "" : (taxRate * 100).toFixed(2)}
-                    onChange={(event) =>
-                      handleTaxRateChange(event.target.value)
-                    }
-                    placeholder="8.25"
-                    className="h-9"
-                  />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Impuesto ({(taxRate * 100).toFixed(2)}%)
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(taxAmount)}
+                  </span>
                 </div>
                 <Separator className="my-3" />
                 <div className="flex items-center justify-between">
@@ -752,21 +580,6 @@ export function PointOfSalePage() {
             </Card>
           </div>
         </div>
-
-        {/* Payment Dialog */}
-        <PaymentDialog
-          isOpen={isPaymentDialogOpen}
-          onClose={() => setIsPaymentDialogOpen(false)}
-          onConfirm={handlePaymentConfirm}
-          total={total}
-          selectedMethod={selectedPaymentMethod}
-          onMethodChange={setSelectedPaymentMethod}
-          amountReceived={amountReceived}
-          onAmountReceivedChange={setAmountReceived}
-          reference={paymentReference}
-          onReferenceChange={setPaymentReference}
-          isLoading={isSubmitting}
-        />
       </DashboardLayout>
     </PageTransition>
   );

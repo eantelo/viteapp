@@ -37,10 +37,6 @@ Responsabilidades clave:
 
 Se puede inyectar un callback opcional `onSaleCreated` (usado en la página para mostrar un toast de éxito cuando `createSale` responde).
 
-### Novedades (Persistencia y Configuración)
-- Órdenes en espera persistidas: ahora `holdOrder` serializa un snapshot a `localStorage` con scope por tenant/usuario. Clave: `pos:heldOrder:{tenantId}:{userId}`. Tras reanudar, se elimina del storage.
-- Impuesto configurable por tenant: `taxRate` se persiste por tenant en `localStorage` (clave `pos:taxRate:{tenantId}`) y puede inicializarse desde la variable de entorno `VITE_DEFAULT_TAX_RATE` (por defecto 0.0825). La UI permite editar el porcentaje.
-
 ## Componentes y patrones reusados
 
 - **shadcn/ui**: `Card`, `Table`, `Select`, `Badge`, `Input`, `Button`, `Avatar`, `Skeleton`, `Separator` y `Spinner` garantizan estilo consistente.
@@ -49,9 +45,9 @@ Se puede inyectar un callback opcional `onSaleCreated` (usado en la página para
 
 ## Futuras mejoras sugeridas
 
-1. (Opcional) Persistencia de múltiples órdenes en espera: endpoint dedicado en API para manejar varias órdenes con nombre/fecha/total y listado.
-2. Descuentos avanzados: cupones y combos validados server-side.
-3. Selección de cliente rápida: buscador incremental/modal para tenants con >100 clientes.
-4. Pagos: integrar pasarelas (Stripe/MercadoPago) y flujo de cambio en efectivo.
+1. **Persistencia de órdenes en espera**: actualmente se almacenan en memoria; podría serializarse en `localStorage` o en un endpoint dedicado.
+2. **Descuentos avanzados**: hoy es un campo manual. Se puede extender para soportar cupones o combos validados server-side.
+3. **Selección de cliente rápida**: agregar buscador incremental o modal para tenants con >100 clientes.
+4. **Pagos**: integrar pasarelas (Stripe/MercadoPago) reutilizando el resumen calculado en el hook.
 
 Esta documentación debe acompañar cualquier cambio futuro en el flujo POS para mantener alineados al frontend y a `Sales.Api`.

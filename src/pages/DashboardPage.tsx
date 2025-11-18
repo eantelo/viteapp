@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/Spinner";
-import { PaymentSummary } from "@/components/sales/PaymentSummary";
 import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
@@ -274,29 +273,6 @@ export function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </motion.section>
-
-        <motion.section
-          className="space-y-4"
-          initial={fadeInInitial}
-          animate={fadeInAnimate}
-          transition={{
-            duration: prefersReducedMotion ? 0 : 0.5,
-            delay: prefersReducedMotion ? 0 : 0.2,
-            ease: defaultEase,
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900">
-                Resumen de Pagos
-              </h2>
-              <p className="text-sm text-slate-500">
-                Estadísticas de ventas y métodos de pago (últimos 30 días)
-              </p>
-            </div>
-          </div>
-          <PaymentSummary />
         </motion.section>
       </DashboardLayout>
     </PageTransition>
