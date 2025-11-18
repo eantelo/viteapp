@@ -45,6 +45,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
   const [customersLoading, setCustomersLoading] = useState(false);
   const [customerId, setCustomerId] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
 
   const [discount, setDiscount] = useState(0);
   const [heldOrder, setHeldOrder] = useState<HeldOrderSnapshot | null>(null);
@@ -287,6 +288,18 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     [taxAmount, taxableBase]
   );
 
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearchTerm.trim()) {
+      return customers;
+    }
+    const term = customerSearchTerm.toLowerCase();
+    return customers.filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(term) ||
+        customer.email.toLowerCase().includes(term)
+    );
+  }, [customers, customerSearchTerm]);
+
   const submitSale = useCallback(async () => {
     if (!customerId) {
       throw new Error("Selecciona un cliente antes de cobrar");
@@ -322,6 +335,9 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     customersLoading,
     customerId,
     setCustomerId,
+    customerSearchTerm,
+    setCustomerSearchTerm,
+    filteredCustomers,
     searchTerm,
     setSearchTerm,
     searchResults,

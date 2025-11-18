@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   IconBarcode,
   IconMinus,
@@ -33,16 +33,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
+import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useToast } from "@/hooks/use-toast";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -71,12 +65,17 @@ export function PointOfSalePage() {
     focusScanInput();
   }, [focusScanInput]);
 
+  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+
   const {
     items,
     customers,
     customersLoading,
     customerId,
     setCustomerId,
+    customerSearchTerm,
+    setCustomerSearchTerm,
+    filteredCustomers,
     searchTerm,
     setSearchTerm,
     searchResults,
@@ -201,6 +200,21 @@ export function PointOfSalePage() {
     const numeric = Number(value);
     if (!Number.isNaN(numeric)) {
       setDiscount(numeric);
+    }
+  };
+
+  const handleCreateCustomer = () => {
+    setIsCustomerDialogOpen(true);
+  };
+
+  const handleCustomerDialogClose = async (saved: boolean) => {
+    setIsCustomerDialogOpen(false);
+    if (saved) {
+      await reloadCustomers();
+      toast({
+        title: "Cliente creado",
+        description: "El nuevo cliente ha sido agregado",
+      });
     }
   };
 
@@ -416,36 +430,72 @@ export function PointOfSalePage() {
               <CardHeader className="pb-3">
                 <CardTitle>Cliente</CardTitle>
                 <CardDescription>
-                  Asigna la venta a un cliente activo
+                  Busca o crea un cliente para la venta
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pos-customer">Selecciona cliente</Label>
-                  <Select
-                    value={customerId}
-                    onValueChange={setCustomerId}
-                    disabled={customersLoading}
-                  >
-                    <SelectTrigger id="pos-customer">
-                      <SelectValue placeholder="Selecciona un cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="customer-search">Buscar cliente</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="customer-search"
+                      value={customerSearchTerm}
+                      onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                      placeholder="Nombre o email del cliente"
+                    />
+                    <Button variant="outline" onClick={handleCreateCustomer}>
+                      <IconUser className="size-4" />
+                      Nuevo
+                    </Button>
+                  </div>
                 </div>
+
+                {customerSearchTerm.trim() && (
+                  <div className="rounded-lg border border-dashed bg-slate-50 p-3 dark:bg-slate-900/30 max-h-40 overflow-y-auto">
+                    {filteredCustomers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No se encontraron clientes. Crea uno nuevo.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredCustomers.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            onClick={() => setCustomerId(customer.id)}
+                            className={`flex w-full items-center gap-3 rounded-md border border-transparent bg-white p-2 text-left shadow-sm transition hover:border-primary hover:bg-primary/5 dark:bg-slate-900 ${
+                              customerId === customer.id
+                                ? "border-primary bg-primary/5"
+                                : ""
+                            }`}
+                          >
+                            <Avatar className="bg-primary/10 text-primary">
+                              <AvatarFallback>
+                                {customer.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                {customer.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {customer.email}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <IconUser className="size-4" />
                     <span>
                       {customerId
-                        ? customers.find((c) => c.id === customerId)?.email
-                        : "Sin cliente asignado"}
+                        ? customers.find((c) => c.id === customerId)?.name
+                        : "Sin cliente seleccionado"}
                     </span>
                   </div>
                   <Button
@@ -581,6 +631,11 @@ export function PointOfSalePage() {
           </div>
         </div>
       </DashboardLayout>
+      <CustomerFormDialog
+        open={isCustomerDialogOpen}
+        customer={null}
+        onClose={handleCustomerDialogClose}
+      />
     </PageTransition>
   );
 }
