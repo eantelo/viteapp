@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import type { ApiError } from "@/api/apiClient";
 import type { ProductDto } from "@/api/productsApi";
 import { getProductByBarcode, getProducts } from "@/api/productsApi";
@@ -11,6 +11,12 @@ import {
   type PaymentCreateDto,
   type PaymentMethodType,
 } from "@/api/salesApi";
+import type { HeldOrderDto, HeldOrderItemDto } from "@/api/heldOrdersApi";
+import {
+  getHeldOrders,
+  createHeldOrder,
+  deleteHeldOrder,
+} from "@/api/heldOrdersApi";
 
 export interface PosLineItem {
   productId: string;
@@ -24,12 +30,7 @@ export interface PosLineItem {
 }
 
 const TAX_RATE = 0.0825;
-
-interface HeldOrderSnapshot {
-  items: PosLineItem[];
-  customerId: string;
-  discount: number;
-}
+const AUTO_SAVE_INTERVAL = 30000; // 30 segundos
 
 export interface UsePointOfSaleOptions {
   /**
@@ -59,8 +60,10 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
 
   const [discount, setDiscount] = useState(0);
-  const [heldOrder, setHeldOrder] = useState<HeldOrderSnapshot | null>(null);
+  const [heldOrders, setHeldOrders] = useState<HeldOrderDto[]>([]);
+  const [heldOrdersLoading, setHeldOrdersLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const autoSaveTimerRef = useRef<number | null>(null);
 
   const loadCustomers = useCallback(async () => {
     setCustomersLoading(true);
@@ -76,9 +79,22 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     }
   }, []);
 
+  const loadHeldOrders = useCallback(async () => {
+    setHeldOrdersLoading(true);
+    try {
+      const orders = await getHeldOrders();
+      setHeldOrders(orders);
+    } catch (error) {
+      console.error("Failed to load held orders", error);
+    } finally {
+      setHeldOrdersLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadCustomers();
-  }, [loadCustomers]);
+    loadHeldOrders();
+  }, [loadCustomers, loadHeldOrders]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -252,25 +268,127 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   const clearOrder = useCallback(() => {
     setItems([]);
     setDiscount(0);
+    // Limpiar auto-guardado al vaciar la orden
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
   }, []);
 
-  const holdOrder = useCallback(() => {
+  const holdOrder = useCallback(async () => {
     if (items.length === 0) {
       return;
     }
-    setHeldOrder({ items, customerId, discount });
-    clearOrder();
-  }, [clearOrder, customerId, discount, items]);
 
-  const resumeHeldOrder = useCallback(() => {
-    if (!heldOrder) {
-      return;
+    const heldItems: HeldOrderItemDto[] = items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      sku: item.sku,
+      price: item.price,
+      quantity: item.quantity,
+      stock: item.stock,
+      barcode: item.barcode,
+      brand: item.brand,
+    }));
+
+    const customerName = customerId
+      ? customers.find((c) => c.id === customerId)?.name
+      : undefined;
+
+    try {
+      await createHeldOrder({
+        customerId: customerId || null,
+        customerName,
+        items: heldItems,
+        discount,
+      });
+
+      clearOrder();
+      await loadHeldOrders();
+    } catch (error) {
+      console.error("Failed to hold order", error);
+      throw error;
     }
-    setItems(heldOrder.items);
-    setCustomerId(heldOrder.customerId);
-    setDiscount(heldOrder.discount);
-    setHeldOrder(null);
-  }, [heldOrder]);
+  }, [items, customerId, customers, discount, clearOrder, loadHeldOrders]);
+
+  const resumeHeldOrder = useCallback((order: HeldOrderDto) => {
+    const restoredItems: PosLineItem[] = order.items.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      sku: item.sku,
+      price: item.price,
+      quantity: item.quantity,
+      stock: item.stock,
+      barcode: item.barcode,
+      brand: item.brand,
+    }));
+
+    setItems(restoredItems);
+    setCustomerId(order.customerId || "");
+    setDiscount(order.discount);
+  }, []);
+
+  const removeHeldOrder = useCallback(
+    async (orderId: string) => {
+      try {
+        await deleteHeldOrder(orderId);
+        await loadHeldOrders();
+      } catch (error) {
+        console.error("Failed to delete held order", error);
+        throw error;
+      }
+    },
+    [loadHeldOrders]
+  );
+
+  // Auto-guardado de orden actual
+  useEffect(() => {
+    // Limpiar timer previo
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    // Solo auto-guardar si hay items y el auto-guardado está habilitado
+    if (items.length > 0) {
+      autoSaveTimerRef.current = window.setTimeout(async () => {
+        try {
+          const heldItems: HeldOrderItemDto[] = items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            sku: item.sku,
+            price: item.price,
+            quantity: item.quantity,
+            stock: item.stock,
+            barcode: item.barcode,
+            brand: item.brand,
+          }));
+
+          const customerName = customerId
+            ? customers.find((c) => c.id === customerId)?.name
+            : undefined;
+
+          await createHeldOrder({
+            customerId: customerId || null,
+            customerName,
+            items: heldItems,
+            discount,
+          });
+
+          await loadHeldOrders();
+        } catch (error) {
+          console.error("Auto-save failed", error);
+        }
+      }, AUTO_SAVE_INTERVAL);
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [items, customerId, customers, discount, loadHeldOrders]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -366,14 +484,14 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         });
 
         clearOrder();
-        setHeldOrder(null);
+        await loadHeldOrders();
         onSaleCreated?.(sale);
         return sale;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [clearOrder, customerId, items, total, onSaleCreated]
+    [clearOrder, customerId, items, total, onSaleCreated, loadHeldOrders]
   );
 
   return {
@@ -399,7 +517,10 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     clearOrder,
     holdOrder,
     resumeHeldOrder,
-    hasHeldOrder: Boolean(heldOrder),
+    removeHeldOrder,
+    heldOrders,
+    heldOrdersLoading,
+    reloadHeldOrders: loadHeldOrders,
     subtotal,
     discount,
     setDiscount,

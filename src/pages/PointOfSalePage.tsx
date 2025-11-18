@@ -4,7 +4,6 @@ import {
   IconUser,
   IconRefresh,
   IconPlayerPause,
-  IconPlayerPlay,
   IconCreditCardPay,
   IconPackage,
   IconHelp,
@@ -30,6 +29,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { CustomerCard } from "@/components/customers/CustomerDetailCard";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
+import { HeldOrdersPanel } from "@/components/sales/HeldOrdersPanel";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
 import { OrderProductTablePos } from "@/components/sales/OrderProductTablePos";
 import { KeyboardShortcutsModal } from "@/components/keyboard/KeyboardShortcutsModal";
@@ -50,6 +50,7 @@ export function PointOfSalePage() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
+  const [isHeldOrdersPanelOpen, setIsHeldOrdersPanelOpen] = useState(false);
   const [isGenericCustomer, setIsGenericCustomer] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [selectedCustomerIndex, setSelectedCustomerIndex] = useState(-1);
@@ -85,7 +86,9 @@ export function PointOfSalePage() {
     clearOrder,
     holdOrder,
     resumeHeldOrder,
-    hasHeldOrder,
+    removeHeldOrder,
+    heldOrders,
+    heldOrdersLoading,
     subtotal,
     discount,
     setDiscount,
@@ -166,20 +169,20 @@ export function PointOfSalePage() {
     setSearchTerm("");
   };
 
-  const handleHold = () => {
-    holdOrder();
-    toast({
-      title: "Orden en espera",
-      description: "Puedes reanudarla cuando lo necesites",
-    });
-  };
-
-  const handleResume = () => {
-    resumeHeldOrder();
-    toast({
-      title: "Orden restaurada",
-      description: "Continuemos con el cobro",
-    });
+  const handleHold = async () => {
+    try {
+      await holdOrder();
+      toast({
+        title: "Orden guardada",
+        description: "La orden se guardó correctamente en el servidor",
+      });
+    } catch (error) {
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar la orden en espera",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClear = () => {
@@ -327,7 +330,7 @@ export function PointOfSalePage() {
       enabled: items.length > 0,
       handler: () => {
         triggerIndicator("F8");
-        handleHold();
+        void handleHold();
       },
     },
     {
@@ -403,7 +406,21 @@ export function PointOfSalePage() {
         className="flex flex-1 flex-col gap-6 p-4"
       >
         {/* Botón flotante para ayuda */}
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          {heldOrders.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsHeldOrdersPanelOpen(true)}
+              className="gap-2 relative"
+            >
+              <IconPlayerPause className="size-4" />
+              <span className="text-xs">Órdenes en espera</span>
+              <Badge variant="default" className="ml-1">
+                {heldOrders.length}
+              </Badge>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -786,16 +803,6 @@ export function PointOfSalePage() {
                     />
                   </Button>
                 </div>
-                {hasHeldOrder && (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={handleResume}
-                  >
-                    <IconPlayerPlay className="size-4" />
-                    Reanudar orden guardada
-                  </Button>
-                )}
                 <Button
                   className="w-full group relative"
                   size="lg"
@@ -834,6 +841,35 @@ export function PointOfSalePage() {
           </div>
         </div>
       </DashboardLayout>
+      <HeldOrdersPanel
+        open={isHeldOrdersPanelOpen}
+        onOpenChange={setIsHeldOrdersPanelOpen}
+        orders={heldOrders}
+        loading={heldOrdersLoading}
+        onResume={(order) => {
+          resumeHeldOrder(order);
+          toast({
+            title: "Orden recuperada",
+            description: "Continuemos con el cobro",
+          });
+        }}
+        onDelete={async (orderId) => {
+          try {
+            await removeHeldOrder(orderId);
+            toast({
+              title: "Orden eliminada",
+              description: "La orden en espera fue eliminada",
+            });
+          } catch (error) {
+            toast({
+              title: "Error",
+              description: "No se pudo eliminar la orden",
+              variant: "destructive",
+            });
+          }
+        }}
+        formatCurrency={formatCurrency}
+      />
       <CustomerFormDialog
         open={isCustomerDialogOpen}
         customer={null}
