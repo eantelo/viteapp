@@ -1,4 +1,4 @@
-import { AnimatePresence } from "framer-motion";
+
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LandingPage } from "@/pages/LandingPage";
@@ -10,6 +10,7 @@ import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
 import { SalesHistoryPage } from "@/pages/SalesHistoryPage";
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
+import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -18,23 +19,22 @@ function App() {
 
   return (
     <>
-      <AnimatePresence mode="wait" initial={false}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/sales/history" element={<SalesHistoryPage />} />
-            <Route path="/sales" element={<SalesPage />} />
-            <Route path="/pos" element={<PointOfSalePage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/catalog" element={<ProductCatalogPage />} />
-            <Route path="/customers" element={<CustomersPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AnimatePresence>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/sales/history" element={<SalesHistoryPage />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/pos" element={<PointOfSalePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/catalog" element={<ProductCatalogPage />} />
+          <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/settings" element={<TenantSettingsPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
       <Toaster />
     </>
   );
