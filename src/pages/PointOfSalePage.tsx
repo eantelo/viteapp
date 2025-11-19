@@ -43,6 +43,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
+import type { CustomerDto } from "@/api/customersApi";
 import { type PaymentMethodType } from "@/api/salesApi";
 import { cn } from "@/lib/utils";
 
