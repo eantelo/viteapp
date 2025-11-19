@@ -265,6 +265,14 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     );
   }, []);
 
+  const updateItemPrice = useCallback((productId: string, newPrice: number) => {
+    setItems((current) =>
+      current.map((item) =>
+        item.productId === productId ? { ...item, price: newPrice } : item
+      )
+    );
+  }, []);
+
   const clearOrder = useCallback(() => {
     setItems([]);
     setDiscount(0);
@@ -532,5 +540,6 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     submitSale,
     isSubmitting,
     reloadCustomers: loadCustomers,
+    updateItemPrice,
   };
 }

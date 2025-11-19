@@ -107,6 +107,7 @@ export function PointOfSalePage() {
     submitSale,
     isSubmitting,
     reloadCustomers,
+    updateItemPrice,
   } = usePointOfSale({
     onSaleCreated: (sale) => {
       toast({
@@ -584,6 +585,7 @@ export function PointOfSalePage() {
                         }
                       }
                     }}
+                    onPriceChange={updateItemPrice}
                     formatCurrency={formatCurrency}
                   />
                 )}

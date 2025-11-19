@@ -39,6 +39,7 @@ interface OrderProductTablePosProps {
   onDecrement: (productId: string) => void;
   onRemoveItem: (productId: string) => void;
   onQuantityChange?: (productId: string, quantity: number) => void;
+  onPriceChange?: (productId: string, price: number) => void;
   onEditProduct?: (productId: string) => void;
   formatCurrency: (amount: number) => string;
 }
@@ -49,11 +50,14 @@ export function OrderProductTablePos({
   onDecrement,
   onRemoveItem,
   onQuantityChange,
+  onPriceChange,
   onEditProduct,
   formatCurrency,
 }: OrderProductTablePosProps) {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editingQuantity, setEditingQuantity] = useState<number>(0);
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [editingPrice, setEditingPrice] = useState<number>(0);
 
   const handleIncrement = (
     productId: string,
@@ -87,6 +91,23 @@ export function OrderProductTablePos({
   const handleQuantityInputChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
     setEditingQuantity(numValue);
+  };
+
+  const handleStartPriceEdit = (productId: string, currentPrice: number) => {
+    setEditingPriceId(productId);
+    setEditingPrice(currentPrice);
+  };
+
+  const handleConfirmPriceEdit = (productId: string) => {
+    if (editingPrice >= 0) {
+      onPriceChange?.(productId, editingPrice);
+    }
+    setEditingPriceId(null);
+  };
+
+  const handlePriceInputChange = (value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setEditingPrice(numValue);
   };
 
   return (
@@ -232,9 +253,35 @@ export function OrderProductTablePos({
 
                   {/* Columna de Precio */}
                   <TableCell className="text-right font-medium">
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {formatCurrency(item.price)}
-                    </span>
+                    {editingPriceId === item.productId ? (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editingPrice}
+                        onChange={(e) => handlePriceInputChange(e.target.value)}
+                        onBlur={() => handleConfirmPriceEdit(item.productId)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleConfirmPriceEdit(item.productId);
+                          }
+                        }}
+                        autoFocus
+                        className="h-11 w-24 text-right font-semibold ml-auto"
+                      />
+                    ) : (
+                      <div
+                        onClick={() =>
+                          handleStartPriceEdit(item.productId, item.price)
+                        }
+                        className="cursor-pointer px-2 py-2 rounded border border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        title="Click para editar precio"
+                      >
+                        <span className="text-gray-700 dark:text-gray-300">
+                          {formatCurrency(item.price)}
+                        </span>
+                      </div>
+                    )}
                   </TableCell>
 
                   {/* Columna de Total */}
