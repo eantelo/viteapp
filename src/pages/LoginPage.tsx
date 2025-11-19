@@ -90,7 +90,10 @@ export function LoginPage() {
         footer={
           <div className="text-muted-foreground">
             ¿Aún no tienes cuenta?{" "}
-            <Link to="/register" className="font-semibold text-primary hover:underline">
+            <Link
+              to="/register"
+              className="font-semibold text-primary hover:underline"
+            >
               Crear cuenta
             </Link>
           </div>
