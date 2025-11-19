@@ -428,7 +428,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     return customers.filter(
       (customer) =>
         customer.name.toLowerCase().includes(term) ||
-        customer.email.toLowerCase().includes(term)
+        customer.email.toLowerCase().includes(term) ||
+        (customer.phone && customer.phone.includes(term))
     );
   }, [customers, customerSearchTerm]);
 

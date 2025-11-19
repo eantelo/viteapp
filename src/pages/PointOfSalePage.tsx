@@ -44,6 +44,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
 import { type PaymentMethodType } from "@/api/salesApi";
+import { cn } from "@/lib/utils";
 
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
@@ -57,6 +58,9 @@ export function PointOfSalePage() {
   const [isGenericCustomer, setIsGenericCustomer] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [selectedCustomerIndex, setSelectedCustomerIndex] = useState(-1);
+  const [customerToEdit, setCustomerToEdit] = useState<CustomerDto | null>(
+    null
+  );
 
   // Referencias para elementos enfocables
   const customerSearchInputRef = useRef<HTMLInputElement>(null);
@@ -596,7 +600,7 @@ export function PointOfSalePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Busqueda con autocomplete */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative">
                   <div className="flex items-center justify-between">
                     <Label>Buscar cliente</Label>
                     <ShortcutBadge shortcut="F3" variant="outline" />
@@ -610,7 +614,7 @@ export function PointOfSalePage() {
                         setSelectedCustomerIndex(-1);
                       }}
                       onKeyDown={handleCustomerSearchKeyDown}
-                      placeholder="Nombre o email del cliente"
+                      placeholder="Nombre, email o teléfono"
                       className="flex-1"
                       onFocus={() => setCustomerSearchOpen(true)}
                       onBlur={() => {
@@ -621,65 +625,88 @@ export function PointOfSalePage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => setIsCustomerDialogOpen(true)}
+                      onClick={() => {
+                        setCustomerToEdit(null);
+                        setIsCustomerDialogOpen(true);
+                      }}
                       title="Crear nuevo cliente"
                     >
                       <IconUserPlus className="size-4" />
                     </Button>
                   </div>
-                </div>
 
-                {/* Dropdown de búsqueda */}
-                {customerSearchOpen && customerSearchTerm.trim() && (
-                  <div
-                    ref={customerDropdownRef}
-                    className="rounded-lg border border-dashed bg-slate-50 dark:bg-slate-900/30 max-h-40 overflow-y-auto p-3"
-                  >
-                    {filteredCustomers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-2">
-                        No se encontraron clientes
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredCustomers.map((customer, index) => (
-                          <button
-                            key={customer.id}
-                            type="button"
-                            onClick={() => handleSelectCustomer(customer.id)}
-                            onMouseEnter={() => setSelectedCustomerIndex(index)}
-                            className={`flex w-full items-center gap-3 rounded-md border p-2 text-left shadow-sm transition ${
-                              selectedCustomerIndex === index
-                                ? "border-primary bg-primary/10 dark:bg-primary/20"
-                                : customerId === customer.id
-                                ? "border-primary bg-primary/5 dark:bg-primary/10"
-                                : "border-transparent bg-white hover:border-primary hover:bg-primary/5 dark:bg-slate-900"
-                            }`}
+                  {/* Dropdown de búsqueda */}
+                  {customerSearchOpen && customerSearchTerm.trim() && (
+                    <div
+                      ref={customerDropdownRef}
+                      className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95"
+                    >
+                      {filteredCustomers.length === 0 ? (
+                        <div className="p-4 text-center">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            No se encontraron clientes
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setCustomerToEdit(null);
+                              setIsCustomerDialogOpen(true);
+                              setCustomerSearchOpen(false);
+                            }}
+                            className="w-full"
                           >
-                            <Avatar className="bg-primary/10 text-primary size-8 shrink-0">
-                              <AvatarFallback className="text-xs">
-                                {customer.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                                {customer.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {customer.email}
-                              </p>
-                            </div>
-                            {customer.totalPurchases &&
-                              customer.totalPurchases > 0 && (
-                                <span className="text-xs text-muted-foreground shrink-0">
-                                  {customer.totalPurchases}x
-                                </span>
+                            <IconUserPlus className="size-4 mr-2" />
+                            Crear nuevo cliente
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="max-h-[200px] overflow-y-auto p-1">
+                          {filteredCustomers.map((customer, index) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => handleSelectCustomer(customer.id)}
+                              onMouseEnter={() =>
+                                setSelectedCustomerIndex(index)
+                              }
+                              className={cn(
+                                "relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+                                selectedCustomerIndex === index
+                                  ? "bg-accent text-accent-foreground"
+                                  : "hover:bg-accent hover:text-accent-foreground"
                               )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                            >
+                              <Avatar className="h-8 w-8 mr-2">
+                                <AvatarFallback className="text-xs">
+                                  {customer.name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col items-start flex-1 overflow-hidden">
+                                <span className="font-medium truncate w-full text-left">
+                                  {customer.name}
+                                </span>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
+                                  <span className="truncate">
+                                    {customer.email}
+                                  </span>
+                                  {customer.phone && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="truncate">
+                                        {customer.phone}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* Botón para cliente genérico */}
                 <Button
@@ -727,7 +754,12 @@ export function PointOfSalePage() {
                                 "Visualización de historial en desarrollo",
                             });
                           }}
-                          onEdit={() => setIsCustomerDialogOpen(true)}
+                          onEdit={() => {
+                            setCustomerToEdit(
+                              customers.find((c) => c.id === customerId) || null
+                            );
+                            setIsCustomerDialogOpen(true);
+                          }}
                           onRemove={handleRemoveCustomer}
                           formatCurrency={formatCurrency}
                           className="shadow-sm"
@@ -939,7 +971,7 @@ export function PointOfSalePage() {
       />
       <CustomerFormDialog
         open={isCustomerDialogOpen}
-        customer={null}
+        customer={customerToEdit}
         onClose={handleCustomerDialogClose}
       />
       <PaymentDialog
