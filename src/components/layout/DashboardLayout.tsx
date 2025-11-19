@@ -2,10 +2,7 @@ import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/layout/Header";
 import { ChatWidget } from "@/components/chat/ChatWidget";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 export interface BreadcrumbItem {
@@ -40,7 +37,7 @@ export function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-slate-50">
+      <SidebarInset className="bg-slate-50 dark:bg-muted/10">
         <Header breadcrumbs={breadcrumbs} />
         <main className={cn("flex flex-1 flex-col gap-4 p-4 pt-0", className)}>
           {children}

@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Bell, Building2, ChevronDown, HelpCircle, Search, Settings, User } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  HelpCircle,
+  Search,
+  Settings,
+  User,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/Spinner";
+import { ModeToggle } from "@/components/mode-toggle";
 import type { BreadcrumbItem as BreadcrumbItemType } from "./DashboardLayout";
 
 interface HeaderProps {
@@ -61,7 +70,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
       {/* Left Section: Sidebar Trigger + Breadcrumbs */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <SidebarTrigger className="-ml-1" />
@@ -95,11 +104,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
       {/* Center Section: Search (hidden on mobile) */}
       <div className="hidden lg:flex items-center flex-1 max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar..."
-            className="w-full pl-9 pr-4 h-9 bg-slate-50 border-slate-200 focus:bg-white"
+            className="w-full pl-9 pr-4 h-9 bg-muted/50 border-input focus:bg-background"
           />
         </div>
       </div>
@@ -114,11 +123,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
               size="sm"
               className="hidden md:flex items-center gap-2 h-9 px-3"
             >
-              <Building2 className="h-4 w-4 text-slate-600" />
-              <span className="text-sm font-medium text-slate-700">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">
                 {auth?.tenantId || "Sin tenant"}
               </span>
-              <ChevronDown className="h-3 w-3 text-slate-400" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -132,17 +141,20 @@ export function Header({ breadcrumbs }: HeaderProps) {
               </Badge>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-xs text-slate-500">
+            <DropdownMenuItem className="text-xs text-muted-foreground">
               Más tenants disponibles próximamente
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Theme Toggle */}
+        <ModeToggle />
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-4 w-4 text-slate-600" />
+              <Bell className="h-4 w-4 text-muted-foreground" />
               {notificationCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                   {notificationCount}
@@ -160,20 +172,28 @@ export function Header({ breadcrumbs }: HeaderProps) {
               <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
                 <div className="flex items-center gap-2 w-full">
                   <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span className="font-medium text-sm">Nueva venta registrada</span>
-                  <span className="ml-auto text-xs text-slate-500">5m</span>
+                  <span className="font-medium text-sm">
+                    Nueva venta registrada
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    5m
+                  </span>
                 </div>
-                <p className="text-xs text-slate-600 pl-4">
+                <p className="text-xs text-muted-foreground pl-4">
                   Se ha completado una venta por $1,234.56
                 </p>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
                 <div className="flex items-center gap-2 w-full">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="font-medium text-sm">Producto actualizado</span>
-                  <span className="ml-auto text-xs text-slate-500">1h</span>
+                  <span className="font-medium text-sm">
+                    Producto actualizado
+                  </span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    1h
+                  </span>
                 </div>
-                <p className="text-xs text-slate-600 pl-4">
+                <p className="text-xs text-muted-foreground pl-4">
                   El inventario de "Producto X" ha sido actualizado
                 </p>
               </DropdownMenuItem>
@@ -181,9 +201,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 <div className="flex items-center gap-2 w-full">
                   <div className="h-2 w-2 rounded-full bg-yellow-500" />
                   <span className="font-medium text-sm">Stock bajo</span>
-                  <span className="ml-auto text-xs text-slate-500">2h</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    2h
+                  </span>
                 </div>
-                <p className="text-xs text-slate-600 pl-4">
+                <p className="text-xs text-muted-foreground pl-4">
                   El producto "Producto Y" tiene stock bajo
                 </p>
               </DropdownMenuItem>
@@ -197,7 +219,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
         {/* Help */}
         <Button variant="ghost" size="icon" className="h-9 w-9">
-          <HelpCircle className="h-4 w-4 text-slate-600" />
+          <HelpCircle className="h-4 w-4 text-muted-foreground" />
         </Button>
 
         {/* User Menu */}
@@ -205,23 +227,23 @@ export function Header({ breadcrumbs }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex items-center gap-2 h-9 px-2 hover:bg-slate-100"
+              className="flex items-center gap-2 h-9 px-2 hover:bg-accent hover:text-accent-foreground"
             >
               <Avatar className="h-7 w-7">
                 <AvatarImage src="" alt={auth?.email || "User"} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-semibold">
+                <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs font-semibold">
                   {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden lg:flex flex-col items-start">
-                <span className="text-sm font-medium text-slate-900 leading-none">
+                <span className="text-sm font-medium text-foreground leading-none">
                   {auth?.email?.split("@")[0] || "Usuario"}
                 </span>
-                <span className="text-xs text-slate-500 leading-none mt-0.5">
+                <span className="text-xs text-muted-foreground leading-none mt-0.5">
                   {auth?.role || "Sin rol"}
                 </span>
               </div>
-              <ChevronDown className="h-3 w-3 text-slate-400 hidden lg:block" />
+              <ChevronDown className="h-3 w-3 text-muted-foreground hidden lg:block" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -230,7 +252,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 <p className="text-sm font-medium leading-none">
                   {auth?.email?.split("@")[0] || "Usuario"}
                 </p>
-                <p className="text-xs leading-none text-slate-500">
+                <p className="text-xs leading-none text-muted-foreground">
                   {auth?.email || "usuario@ejemplo.com"}
                 </p>
                 <div className="pt-1">
@@ -257,8 +279,12 @@ export function Header({ breadcrumbs }: HeaderProps) {
               disabled={isLoggingOut}
               className="text-red-600 focus:text-red-600"
             >
-              {isLoggingOut && <Spinner size="sm" className="mr-2 text-current" />}
-              <span>{isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+              {isLoggingOut && (
+                <Spinner size="sm" className="mr-2 text-current" />
+              )}
+              <span>
+                {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+              </span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
