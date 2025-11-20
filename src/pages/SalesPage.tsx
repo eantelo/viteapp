@@ -33,6 +33,7 @@ import {
   IconEye,
   IconRefresh,
   IconCalendar,
+  IconFileInvoice,
 } from "@tabler/icons-react";
 import {
   Select,
@@ -42,7 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { SaleDto } from "@/api/salesApi";
-import { getSales, deleteSale } from "@/api/salesApi";
+import { getSales, deleteSale, downloadInvoicePdf } from "@/api/salesApi";
 import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
@@ -195,6 +196,16 @@ export function SalesPage() {
     } catch (err) {
       alert(
         err instanceof Error ? err.message : "Error al eliminar orden de venta"
+      );
+    }
+  };
+
+  const handlePrintInvoice = async (sale: SaleDto) => {
+    try {
+      await downloadInvoicePdf(sale.id);
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "Error al descargar la factura"
       );
     }
   };
@@ -621,6 +632,18 @@ export function SalesPage() {
                               </TableCell>
                               <TableCell className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handlePrintInvoice(sale);
+                                    }}
+                                    className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary"
+                                    title="Imprimir Factura"
+                                  >
+                                    <IconFileInvoice size={18} />
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"

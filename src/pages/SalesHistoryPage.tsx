@@ -43,6 +43,7 @@ import {
   getSalesHistory,
   getSalesStatistics,
   deleteSale,
+  downloadInvoicePdf,
 } from "@/api/salesApi";
 import type { SalesStatistics, SalesHistoryParams } from "@/api/salesApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -199,10 +200,17 @@ export function SalesHistoryPage() {
     setDetailModalOpen(true);
   };
 
-  const handlePrint = (sale: SaleDto) => {
-    // Implementar impresión de ticket
-    toast.info("Función de impresión en desarrollo");
-    console.log("Imprimir venta:", sale);
+  const handlePrint = async (sale: SaleDto) => {
+    try {
+      toast.info("Generando factura...");
+      await downloadInvoicePdf(sale.id);
+      toast.success("Factura descargada");
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err instanceof Error ? err.message : "Error al descargar la factura"
+      );
+    }
   };
 
   const handleCancel = async (sale: SaleDto) => {

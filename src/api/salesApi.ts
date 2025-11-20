@@ -160,3 +160,57 @@ export async function getSalesStatistics(
   const query = params.toString() ? `?${params.toString()}` : "";
   return apiClient<SalesStatistics>(`/api/sales/statistics${query}`);
 }
+
+export async function downloadInvoicePdf(id: string): Promise<void> {
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
+    "http://localhost:5205";
+  const url = `${baseUrl}/api/Sales/${id}/invoice-pdf`;
+
+  // Obtener token de autenticación
+  let token: string | undefined;
+  try {
+    const authStorage = localStorage.getItem("salesnet.auth");
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      token = parsed.token;
+    }
+  } catch (e) {
+    console.warn("Error reading auth token", e);
+  }
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error al descargar la factura: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  
+  // Intentar obtener el nombre del archivo del header Content-Disposition
+  const contentDisposition = response.headers.get("Content-Disposition");
+  let filename = `Factura-${id}.pdf`;
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+  
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+}
