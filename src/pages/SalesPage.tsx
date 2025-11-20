@@ -511,14 +511,7 @@ export function SalesPage() {
 
           {/* Contenido principal */}
           <Card className="bg-white dark:bg-gray-900/50 shadow-sm border-gray-200 dark:border-gray-800">
-            <CardHeader className="border-b border-gray-200 dark:border-gray-800">
-              <CardTitle>Listado de Órdenes</CardTitle>
-              <CardDescription>
-                {filteredSales.length === sales.length
-                  ? `${sales.length} órdenes en total`
-                  : `${filteredSales.length} de ${sales.length} órdenes`}
-              </CardDescription>
-            </CardHeader>
+
             <CardContent className="pt-6">
               {/* Barra de búsqueda */}
               <div className="flex flex-col md:flex-row gap-4 mb-4">
