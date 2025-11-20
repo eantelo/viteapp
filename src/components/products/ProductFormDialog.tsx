@@ -467,7 +467,7 @@ export function ProductFormDialog({
 
               <div className="grid gap-2">
                 <Label htmlFor="stock">
-                  Stock <span className="text-error">*</span>
+                  Stock {isEditing ? "(Solo lectura)" : <span className="text-error">*</span>}
                 </Label>
                 <Input
                   id="stock"
@@ -481,8 +481,14 @@ export function ProductFormDialog({
                     }
                   }}
                   placeholder="0"
-                  required
+                  required={!isEditing}
+                  disabled={isEditing}
                 />
+                {isEditing && (
+                  <p className="text-xs text-muted-foreground">
+                    Para ajustar el stock, utiliza la opción "Ajustar Stock".
+                  </p>
+                )}
               </div>
             </div>
 

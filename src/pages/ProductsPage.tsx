@@ -27,10 +27,14 @@ import {
   IconSearch,
   IconChevronLeft,
   IconChevronRight,
+  IconHistory,
+  IconArrowsDiff,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts, deleteProduct } from "@/api/productsApi";
 import { ProductFormDialog } from "@/components/products/ProductFormDialog";
+import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDialog";
+import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -55,6 +59,10 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<ProductDto | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  
+  const [stockAdjustmentOpen, setStockAdjustmentOpen] = useState(false);
+  const [stockHistoryOpen, setStockHistoryOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(null);
 
   const loadProducts = async (searchTerm?: string) => {
     try {
@@ -118,6 +126,16 @@ export function ProductsPage() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al eliminar producto");
     }
+  };
+
+  const handleAdjustStock = (product: ProductDto) => {
+    setSelectedProduct(product);
+    setStockAdjustmentOpen(true);
+  };
+
+  const handleViewHistory = (product: ProductDto) => {
+    setSelectedProduct(product);
+    setStockHistoryOpen(true);
   };
 
   const handleDialogClose = (saved: boolean) => {
@@ -299,6 +317,28 @@ export function ProductsPage() {
                                 >
                                   <IconTrash size={16} />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Historial de Stock"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleViewHistory(product);
+                                  }}
+                                >
+                                  <IconHistory size={16} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Ajustar Stock"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleAdjustStock(product);
+                                  }}
+                                >
+                                  <IconArrowsDiff size={16} />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -374,6 +414,28 @@ export function ProductsPage() {
           open={dialogOpen}
           product={editingProduct}
           onClose={handleDialogClose}
+        />
+
+        <StockAdjustmentDialog
+          open={stockAdjustmentOpen}
+          productId={selectedProduct?.id ?? ""}
+          productName={selectedProduct?.name ?? ""}
+          currentStock={selectedProduct?.stock ?? 0}
+          onClose={(adjusted) => {
+            setStockAdjustmentOpen(false);
+            setSelectedProduct(null);
+            if (adjusted) loadProducts(search);
+          }}
+        />
+
+        <StockHistoryDialog
+          open={stockHistoryOpen}
+          productId={selectedProduct?.id ?? ""}
+          productName={selectedProduct?.name ?? ""}
+          onClose={() => {
+            setStockHistoryOpen(false);
+            setSelectedProduct(null);
+          }}
         />
       </DashboardLayout>
     </PageTransition>

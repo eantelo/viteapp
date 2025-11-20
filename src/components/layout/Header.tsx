@@ -5,6 +5,7 @@ import {
   Building2,
   ChevronDown,
   HelpCircle,
+  Laptop,
   Search,
   Settings,
   User,
@@ -273,6 +274,12 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 <Link to="/settings" className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Configuración</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/system" className="flex items-center">
+                  <Laptop className="mr-2 h-4 w-4" />
+                  <span>Sistema</span>
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

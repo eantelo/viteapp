@@ -10,12 +10,15 @@ import {
   BarChart,
   Bar,
   XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
 } from "recharts";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  type ChartConfig
+} from "@/components/ui/chart";
 
 interface SalesStatisticsCardsProps {
   statistics: SalesStatistics | null;
@@ -39,10 +42,10 @@ export function SalesStatisticsCards({
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
-              <div className="h-4 bg-gray-200 rounded w-24"></div>
+              <div className="h-4 bg-muted rounded w-24"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-gray-200 rounded w-32"></div>
+              <div className="h-8 bg-muted rounded w-32"></div>
             </CardContent>
           </Card>
         ))}
@@ -72,6 +75,17 @@ export function SalesStatisticsCards({
     count: item.count,
   }));
 
+  const chartConfig = {
+    amount: {
+      label: "Monto",
+      color: "#3b82f6",
+    },
+    count: {
+      label: "Transacciones",
+      color: "#8b5cf6",
+    },
+  } satisfies ChartConfig;
+
   // Colores para el gráfico
   const getBarColor = (index: number) => {
     const colors = [
@@ -91,7 +105,7 @@ export function SalesStatisticsCards({
     <div className="space-y-4">
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+        <Card className="bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
               Total Vendido
@@ -105,7 +119,7 @@ export function SalesStatisticsCards({
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+        <Card className="bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/50 border-purple-200 dark:border-purple-800">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">
               Transacciones
@@ -119,7 +133,7 @@ export function SalesStatisticsCards({
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+        <Card className="bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/50 border-green-200 dark:border-green-800">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">
               Ticket Promedio
@@ -133,7 +147,7 @@ export function SalesStatisticsCards({
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
+        <Card className="bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-950/50 dark:to-orange-900/50 border-orange-200 dark:border-orange-800">
           <CardHeader className="pb-2 flex flex-row items-center justify-between">
             <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">
               Métodos de Pago
@@ -155,37 +169,23 @@ export function SalesStatisticsCards({
             <CardTitle className="text-lg">Ventas por Hora</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
               <BarChart data={hourlyChartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  className="stroke-gray-200 dark:stroke-gray-700"
-                />
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="hour"
-                  className="text-xs fill-gray-600 dark:fill-gray-400"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
                 />
-                <YAxis className="text-xs fill-gray-600 dark:fill-gray-400" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (name === "amount") {
-                      return [formatCurrency(value), "Monto"];
-                    }
-                    return [value, "Ventas"];
-                  }}
-                />
-                <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                   {hourlyChartData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={getBarColor(index)} />
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}
@@ -203,7 +203,7 @@ export function SalesStatisticsCards({
               {statistics.salesByPaymentMethod.map((item, index) => (
                 <div
                   key={item.method}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -216,20 +216,20 @@ export function SalesStatisticsCards({
                       aria-hidden="true"
                     />
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className="font-medium text-foreground">
                         {getPaymentMethodName(item.method)}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-muted-foreground">
                         {item.count}{" "}
                         {item.count === 1 ? "transacción" : "transacciones"}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-900 dark:text-white">
+                    <div className="font-bold text-foreground">
                       {formatCurrency(item.amount)}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       {((item.amount / statistics.totalSales) * 100).toFixed(1)}
                       %
                     </div>

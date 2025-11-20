@@ -11,6 +11,7 @@ import { SalesPage } from "@/pages/SalesPage";
 import { SalesHistoryPage } from "@/pages/SalesHistoryPage";
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
+import { SystemPage } from "@/pages/SystemPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -32,6 +33,7 @@ function App() {
           <Route path="/catalog" element={<ProductCatalogPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />
+          <Route path="/system" element={<SystemPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
