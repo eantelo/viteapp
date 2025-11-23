@@ -6,7 +6,7 @@ export interface ChatResponse {
 
 export const chatService = {
   sendMessage: async (message: string): Promise<ChatResponse> => {
-    return apiClient<ChatResponse>("chat/send", {
+    return apiClient<ChatResponse>("/api/chat/send", {
       method: "POST",
       body: JSON.stringify({ message }),
     });

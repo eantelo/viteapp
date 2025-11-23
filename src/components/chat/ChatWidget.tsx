@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, X, Send, Loader2, Minimize2 } from "lucide-react";
@@ -23,7 +29,8 @@ export function ChatWidget() {
     {
       id: "welcome",
       role: "system",
-      content: "Hola, soy tu asistente virtual. ¿En qué puedo ayudarte hoy?",
+      content:
+        "Hola, soy tu asistente de ventas. Puedo ayudarte con consultas sobre productos, ventas y stock. ¿En qué puedo ayudarte hoy?",
       timestamp: new Date(),
     },
   ]);
@@ -66,7 +73,8 @@ export function ChatWidget() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "system",
-        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
+        content:
+          "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -98,7 +106,9 @@ export function ChatWidget() {
               <CardHeader className="p-3 border-b bg-primary text-primary-foreground flex flex-row items-center justify-between space-y-0">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
-                  <CardTitle className="text-sm font-medium">Asistente Virtual</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Asistente Virtual
+                  </CardTitle>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -126,21 +136,31 @@ export function ChatWidget() {
                       <div
                         key={msg.id}
                         className={cn(
-                          "flex w-max max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 text-sm",
+                          "flex w-fit max-w-[85%] flex-col gap-1 rounded-lg px-3 py-2 text-sm overflow-hidden",
                           msg.role === "user"
                             ? "ml-auto bg-primary text-primary-foreground"
                             : "bg-white border shadow-sm text-slate-800"
                         )}
                       >
                         {msg.role === "system" ? (
-                           <div className="prose prose-sm dark:prose-invert max-w-none">
-                             <ReactMarkdown>{msg.content}</ReactMarkdown>
-                           </div>
+                          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
                         ) : (
                           <p>{msg.content}</p>
                         )}
-                        <span className={cn("text-[10px] opacity-70", msg.role === "user" ? "text-primary-foreground/80" : "text-slate-400")}>
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <span
+                          className={cn(
+                            "text-[10px] opacity-70",
+                            msg.role === "user"
+                              ? "text-primary-foreground/80"
+                              : "text-slate-400"
+                          )}
+                        >
+                          {msg.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     ))}
@@ -168,13 +188,17 @@ export function ChatWidget() {
                     className="flex-1 focus-visible:ring-1"
                     disabled={isLoading}
                   />
-                  <Button 
-                    size="icon" 
-                    onClick={handleSendMessage} 
+                  <Button
+                    size="icon"
+                    onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isLoading}
                     className="h-9 w-9 shrink-0"
                   >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </CardFooter>
