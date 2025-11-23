@@ -61,9 +61,37 @@ async function revokeToken(payload: RevokeTokenPayload): Promise<void> {
   });
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+  return apiClient<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    skipAuth: true,
+  });
+}
+
+async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+  return apiClient<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    skipAuth: true,
+  });
+}
+
 export const authApi = {
   login,
   register,
   refreshToken,
   revokeToken,
+  forgotPassword,
+  resetPassword,
 };

@@ -1,4 +1,5 @@
 import { useId, type FormEventHandler } from "react";
+import { Link } from "react-router-dom";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +17,7 @@ type LoginFormProps = {
   fieldErrors: Partial<Record<"email" | "password", string>>;
   errorMessage?: string | null;
   errorDetails?: string[];
+  successMessage?: string | null;
   isLoading: boolean;
   onSubmit: FormEventHandler<HTMLFormElement>;
   onEmailChange: (value: string) => void;
@@ -33,6 +35,7 @@ export function LoginForm({
   fieldErrors,
   errorMessage,
   errorDetails,
+  successMessage,
   isLoading,
   onSubmit,
   onEmailChange,
@@ -46,6 +49,9 @@ export function LoginForm({
 
   return (
     <div className={cn("grid gap-6", className)}>
+      {successMessage && (
+        <Alert variant="success" message={successMessage} />
+      )}
       {errorMessage && (
         <Alert variant="error" message={errorMessage} items={errorDetails} />
       )}
@@ -75,9 +81,9 @@ export function LoginForm({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
                 <Label htmlFor={passwordId}>Contraseña</Label>
-                <a href="#" className="text-sm font-medium text-primary hover:underline">
+                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
                     ¿Olvidaste tu contraseña?
-                </a>
+                </Link>
             </div>
             <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

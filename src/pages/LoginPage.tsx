@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authApi } from "@/api/authApi";
 import type { ApiError } from "@/api/apiClient";
 import { AuthLayout } from "@/components/layout/AuthLayout";
@@ -18,6 +18,7 @@ type LoginFieldErrors = Partial<Record<LoginField, string>>;
 export function LoginPage() {
   useDocumentTitle("SalesNet | Iniciar sesión");
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuth();
   const [formState, setFormState] = useState({ email: "", password: "" });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,6 +27,9 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    (location.state as { message?: string })?.message || null
+  );
 
   const handleChange = (field: LoginField, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
@@ -107,6 +111,7 @@ export function LoginPage() {
           fieldErrors={fieldErrors}
           errorMessage={errorMessage}
           errorDetails={errorDetails}
+          successMessage={successMessage}
           isLoading={isLoading}
           onSubmit={handleSubmit}
           onEmailChange={(value) => handleChange("email", value)}

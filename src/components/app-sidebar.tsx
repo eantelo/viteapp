@@ -9,6 +9,7 @@ import {
   IconReceipt,
   IconInnerShadowTop,
   IconCashRegister,
+  IconCoffee,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -62,6 +63,11 @@ const data = {
       title: "Clientes",
       url: "/customers",
       icon: IconAddressBook,
+    },
+    {
+      title: "POS Restaurante",
+      url: "/pos/restaurant",
+      icon: IconCoffee,
     },
   ],
   navReports: [
