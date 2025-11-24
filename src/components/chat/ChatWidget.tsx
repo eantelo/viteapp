@@ -36,6 +36,7 @@ export function ChatWidget() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +61,12 @@ export function ChatWidget() {
     setIsLoading(true);
 
     try {
-      const response = await chatService.sendMessage(userMessage.content);
+      const response = await chatService.sendMessage(userMessage.content, conversationId);
+      
+      if (response.conversationId) {
+        setConversationId(response.conversationId);
+      }
+
       const systemMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "system",
