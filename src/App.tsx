@@ -10,7 +10,7 @@ import { ProductDetailPage } from "@/pages/ProductDetailPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
-import { SalesHistoryPage } from "@/pages/SalesHistoryPage";
+
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
 import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
@@ -31,7 +31,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/sales/history" element={<SalesHistoryPage />} />
+
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/pos" element={<PointOfSalePage />} />
           <Route path="/pos/restaurant" element={<RestaurantPosPage />} />

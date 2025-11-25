@@ -384,7 +384,7 @@ export function PointOfSalePage() {
       description: "Ver historial de ventas",
       handler: () => {
         triggerIndicator("F5");
-        navigate("/sales/history");
+        navigate("/sales");
       },
     },
     {
@@ -488,7 +488,7 @@ export function PointOfSalePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate("/sales/history")}
+            onClick={() => navigate("/sales")}
             className="gap-2"
           >
             <IconHistory className="size-4" />

@@ -10,6 +10,7 @@ export interface TenantSettings {
   phone?: string;
   email?: string;
   website?: string;
+  isSetupComplete?: boolean;
   createdBy?: string;
   createdAt?: string;
   updatedBy?: string;

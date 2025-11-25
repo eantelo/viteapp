@@ -7,6 +7,7 @@ export interface AuthResponse {
   role: string;
   tenantId: string;
   userId: string;
+  isSetupComplete: boolean;
 }
 
 export interface LoginPayload {
@@ -71,7 +72,9 @@ export interface ResetPasswordPayload {
   newPassword: string;
 }
 
-async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message: string }> {
+async function forgotPassword(
+  payload: ForgotPasswordPayload
+): Promise<{ message: string }> {
   return apiClient<{ message: string }>("/api/auth/forgot-password", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -79,7 +82,9 @@ async function forgotPassword(payload: ForgotPasswordPayload): Promise<{ message
   });
 }
 
-async function resetPassword(payload: ResetPasswordPayload): Promise<{ message: string }> {
+async function resetPassword(
+  payload: ResetPasswordPayload
+): Promise<{ message: string }> {
   return apiClient<{ message: string }>("/api/auth/reset-password", {
     method: "POST",
     body: JSON.stringify(payload),
