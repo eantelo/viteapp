@@ -71,6 +71,7 @@ export function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaDockedRef = useRef<HTMLDivElement>(null);
   const inputDockedRef = useRef<HTMLInputElement>(null);
+  const lastMessageCountRef = useRef<number>(0);
 
   // Helper para parsear timestamp (puede ser string ISO o Date)
   const parseTimestamp = (timestamp: string | Date): Date => {
@@ -101,23 +102,30 @@ export function ChatWidget() {
     });
   }, []);
 
-  // Scroll automático cuando cambian los mensajes o se abre el chat
+  // Scroll automático cuando hay NUEVOS mensajes (evitar scroll en navegación)
   useEffect(() => {
-    if (isOpen) {
+    // Solo hacer scroll si:
+    // 1. El chat está abierto
+    // 2. Hay MÁS mensajes que antes (nuevo mensaje recibido)
+    if (isOpen && messages.length > lastMessageCountRef.current) {
+      lastMessageCountRef.current = messages.length;
       // Pequeño delay para asegurar que el contenido se haya renderizado
       const timeoutId = setTimeout(() => {
         scrollToBottom(true);
       }, 100);
       return () => clearTimeout(timeoutId);
     }
+    // Actualizar la referencia incluso si no se hace scroll
+    lastMessageCountRef.current = messages.length;
   }, [messages, isOpen, scrollToBottom]);
 
   // Scroll cuando está cargando (para mostrar el indicador de typing)
   useEffect(() => {
-    if (isLoading && isOpen) {
+    if (isLoading && isOpen && messages.length > 0) {
+      // Solo hacer scroll si realmente hay mensajes que mostrar
       scrollToBottom(true);
     }
-  }, [isLoading, isOpen, scrollToBottom]);
+  }, [isLoading, isOpen, messages.length, scrollToBottom]);
 
   const handleNewConversation = () => {
     resetConversation();
