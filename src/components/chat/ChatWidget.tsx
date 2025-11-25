@@ -51,6 +51,10 @@ const CONVERSATION_SUGGESTIONS = [
     id: "create-product",
     text: "Crear un nuevo producto",
   },
+  {
+    id: "create-sale",
+    text: "Registrar una venta rápida",
+  },
 ];
 
 export function ChatWidget() {
@@ -175,7 +179,15 @@ export function ChatWidget() {
       // Detectar si la respuesta indica una actualización de producto
       // y emitir el evento correspondiente para que otras páginas se actualicen
       const productUpdate = detectProductUpdateFromChatMessage(textContent);
+      console.log(
+        "[ChatWidget] Respuesta del chat:",
+        textContent.substring(0, 100)
+      );
+      console.log("[ChatWidget] Actualización detectada:", productUpdate);
       if (productUpdate) {
+        console.log(
+          "[ChatWidget] Emitiendo evento de actualización de producto"
+        );
         emitProductUpdated(productUpdate);
       }
     } catch (error) {

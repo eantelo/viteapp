@@ -40,11 +40,13 @@ declare global {
  * Llama a esta función cuando se actualice un producto desde cualquier parte de la app.
  */
 export function emitProductUpdated(detail: ProductUpdatedEventDetail): void {
+  console.log("[product-events] Emitiendo evento:", detail);
   const event = new CustomEvent(PRODUCT_UPDATED_EVENT, {
     detail,
     bubbles: true,
   });
   window.dispatchEvent(event);
+  console.log("[product-events] Evento emitido exitosamente");
 }
 
 /**
@@ -56,13 +58,16 @@ export function onProductUpdated(
   callback: (detail: ProductUpdatedEventDetail) => void
 ): () => void {
   const handler = (event: CustomEvent<ProductUpdatedEventDetail>) => {
+    console.log("[product-events] Evento recibido:", event.detail);
     callback(event.detail);
   };
 
   window.addEventListener(PRODUCT_UPDATED_EVENT, handler);
+  console.log("[product-events] Suscripción registrada");
 
   return () => {
     window.removeEventListener(PRODUCT_UPDATED_EVENT, handler);
+    console.log("[product-events] Suscripción cancelada");
   };
 }
 
@@ -76,23 +81,37 @@ export function detectProductUpdateFromChatMessage(
   // Normalizar el mensaje para la detección
   const normalizedMessage = message.toLowerCase();
 
-  // Detectar ajuste de stock
-  // Patrones: "Entrada registrada para X", "Salida registrada para X", "Stock actualizado"
-  const stockPatterns = [
-    /(?:entrada|salida) registrada para (.+?)\./i,
+  // Detectar ajuste de stock confirmado
+  // Patrón exacto del backend: "{Entrada|Salida} registrada para {nombre}. Stock actualizado: {cantidad} unidades."
+  const stockConfirmedPattern =
+    /(entrada|salida) registrada para (.+?)\. stock actualizado: (\d+) unidades/i;
+  const stockConfirmedMatch = message.match(stockConfirmedPattern);
+  if (stockConfirmedMatch) {
+    console.log(
+      "[product-events] Detectado ajuste de stock:",
+      stockConfirmedMatch
+    );
+    return {
+      updateType: "stock",
+      productName: stockConfirmedMatch[2]?.trim(),
+      message: message,
+    };
+  }
+
+  // Detectar otros patrones de stock (por si acaso)
+  const otherStockPatterns = [
     /stock (?:actualizado|ajustado)/i,
     /stock actual(?:izado)?:\s*\d+/i,
   ];
 
-  for (const pattern of stockPatterns) {
+  for (const pattern of otherStockPatterns) {
     if (pattern.test(message)) {
-      // Intentar extraer el nombre del producto
-      const nameMatch = message.match(
-        /(?:entrada|salida) registrada para (.+?)\./i
+      console.log(
+        "[product-events] Detectado patrón de stock alternativo:",
+        pattern
       );
       return {
         updateType: "stock",
-        productName: nameMatch?.[1]?.trim(),
         message: message,
       };
     }
@@ -107,6 +126,7 @@ export function detectProductUpdateFromChatMessage(
     // Intentar extraer el ID del producto del enlace
     const idMatch = message.match(/\/products\/([a-f0-9-]+)/i);
     const nameMatch = message.match(/\*\*Nombre:\*\*\s*(.+)/i);
+    console.log("[product-events] Detectada creación de producto");
     return {
       productId: idMatch?.[1],
       updateType: "created",
@@ -121,6 +141,7 @@ export function detectProductUpdateFromChatMessage(
     normalizedMessage.includes("producto modificado")
   ) {
     const idMatch = message.match(/\/products\/([a-f0-9-]+)/i);
+    console.log("[product-events] Detectada actualización de producto");
     return {
       productId: idMatch?.[1],
       updateType: "updated",
@@ -133,6 +154,7 @@ export function detectProductUpdateFromChatMessage(
     normalizedMessage.includes("producto eliminado") ||
     normalizedMessage.includes("producto borrado")
   ) {
+    console.log("[product-events] Detectada eliminación de producto");
     return {
       updateType: "deleted",
       message: message,

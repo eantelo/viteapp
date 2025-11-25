@@ -142,9 +142,14 @@ export function ProductDetailPage() {
 
   // Suscribirse a eventos de actualización de productos desde el chat
   useEffect(() => {
+    // Solo suscribirse si hay un ID de producto
+    if (!id) return;
+
     const handleProductUpdate = (detail: ProductUpdatedEventDetail) => {
-      // Si no hay producto cargado, no hacer nada
-      if (!product || !id) return;
+      console.log(
+        "[ProductDetailPage] Evento de actualización recibido:",
+        detail
+      );
 
       // Refrescar si:
       // 1. El evento es para este producto específico (por ID)
@@ -154,6 +159,15 @@ export function ProductDetailPage() {
         detail.productId === id ||
         (!detail.productId &&
           (detail.updateType === "stock" || detail.updateType === "updated"));
+
+      console.log(
+        "[ProductDetailPage] ¿Debe refrescar?:",
+        shouldRefresh,
+        "ID actual:",
+        id,
+        "ID evento:",
+        detail.productId
+      );
 
       if (shouldRefresh) {
         // Recargar el producto para obtener los datos actualizados
@@ -172,10 +186,17 @@ export function ProductDetailPage() {
 
     // Suscribirse al evento
     const unsubscribe = onProductUpdated(handleProductUpdate);
+    console.log(
+      "[ProductDetailPage] Suscrito a eventos de actualización para producto:",
+      id
+    );
 
     // Limpiar suscripción al desmontar
-    return unsubscribe;
-  }, [id, product, loadProduct]);
+    return () => {
+      console.log("[ProductDetailPage] Cancelando suscripción");
+      unsubscribe();
+    };
+  }, [id, loadProduct]);
 
   const handleEdit = () => {
     setIsEditing(true);

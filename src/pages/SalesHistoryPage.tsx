@@ -53,11 +53,12 @@ import { SaleDetailModal } from "@/components/sales/SaleDetailModal";
 import type { DatePreset } from "@/types/salesHistory";
 import { exportToExcel, exportToPDF } from "@/utils/salesExport";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export function SalesHistoryPage() {
   useDocumentTitle("Historial de Ventas");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [sales, setSales] = useState<SaleDto[]>([]);
   const [statistics, setStatistics] = useState<SalesStatistics | null>(null);
@@ -65,9 +66,14 @@ export function SalesHistoryPage() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Leer parámetro de búsqueda inicial desde la URL
+  const initialSearch = searchParams.get("search") ?? "";
+
   // Filtros
-  const [search, setSearch] = useState("");
-  const [datePreset, setDatePreset] = useState<DatePreset>("today");
+  const [search, setSearch] = useState(initialSearch);
+  const [datePreset, setDatePreset] = useState<DatePreset>(
+    initialSearch ? "thisMonth" : "today"
+  );
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [customerId, setCustomerId] = useState("");
