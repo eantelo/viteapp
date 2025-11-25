@@ -1,7 +1,43 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Aplicar tema antes de que React se cargue para evitar flash
+      (function() {
+        const storageKey = 'vite-ui-theme';
+        const theme = localStorage.getItem(storageKey);
+        const root = document.documentElement;
+        
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          root.classList.add('dark');
+        } else if (theme === 'light') {
+          root.classList.remove('dark');
+        } else {
+          // system theme
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        }
+      })();
+    </script>
+    <style>
+      /* Estilos críticos para evitar flash de contenido sin estilo (FOUC) */
+      html.dark {
+        background-color: #0a0a0a; /* Fallback para oklch(0.145 0 0) */
+        color-scheme: dark;
+      }
+      html:not(.dark) {
+        background-color: #ffffff; /* Fallback para oklch(1 0 0) */
+        color-scheme: light;
+      }
+      body {
+        background-color: inherit;
+        margin: 0;
+      }
+    </style>
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

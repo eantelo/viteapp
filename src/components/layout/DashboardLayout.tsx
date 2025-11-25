@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { ChatDockProvider, useChatDock } from "@/contexts/ChatDockContext";
 
 export interface BreadcrumbItem {
   label: string;
@@ -25,25 +26,49 @@ interface DashboardLayoutProps {
   className?: string;
 }
 
-/**
- * Layout compartido para todas las páginas protegidas del dashboard.
- * Incluye sidebar, header con breadcrumbs, información de usuario y botón de logout.
- */
-export function DashboardLayout({
+function DashboardLayoutContent({
   breadcrumbs,
   children,
   className,
 }: DashboardLayoutProps) {
+  const { isChatVisibleAndDocked, chatWidth } = useChatDock();
+
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-slate-50 dark:bg-muted/10">
+      <SidebarInset
+        className={cn("flex flex-col bg-slate-50 dark:bg-muted/10")}
+      >
+        {/* Header spans full width, not affected by chat panel */}
         <Header breadcrumbs={breadcrumbs} />
-        <main className={cn("flex flex-1 flex-col gap-4 p-4 pt-0", className)}>
+        {/* Main content area adjusts for docked chat */}
+        <main
+          className={cn(
+            "flex-1 flex flex-col gap-4 p-4 overflow-auto transition-all duration-300",
+            className
+          )}
+          style={{
+            paddingRight: isChatVisibleAndDocked
+              ? `${chatWidth + 16}px`
+              : undefined,
+          }}
+        >
           {children}
         </main>
         <ChatWidget />
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+/**
+ * Layout compartido para todas las páginas protegidas del dashboard.
+ * Incluye sidebar, header con breadcrumbs, información de usuario y botón de logout.
+ */
+export function DashboardLayout(props: DashboardLayoutProps) {
+  return (
+    <ChatDockProvider>
+      <DashboardLayoutContent {...props} />
+    </ChatDockProvider>
   );
 }

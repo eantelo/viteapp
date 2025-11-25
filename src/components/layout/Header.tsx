@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
+  Bot,
   Building2,
   ChevronDown,
   HelpCircle,
@@ -11,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useChatDock } from "@/contexts/ChatDockContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/Spinner";
+import { Switch } from "@/components/ui/switch";
 import { ModeToggle } from "@/components/mode-toggle";
 import type { BreadcrumbItem as BreadcrumbItemType } from "./DashboardLayout";
 
@@ -44,6 +47,7 @@ interface HeaderProps {
 
 export function Header({ breadcrumbs }: HeaderProps) {
   const { auth, logout } = useAuth();
+  const { isEnabled, setIsEnabled, isChatVisibleAndDocked } = useChatDock();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [notificationCount] = useState(3); // Mock notification count
 
@@ -151,6 +155,20 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
         {/* Theme Toggle */}
         <ModeToggle />
+
+        {/* Assistant Toggle */}
+        <div className="hidden sm:flex items-center gap-2 px-2">
+          <Bot
+            className={`h-4 w-4 ${
+              isChatVisibleAndDocked ? "text-primary" : "text-muted-foreground"
+            }`}
+          />
+          <Switch
+            checked={isEnabled}
+            onCheckedChange={setIsEnabled}
+            aria-label="Mostrar/Ocultar Asistente Virtual"
+          />
+        </div>
 
         {/* Notifications */}
         <DropdownMenu>

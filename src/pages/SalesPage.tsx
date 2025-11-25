@@ -5,12 +5,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -304,10 +299,10 @@ export function SalesPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Órdenes de Venta" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className="flex flex-1 flex-col gap-4 p-0"
       >
         <motion.div
-          className="flex items-center justify-between"
+          className="flex items-center justify-between px-4 pt-4"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
@@ -338,7 +333,7 @@ export function SalesPage() {
 
         {/* Layout con filtros laterales */}
         <motion.div
-          className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4"
+          className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 px-4 pb-4"
           initial={motionInitial}
           animate={motionAnimate}
           transition={{
@@ -521,7 +516,6 @@ export function SalesPage() {
 
           {/* Contenido principal */}
           <Card className="bg-white dark:bg-gray-900/50 shadow-sm border-gray-200 dark:border-gray-800">
-
             <CardContent className="pt-6">
               {/* Barra de búsqueda */}
               <div className="flex flex-col md:flex-row gap-4 mb-4">
