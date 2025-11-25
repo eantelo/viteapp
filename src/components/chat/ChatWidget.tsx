@@ -24,6 +24,10 @@ import remarkGfm from "remark-gfm";
 import { useChatDock, type Message } from "@/contexts/ChatDockContext";
 import { ChatChart } from "./ChatChart";
 import { extractChartData } from "./chat-utils";
+import {
+  detectProductUpdateFromChatMessage,
+  emitProductUpdated,
+} from "@/lib/product-events";
 
 // Sugerencias de conversación para mostrar al inicio
 const CONVERSATION_SUGGESTIONS = [
@@ -167,6 +171,13 @@ export function ChatWidget() {
         chartData: chartData ?? undefined,
       };
       setMessages((prev) => [...prev, systemMessage]);
+
+      // Detectar si la respuesta indica una actualización de producto
+      // y emitir el evento correspondiente para que otras páginas se actualicen
+      const productUpdate = detectProductUpdateFromChatMessage(textContent);
+      if (productUpdate) {
+        emitProductUpdated(productUpdate);
+      }
     } catch (error) {
       console.error("Failed to send message", error);
       const errorMessage: Message = {

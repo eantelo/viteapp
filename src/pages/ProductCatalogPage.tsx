@@ -52,6 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { onProductUpdated } from "@/lib/product-events";
 
 // Componente de filtros reutilizable para mobile y desktop
 function FilterContent({
@@ -338,6 +339,23 @@ export function ProductCatalogPage() {
 
   useEffect(() => {
     loadProducts();
+  }, []);
+
+  // Suscribirse a eventos de actualización de productos desde el chat
+  useEffect(() => {
+    const unsubscribe = onProductUpdated((detail) => {
+      // Refrescar la lista cuando se actualiza un producto desde el chat
+      if (
+        detail.updateType === "stock" ||
+        detail.updateType === "created" ||
+        detail.updateType === "updated" ||
+        detail.updateType === "deleted"
+      ) {
+        loadProducts();
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   // Aplicar filtros cuando cambien

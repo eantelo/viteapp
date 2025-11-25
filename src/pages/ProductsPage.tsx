@@ -38,6 +38,7 @@ import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDial
 import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
+import { onProductUpdated } from "@/lib/product-events";
 
 export function ProductsPage() {
   useDocumentTitle("Productos");
@@ -99,6 +100,23 @@ export function ProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Suscribirse a eventos de actualización de productos desde el chat
+  useEffect(() => {
+    const unsubscribe = onProductUpdated((detail) => {
+      // Refrescar la lista cuando se actualiza un producto desde el chat
+      if (
+        detail.updateType === "stock" ||
+        detail.updateType === "created" ||
+        detail.updateType === "updated" ||
+        detail.updateType === "deleted"
+      ) {
+        loadProducts(search);
+      }
+    });
+
+    return unsubscribe;
+  }, [search]);
 
   // Manejar parámetro 'edit' de la URL para abrir el formulario de edición
   useEffect(() => {

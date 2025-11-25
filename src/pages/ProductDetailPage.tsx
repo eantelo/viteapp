@@ -40,6 +40,10 @@ import {
   getCategories,
   getBrands,
 } from "@/api/productsApi";
+import {
+  onProductUpdated,
+  type ProductUpdatedEventDetail,
+} from "@/lib/product-events";
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -135,6 +139,43 @@ export function ProductDetailPage() {
     loadProduct();
     loadSuggestions();
   }, [loadProduct]);
+
+  // Suscribirse a eventos de actualización de productos desde el chat
+  useEffect(() => {
+    const handleProductUpdate = (detail: ProductUpdatedEventDetail) => {
+      // Si no hay producto cargado, no hacer nada
+      if (!product || !id) return;
+
+      // Refrescar si:
+      // 1. El evento es para este producto específico (por ID)
+      // 2. El evento no tiene ID (actualización general que podría afectar este producto)
+      // 3. El tipo de actualización es stock, updated o created
+      const shouldRefresh =
+        detail.productId === id ||
+        (!detail.productId &&
+          (detail.updateType === "stock" || detail.updateType === "updated"));
+
+      if (shouldRefresh) {
+        // Recargar el producto para obtener los datos actualizados
+        loadProduct();
+
+        // Mostrar notificación al usuario
+        if (detail.updateType === "stock") {
+          toast.info("Stock actualizado desde el asistente", {
+            description: detail.productName
+              ? `Se actualizó el stock de ${detail.productName}`
+              : "Los datos del producto han sido actualizados",
+          });
+        }
+      }
+    };
+
+    // Suscribirse al evento
+    const unsubscribe = onProductUpdated(handleProductUpdate);
+
+    // Limpiar suscripción al desmontar
+    return unsubscribe;
+  }, [id, product, loadProduct]);
 
   const handleEdit = () => {
     setIsEditing(true);
