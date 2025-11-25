@@ -1,4 +1,3 @@
-
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LandingPage } from "@/pages/LandingPage";
@@ -7,6 +6,7 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ProductsPage } from "@/pages/ProductsPage";
+import { ProductDetailPage } from "@/pages/ProductDetailPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
@@ -36,6 +36,7 @@ function App() {
           <Route path="/pos" element={<PointOfSalePage />} />
           <Route path="/pos/restaurant" element={<RestaurantPosPage />} />
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/catalog" element={<ProductCatalogPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />

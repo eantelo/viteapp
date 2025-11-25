@@ -338,16 +338,18 @@ export function ChatWidget() {
                             />
                           ),
                           a: ({ node, href, children, ...props }) => {
-                            // Si es un enlace interno (empieza con /), usar Link de react-router
+                            // Si es un enlace interno (empieza con /), usar button que navega
                             if (href && href.startsWith("/")) {
                               return (
-                                <Link
-                                  to={href}
-                                  className="text-primary hover:underline font-medium"
+                                <button
+                                  onClick={() => {
+                                    navigate(href);
+                                  }}
+                                  className="text-primary hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
                                   {...props}
                                 >
                                   {children}
-                                </Link>
+                                </button>
                               );
                             }
                             // Para enlaces externos, usar <a> normal con target blank

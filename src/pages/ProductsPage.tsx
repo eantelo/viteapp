@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import { motion, useReducedMotion } from "framer-motion";
 export function ProductsPage() {
   useDocumentTitle("Productos");
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -153,6 +154,10 @@ export function ProductsPage() {
     setDialogOpen(true);
   };
 
+  const handleViewDetail = (product: ProductDto) => {
+    navigate(`/products/${product.id}`);
+  };
+
   const handleEdit = (product: ProductDto) => {
     setEditingProduct(product);
     setDialogOpen(true);
@@ -195,7 +200,7 @@ export function ProductsPage() {
   ) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleEdit(product);
+      handleViewDetail(product);
     }
   };
 
@@ -299,13 +304,13 @@ export function ProductsPage() {
                         {paginatedProducts.map((product) => (
                           <TableRow
                             key={product.id}
-                            onClick={() => handleEdit(product)}
+                            onClick={() => handleViewDetail(product)}
                             onKeyDown={(event) =>
                               handleRowKeyDown(event, product)
                             }
                             tabIndex={0}
                             className="cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
-                            aria-label={`Editar producto ${product.name}`}
+                            aria-label={`Ver producto ${product.name}`}
                           >
                             <TableCell className="font-medium">
                               {product.name}

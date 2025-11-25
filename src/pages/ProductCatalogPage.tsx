@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -266,6 +267,7 @@ function FilterContent({
 
 export function ProductCatalogPage() {
   useDocumentTitle("Catálogo de Productos");
+  const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -555,6 +557,10 @@ export function ProductCatalogPage() {
   const handleCreateProduct = () => {
     setSelectedProduct(null);
     setShowFormDialog(true);
+  };
+
+  const handleViewDetail = (product: ProductDto) => {
+    navigate(`/products/${product.id}`);
   };
 
   const handleEditProduct = (product: ProductDto) => {
@@ -867,16 +873,16 @@ export function ProductCatalogPage() {
                           paginatedProducts.map((product) => (
                             <tr
                               key={product.id}
-                              onClick={() => handleEditProduct(product)}
+                              onClick={() => handleViewDetail(product)}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault();
-                                  handleEditProduct(product);
+                                  handleViewDetail(product);
                                 }
                               }}
                               tabIndex={0}
                               className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
-                              aria-label={`Editar producto ${product.name}`}
+                              aria-label={`Ver producto ${product.name}`}
                             >
                               <th
                                 scope="row"

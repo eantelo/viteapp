@@ -229,6 +229,25 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("chatWidgetWidth", chatWidth.toString());
   }, [chatWidth]);
 
+  // Al iniciar, verificar el estado guardado del toggle y aplicarlo
+  useEffect(() => {
+    const saved = localStorage.getItem(CHAT_ENABLED_KEY);
+    if (saved !== null) {
+      const enabledState = JSON.parse(saved);
+      setIsEnabledState(enabledState);
+      // Aplicar el estado al chatState
+      setChatState((prev) => ({
+        ...prev,
+        isOpen: enabledState,
+        isMinimized: false,
+      }));
+      // Si está habilitado, forzar modo docked
+      if (enabledState) {
+        setIsDocked(true);
+      }
+    }
+  }, []); // Solo ejecutar una vez al montar
+
   return (
     <ChatDockContext.Provider
       value={{
