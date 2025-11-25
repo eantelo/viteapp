@@ -4,8 +4,8 @@ import {
   useState,
   useEffect,
   useCallback,
-  ReactNode,
 } from "react";
+import type { ReactNode } from "react";
 import type { ChartData } from "@/components/chat/ChatChart";
 
 // Constantes para los límites del ancho del chat

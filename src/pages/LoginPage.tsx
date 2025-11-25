@@ -27,7 +27,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
-  const [successMessage, setSuccessMessage] = useState<string | null>(
+  const [successMessage] = useState<string | null>(
     (location.state as { message?: string })?.message || null
   );
 

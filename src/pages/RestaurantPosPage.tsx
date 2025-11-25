@@ -8,12 +8,10 @@ import {
   IconTrash,
   IconCreditCard,
   IconClock,
-  IconChevronLeft,
   IconPlus,
   IconMinus,
   IconX,
   IconPlayerPause,
-  IconUserPlus,
   IconHistory,
 } from "@tabler/icons-react";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
@@ -44,7 +42,7 @@ export function RestaurantPosPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { auth } = useAuth();
-  
+
   // State
   const [categories, setCategories] = useState<string[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
@@ -91,7 +89,7 @@ export function RestaurantPosPage() {
       try {
         const [cats, prods] = await Promise.all([
           getCategories(),
-          getProducts()
+          getProducts(),
         ]);
         setCategories(cats);
         setProducts(prods);
@@ -120,25 +118,27 @@ export function RestaurantPosPage() {
   // Filter products
   const filteredProducts = useMemo(() => {
     let filtered = products;
-    
+
     if (selectedCategory) {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+      filtered = filtered.filter((p) => p.category === selectedCategory);
     }
-    
+
     if (localSearchTerm) {
       const term = localSearchTerm.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(term) || 
-        p.sku.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.sku.toLowerCase().includes(term)
       );
     }
-    
+
     return filtered;
   }, [products, selectedCategory, localSearchTerm]);
 
-  const currentCustomer = useMemo(() => 
-    customers.find(c => c.id === customerId), 
-  [customers, customerId]);
+  const currentCustomer = useMemo(
+    () => customers.find((c) => c.id === customerId),
+    [customers, customerId]
+  );
 
   const handlePaymentConfirm = async (
     paymentMethod: PaymentMethodType,
@@ -177,9 +177,9 @@ export function RestaurantPosPage() {
       {/* Header */}
       <header className="flex h-14 items-center justify-between bg-slate-900 px-4 text-slate-50 shadow-md z-10">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="text-slate-300 hover:bg-slate-800 hover:text-white"
             onClick={() => navigate("/dashboard")}
           >
@@ -187,7 +187,7 @@ export function RestaurantPosPage() {
           </Button>
           <h1 className="text-lg font-semibold tracking-tight">SalesNet POS</h1>
         </div>
-        
+
         <div className="flex items-center gap-6 text-sm text-slate-300">
           <div className="flex items-center gap-2">
             <IconUser className="size-4" />
@@ -219,10 +219,14 @@ export function RestaurantPosPage() {
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
               )}
             >
-              <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full",
-                selectedCategory === category ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-800"
-              )}>
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full",
+                  selectedCategory === category
+                    ? "bg-slate-800"
+                    : "bg-slate-100 dark:bg-slate-800"
+                )}
+              >
                 {/* Placeholder icon - ideally map categories to icons */}
                 <IconCoffee className="size-6" />
               </div>
@@ -239,8 +243,8 @@ export function RestaurantPosPage() {
           <div className="p-4 bg-white dark:bg-slate-900 border-b flex gap-3">
             <div className="relative flex-1 max-w-md">
               <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar producto..." 
+              <Input
+                placeholder="Buscar producto..."
                 className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-slate-900"
                 value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)}
@@ -248,16 +252,16 @@ export function RestaurantPosPage() {
             </div>
             {/* Mobile Category Selector (visible only on small screens) */}
             <div className="md:hidden flex-1 overflow-x-auto flex gap-2 pb-1">
-               {categories.map(cat => (
-                 <Badge 
-                    key={cat} 
-                    variant={selectedCategory === cat ? "default" : "outline"}
-                    className="whitespace-nowrap cursor-pointer"
-                    onClick={() => setSelectedCategory(cat)}
-                 >
-                   {cat}
-                 </Badge>
-               ))}
+              {categories.map((cat) => (
+                <Badge
+                  key={cat}
+                  variant={selectedCategory === cat ? "default" : "outline"}
+                  className="whitespace-nowrap cursor-pointer"
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat}
+                </Badge>
+              ))}
             </div>
           </div>
 
@@ -306,10 +310,12 @@ export function RestaurantPosPage() {
           {/* Customer Selection */}
           <div className="p-3 border-b bg-slate-50/80 dark:bg-slate-900/80">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Cliente</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Cliente
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-6 text-xs text-blue-600 hover:text-blue-700"
                 onClick={() => setIsCustomerSearchOpen(true)}
               >
@@ -333,10 +339,10 @@ export function RestaurantPosPage() {
 
           <div className="flex items-center justify-between p-4 border-b bg-slate-50/50 dark:bg-slate-900">
             <div>
-              <h2 className="font-bold text-lg text-slate-900 dark:text-white">Orden Actual</h2>
-              <p className="text-xs text-slate-500">
-                {items.length} productos
-              </p>
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">
+                Orden Actual
+              </h2>
+              <p className="text-xs text-slate-500">{items.length} productos</p>
             </div>
             <div className="flex gap-1">
               {heldOrders.length > 0 && (
@@ -363,9 +369,9 @@ export function RestaurantPosPage() {
               >
                 <IconPlayerPause className="size-5" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={clearOrder}
                 className="text-red-500 hover:text-red-600 hover:bg-red-50"
                 disabled={items.length === 0}
@@ -379,23 +385,26 @@ export function RestaurantPosPage() {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item.productId} className="flex gap-3 items-start group">
+                <div
+                  key={item.productId}
+                  className="flex gap-3 items-start group"
+                >
                   <div className="flex flex-col gap-1 items-center justify-center bg-slate-100 rounded-md w-8 py-1 dark:bg-slate-800">
-                    <button 
+                    <button
                       onClick={() => incrementItem(item.productId)}
                       className="text-slate-500 hover:text-slate-900 p-0.5"
                     >
                       <IconPlus className="size-3" />
                     </button>
                     <span className="text-sm font-bold">{item.quantity}</span>
-                    <button 
+                    <button
                       onClick={() => decrementItem(item.productId)}
                       className="text-slate-500 hover:text-slate-900 p-0.5"
                     >
                       <IconMinus className="size-3" />
                     </button>
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <span className="font-medium text-sm text-slate-900 dark:text-slate-100">
@@ -410,7 +419,7 @@ export function RestaurantPosPage() {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => removeItem(item.productId)}
                     className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
@@ -418,7 +427,7 @@ export function RestaurantPosPage() {
                   </button>
                 </div>
               ))}
-              
+
               {items.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400 border-2 border-dashed rounded-xl">
                   <IconCoffee className="size-10 mb-2 opacity-20" />
@@ -440,14 +449,16 @@ export function RestaurantPosPage() {
               </div>
               <Separator />
               <div className="flex justify-between items-end">
-                <span className="font-bold text-lg text-slate-900 dark:text-white">Total</span>
+                <span className="font-bold text-lg text-slate-900 dark:text-white">
+                  Total
+                </span>
                 <span className="font-bold text-2xl text-slate-900 dark:text-white">
                   {formatCurrency(total)}
                 </span>
               </div>
             </div>
 
-            <Button 
+            <Button
               className="w-full h-14 text-lg font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20"
               disabled={items.length === 0 || isSubmitting}
               onClick={() => setIsPaymentDialogOpen(true)}
@@ -477,7 +488,10 @@ export function RestaurantPosPage() {
       />
 
       {/* Customer Selection Dialog */}
-      <Dialog open={isCustomerSearchOpen} onOpenChange={setIsCustomerSearchOpen}>
+      <Dialog
+        open={isCustomerSearchOpen}
+        onOpenChange={setIsCustomerSearchOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Seleccionar Cliente</DialogTitle>
@@ -488,10 +502,10 @@ export function RestaurantPosPage() {
           <div className="space-y-4 py-4">
             <div className="relative">
               <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar cliente..." 
-                className="pl-9" 
-                // Simple filter implementation could go here if needed, 
+              <Input
+                placeholder="Buscar cliente..."
+                className="pl-9"
+                // Simple filter implementation could go here if needed,
                 // but for now we rely on the list
               />
             </div>
@@ -509,7 +523,9 @@ export function RestaurantPosPage() {
                   </div>
                   <div>
                     <p className="font-medium">Cliente General</p>
-                    <p className="text-xs text-muted-foreground">Venta al público</p>
+                    <p className="text-xs text-muted-foreground">
+                      Venta al público
+                    </p>
                   </div>
                 </button>
                 {customers.map((customer) => (
@@ -521,7 +537,8 @@ export function RestaurantPosPage() {
                     }}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors border border-transparent hover:border-slate-200",
-                      customerId === customer.id && "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                      customerId === customer.id &&
+                        "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700"
                     )}
                   >
                     <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
@@ -529,7 +546,9 @@ export function RestaurantPosPage() {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <p className="font-medium truncate">{customer.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {customer.email}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -565,7 +584,11 @@ export function RestaurantPosPage() {
                         {order.customerName || "Cliente General"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(order.createdAt), "d MMM yyyy, h:mm a", { locale: es })}
+                        {format(
+                          new Date(order.createdAt),
+                          "d MMM yyyy, h:mm a",
+                          { locale: es }
+                        )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {order.items.length} productos
@@ -575,8 +598,8 @@ export function RestaurantPosPage() {
                       <span className="font-bold">
                         {/* Calculate total for display if needed, or just show items count */}
                       </span>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         onClick={() => {
                           resumeHeldOrder(order);
                           setIsHeldOrdersOpen(false);
