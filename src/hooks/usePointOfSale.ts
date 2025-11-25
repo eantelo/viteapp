@@ -91,10 +91,11 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     }
   }, []);
 
+  // Load data only once on mount, not when callbacks change reference
   useEffect(() => {
     loadCustomers();
     loadHeldOrders();
-  }, [loadCustomers, loadHeldOrders]);
+  }, []);
 
   useEffect(() => {
     if (!searchTerm.trim()) {

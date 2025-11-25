@@ -83,7 +83,7 @@ export function RestaurantPosPage() {
     includeTax: true,
   });
 
-  // Load initial data
+  // Load initial data (only once on mount)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -113,7 +113,7 @@ export function RestaurantPosPage() {
     // Clock timer
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
-  }, [toast]);
+  }, []);
 
   // Filter products
   const filteredProducts = useMemo(() => {
