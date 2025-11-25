@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ import {
   IconArrowsDiff,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
-import { getProducts, deleteProduct } from "@/api/productsApi";
+import { getProducts, deleteProduct, getProductById } from "@/api/productsApi";
 import { ProductFormDialog } from "@/components/products/ProductFormDialog";
 import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDialog";
 import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
@@ -40,6 +41,7 @@ import { motion, useReducedMotion } from "framer-motion";
 
 export function ProductsPage() {
   useDocumentTitle("Productos");
+  const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -59,10 +61,12 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<ProductDto | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   const [stockAdjustmentOpen, setStockAdjustmentOpen] = useState(false);
   const [stockHistoryOpen, setStockHistoryOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
+    null
+  );
 
   const loadProducts = async (searchTerm?: string) => {
     try {
@@ -94,6 +98,45 @@ export function ProductsPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Manejar parámetro 'edit' de la URL para abrir el formulario de edición
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId && !dialogOpen) {
+      // Intentar encontrar el producto en la lista cargada
+      const productFromList = products.find((p) => p.id === editId);
+      if (productFromList) {
+        setEditingProduct(productFromList);
+        setDialogOpen(true);
+        // Limpiar el parámetro de la URL
+        setSearchParams({}, { replace: true });
+      } else if (!loading && products.length > 0) {
+        // Si no está en la lista, cargar el producto desde la API
+        getProductById(editId)
+          .then((product) => {
+            setEditingProduct(product);
+            setDialogOpen(true);
+            setSearchParams({}, { replace: true });
+          })
+          .catch((err) => {
+            console.error("Error al cargar producto para editar:", err);
+            setSearchParams({}, { replace: true });
+          });
+      } else if (!loading && products.length === 0) {
+        // Lista vacía, intentar cargar directamente
+        getProductById(editId)
+          .then((product) => {
+            setEditingProduct(product);
+            setDialogOpen(true);
+            setSearchParams({}, { replace: true });
+          })
+          .catch((err) => {
+            console.error("Error al cargar producto para editar:", err);
+            setSearchParams({}, { replace: true });
+          });
+      }
+    }
+  }, [searchParams, products, loading, dialogOpen, setSearchParams]);
 
   const handleSearch = () => {
     loadProducts(search);

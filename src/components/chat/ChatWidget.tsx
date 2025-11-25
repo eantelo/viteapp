@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,6 +44,10 @@ const CONVERSATION_SUGGESTIONS = [
   {
     id: "recent-customers",
     text: "Clientes con compras recientes",
+  },
+  {
+    id: "create-product",
+    text: "Crear un nuevo producto",
   },
 ];
 
@@ -332,6 +337,32 @@ export function ChatWidget() {
                               {...props}
                             />
                           ),
+                          a: ({ node, href, children, ...props }) => {
+                            // Si es un enlace interno (empieza con /), usar Link de react-router
+                            if (href && href.startsWith("/")) {
+                              return (
+                                <Link
+                                  to={href}
+                                  className="text-primary hover:underline font-medium"
+                                  {...props}
+                                >
+                                  {children}
+                                </Link>
+                              );
+                            }
+                            // Para enlaces externos, usar <a> normal con target blank
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                                {...props}
+                              >
+                                {children}
+                              </a>
+                            );
+                          },
                         }}
                       >
                         {msg.content}
