@@ -12,11 +12,9 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   MessageCircle,
-  X,
   Send,
   Loader2,
   GripVertical,
-  RotateCcw,
   SquarePen,
 } from "lucide-react";
 import { chatService } from "@/services/chat-service";
@@ -55,7 +53,6 @@ export function ChatWidget() {
   const navigate = useNavigate();
   const {
     isEnabled,
-    setIsEnabled,
     isOpen,
     chatWidth,
     setChatWidth,
@@ -68,10 +65,6 @@ export function ChatWidget() {
     resetConversation,
   } = useChatDock();
 
-  // Si el asistente está deshabilitado, no renderizar nada
-  if (!isEnabled) {
-    return null;
-  }
   const [isResizing, setIsResizing] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -238,8 +231,8 @@ export function ChatWidget() {
     };
   }, [isResizing, setChatWidth, minChatWidth, maxChatWidth]);
 
-  // Si el chat no está abierto, no renderizar nada
-  if (!isOpen) {
+  // Si el asistente está deshabilitado o el chat no está abierto, no renderizar nada
+  if (!isEnabled || !isOpen) {
     return null;
   }
 
@@ -347,7 +340,7 @@ export function ChatWidget() {
                                     navigate(href);
                                   }}
                                   className="text-primary hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
-                                  {...props}
+                                  type="button"
                                 >
                                   {children}
                                 </button>
