@@ -8,6 +8,7 @@ import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { ProductsPage } from "@/pages/ProductsPage";
 import { ProductDetailPage } from "@/pages/ProductDetailPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
+import { CategoriesPage } from "@/pages/CategoriesPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
 
@@ -38,6 +39,7 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/catalog" element={<ProductCatalogPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />
           <Route path="/system" element={<SystemPage />} />

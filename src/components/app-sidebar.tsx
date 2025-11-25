@@ -10,6 +10,7 @@ import {
   IconInnerShadowTop,
   IconCashRegister,
   IconCoffee,
+  IconTags,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -53,6 +54,11 @@ const data = {
       title: "Productos",
       url: "/products",
       icon: IconPackage,
+    },
+    {
+      title: "Categorías",
+      url: "/categories",
+      icon: IconTags,
     },
     {
       title: "Catálogo",
