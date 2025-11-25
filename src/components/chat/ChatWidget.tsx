@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,6 +52,7 @@ const CONVERSATION_SUGGESTIONS = [
 ];
 
 export function ChatWidget() {
+  const navigate = useNavigate();
   const {
     isEnabled,
     setIsEnabled,
