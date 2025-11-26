@@ -9,6 +9,7 @@ export interface ProductDto {
   brand: string;
   category: string;
   price: number;
+  cost: number;
   stock: number;
   isActive: boolean;
 }
@@ -21,6 +22,7 @@ export interface ProductCreateDto {
   brand: string;
   category: string;
   price: number;
+  cost: number;
   stock: number;
 }
 
@@ -32,6 +34,7 @@ export interface ProductUpdateDto {
   brand: string;
   category: string;
   price: number;
+  cost: number;
   stock: number;
   isActive: boolean;
 }

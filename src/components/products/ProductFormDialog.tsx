@@ -45,6 +45,7 @@ export function ProductFormDialog({
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [stock, setStock] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -78,6 +79,7 @@ export function ProductFormDialog({
         setBrand(product.brand || "");
         setCategory(product.category || "");
         setPrice(product.price.toString());
+        setCost(product.cost.toString());
         setStock(product.stock.toString());
         setIsActive(product.isActive);
       } else {
@@ -88,6 +90,7 @@ export function ProductFormDialog({
         setBrand("");
         setCategory("");
         setPrice("");
+        setCost("");
         setStock("");
         setIsActive(true);
       }
@@ -219,14 +222,19 @@ export function ProductFormDialog({
 
     try {
       const priceValue = parseFloat(price);
+      const costValue = parseFloat(cost) || 0;
       const stockValue = parseInt(stock, 10);
 
-      console.log("Parsed values:", { priceValue, stockValue });
+      console.log("Parsed values:", { priceValue, costValue, stockValue });
 
       if (isNaN(priceValue) || priceValue < 0) {
         throw new Error(
           "El precio debe ser un número válido mayor o igual a 0"
         );
+      }
+
+      if (costValue < 0) {
+        throw new Error("El costo debe ser un número válido mayor o igual a 0");
       }
 
       if (isNaN(stockValue) || stockValue < 0) {
@@ -244,6 +252,7 @@ export function ProductFormDialog({
           brand: brand.trim(),
           category: category.trim(),
           price: priceValue,
+          cost: costValue,
           stock: stockValue,
           isActive,
         };
@@ -258,6 +267,7 @@ export function ProductFormDialog({
           brand: brand.trim(),
           category: category.trim(),
           price: priceValue,
+          cost: costValue,
           stock: stockValue,
         };
         console.log("Creating product:", dto);
@@ -321,8 +331,6 @@ export function ProductFormDialog({
               />
             </div>
 
-
-
             <div className="grid gap-2">
               <Label htmlFor="sku">
                 SKU <span className="text-error">*</span>
@@ -341,8 +349,6 @@ export function ProductFormDialog({
                 required
               />
             </div>
-
-
 
             {!isEditing && (
               <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
@@ -466,8 +472,33 @@ export function ProductFormDialog({
               </div>
 
               <div className="grid gap-2">
+                <Label htmlFor="cost">Costo</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
                 <Label htmlFor="stock">
-                  Stock {isEditing ? "(Solo lectura)" : <span className="text-error">*</span>}
+                  Stock{" "}
+                  {isEditing ? (
+                    "(Solo lectura)"
+                  ) : (
+                    <span className="text-error">*</span>
+                  )}
                 </Label>
                 <Input
                   id="stock"
@@ -490,6 +521,38 @@ export function ProductFormDialog({
                   </p>
                 )}
               </div>
+
+              {/* Mostrar utilidad calculada */}
+              {price && cost && (
+                <div className="grid gap-2">
+                  <Label>Utilidad</Label>
+                  <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50">
+                    <span
+                      className={`font-medium ${
+                        parseFloat(price) - parseFloat(cost) >= 0
+                          ? "text-success"
+                          : "text-error"
+                      }`}
+                    >
+                      $
+                      {(
+                        (parseFloat(price) || 0) - (parseFloat(cost) || 0)
+                      ).toFixed(2)}
+                    </span>
+                    <span className="text-muted-foreground text-sm ml-2">
+                      (
+                      {parseFloat(price) > 0
+                        ? (
+                            ((parseFloat(price) - parseFloat(cost)) /
+                              parseFloat(price)) *
+                            100
+                          ).toFixed(1)
+                        : 0}
+                      %)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {isEditing && (

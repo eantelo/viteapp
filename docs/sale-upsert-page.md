@@ -1,0 +1,126 @@
+# Página de Creación/Edición de Ventas (SaleUpsertPage)
+
+## Descripción
+
+La página `SaleUpsertPage` permite crear y editar órdenes de venta en una interfaz de página completa, reemplazando el antiguo diálogo modal (`SaleFormDialog`). Este cambio mejora la experiencia del usuario al proporcionar más espacio de trabajo y una navegación más clara.
+
+## Rutas
+
+| Ruta | Descripción |
+|------|-------------|
+| `/sales/new` | Crear una nueva orden de venta |
+| `/sales/:id/edit` | Editar una orden de venta existente |
+
+## Características
+
+### Información General
+- **Cliente**: Selector de clientes activos (obligatorio)
+- **Fecha**: Selector de fecha de la venta (obligatorio)
+- **Notas**: Campo de texto opcional para observaciones
+
+### Gestión de Productos
+- Selector de productos con precio y stock visible
+- Tabla de productos agregados con:
+  - Nombre y SKU del producto
+  - Controles de cantidad (+/-)
+  - Precio unitario
+  - Subtotal calculado automáticamente
+  - Botón para eliminar productos
+- Validación para evitar productos duplicados
+
+### Panel de Resumen
+- Conteo de productos y cantidad total
+- Total de la orden
+- Información del cliente seleccionado
+- Acciones rápidas (navegación a POS, Clientes, Productos)
+
+## Estructura del Archivo
+
+```
+viteapp/src/pages/SaleUpsertPage.tsx
+```
+
+## Componentes Utilizados
+
+- `DashboardLayout`: Layout principal con breadcrumbs
+- `PageTransition`: Animaciones de transición de página
+- `OrderProductTable`: Tabla de productos de la orden
+- Componentes de UI: Card, Button, Input, Select, Label, Textarea
+
+## Flujo de Trabajo
+
+### Crear Nueva Orden
+1. Usuario navega a `/sales/new` (botón "Nueva Orden" en SalesPage)
+2. Selecciona cliente y fecha
+3. Agrega productos desde el selector
+4. Ajusta cantidades según necesidad
+5. Click en "Crear Orden"
+6. Redirección a `/sales` con mensaje de éxito
+
+### Editar Orden Existente
+1. Usuario navega a `/sales/:id/edit` (botón editar en SalesPage)
+2. Se carga la información de la orden existente
+3. Modifica los datos necesarios
+4. Click en "Actualizar Orden"
+5. Redirección a `/sales` con mensaje de éxito
+
+## API Consumida
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/sales/:id` | Obtener datos de orden existente |
+| POST | `/api/sales` | Crear nueva orden |
+| PUT | `/api/sales/:id` | Actualizar orden existente |
+| GET | `/api/customers` | Listar clientes activos |
+| GET | `/api/products` | Listar productos activos |
+
+## Validaciones
+
+- Cliente: Obligatorio
+- Fecha: Obligatoria
+- Productos: Al menos uno requerido
+- No se permiten productos duplicados en la misma orden
+
+## Estados de la Página
+
+1. **Cargando**: Muestra skeleton mientras se obtienen datos (solo edición)
+2. **Error**: Muestra mensaje de error con opciones de reintentar
+3. **Formulario**: Estado normal con el formulario activo
+4. **Guardando**: Botones deshabilitados mientras se procesa
+
+## Animaciones
+
+Utiliza Framer Motion para transiciones suaves:
+- Fade in con desplazamiento vertical
+- Respeta `prefers-reduced-motion` del usuario
+- Animaciones escalonadas por sección
+
+## Integración con SalesPage
+
+El botón "Nueva Orden" en `SalesPage` ahora navega a `/sales/new` en lugar de abrir un diálogo modal. El botón de editar en cada fila navega a `/sales/:id/edit`.
+
+## Ejemplo de Uso
+
+```tsx
+// Navegación programática
+import { useNavigate } from 'react-router-dom';
+
+const navigate = useNavigate();
+
+// Crear nueva orden
+navigate('/sales/new');
+
+// Editar orden existente
+navigate(`/sales/${saleId}/edit`);
+```
+
+## Cambios Respecto al Diálogo Anterior
+
+| Aspecto | SaleFormDialog | SaleUpsertPage |
+|---------|----------------|----------------|
+| Tipo | Modal/Diálogo | Página completa |
+| Espacio | Limitado | Amplio |
+| Navegación | Estado local | URL navegable |
+| Breadcrumbs | No | Sí |
+| Historial | No | Sí (back/forward) |
+| Bookmarking | No | Sí |

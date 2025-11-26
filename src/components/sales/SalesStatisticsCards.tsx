@@ -6,19 +6,6 @@ import {
   IconChartLine,
   IconCreditCard,
 } from "@tabler/icons-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  CartesianGrid,
-  Cell,
-} from "recharts";
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent,
-  type ChartConfig
-} from "@/components/ui/chart";
 
 interface SalesStatisticsCardsProps {
   statistics: SalesStatistics | null;
@@ -67,24 +54,6 @@ export function SalesStatisticsCards({
     };
     return methods[method] || "Desconocido";
   };
-
-  // Preparar datos para el gráfico por hora
-  const hourlyChartData = statistics.salesByHour.map((item) => ({
-    hour: `${item.hour}:00`,
-    amount: item.amount,
-    count: item.count,
-  }));
-
-  const chartConfig = {
-    amount: {
-      label: "Monto",
-      color: "#3b82f6",
-    },
-    count: {
-      label: "Transacciones",
-      color: "#8b5cf6",
-    },
-  } satisfies ChartConfig;
 
   // Colores para el gráfico
   const getBarColor = (index: number) => {
@@ -161,34 +130,6 @@ export function SalesStatisticsCards({
           </CardContent>
         </Card>
       </div>
-
-      {/* Gráfico de ventas por hora */}
-      {hourlyChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Ventas por Hora</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <BarChart data={hourlyChartData}>
-                <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="hour"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                  {hourlyChartData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={getBarColor(index)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Desglose por método de pago */}
       {statistics.salesByPaymentMethod.length > 0 && (

@@ -78,6 +78,7 @@ export function ProductDetailPage() {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [cost, setCost] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   // Sugerencias de marca y categoría
@@ -132,6 +133,7 @@ export function ProductDetailPage() {
     setBrand(prod.brand || "");
     setCategory(prod.category || "");
     setPrice(prod.price.toString());
+    setCost(prod.cost.toString());
     setIsActive(prod.isActive);
   };
 
@@ -234,6 +236,12 @@ export function ProductDetailPage() {
       return;
     }
 
+    const costValue = parseFloat(cost) || 0;
+    if (costValue < 0) {
+      setFormError("El costo debe ser un número válido mayor o igual a 0.");
+      return;
+    }
+
     setSaving(true);
     setFormError(null);
 
@@ -246,6 +254,7 @@ export function ProductDetailPage() {
         brand: brand.trim(),
         category: category.trim(),
         price: priceValue,
+        cost: costValue,
         stock: product.stock, // Stock no se modifica aquí
         isActive,
       };
@@ -584,28 +593,78 @@ export function ProductDetailPage() {
 
                   <Separator />
 
-                  {/* Precio */}
-                  <div className="grid gap-2">
-                    <Label htmlFor="price">
-                      Precio{" "}
-                      {isEditing && <span className="text-error">*</span>}
-                    </Label>
-                    {isEditing ? (
-                      <Input
-                        id="price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        placeholder="0.00"
-                      />
-                    ) : (
-                      <p className="text-2xl font-bold text-primary">
-                        {formatPrice(product.price)}
-                      </p>
-                    )}
+                  {/* Precio y Costo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="price">
+                        Precio{" "}
+                        {isEditing && <span className="text-error">*</span>}
+                      </Label>
+                      {isEditing ? (
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <p className="text-2xl font-bold text-primary">
+                          {formatPrice(product.price)}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="cost">Costo</Label>
+                      {isEditing ? (
+                        <Input
+                          id="cost"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={cost}
+                          onChange={(e) => setCost(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      ) : (
+                        <p className="text-2xl font-bold text-muted-foreground">
+                          {formatPrice(product.cost)}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Utilidad */}
+                  {!isEditing && (
+                    <div className="grid gap-2">
+                      <Label>Utilidad</Label>
+                      <div className="flex items-center gap-3">
+                        <p
+                          className={`text-2xl font-bold ${
+                            product.price - product.cost >= 0
+                              ? "text-success"
+                              : "text-error"
+                          }`}
+                        >
+                          {formatPrice(product.price - product.cost)}
+                        </p>
+                        <span className="text-muted-foreground text-lg">
+                          (
+                          {product.price > 0
+                            ? (
+                                ((product.price - product.cost) /
+                                  product.price) *
+                                100
+                              ).toFixed(1)
+                            : 0}
+                          %)
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Estado (solo en edición) */}
                   {isEditing && (

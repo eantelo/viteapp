@@ -11,6 +11,7 @@ import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
+import { SaleUpsertPage } from "@/pages/SaleUpsertPage";
 
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
@@ -34,6 +35,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
 
           <Route path="/sales" element={<SalesPage />} />
+          <Route path="/sales/new" element={<SaleUpsertPage />} />
+          <Route path="/sales/:id/edit" element={<SaleUpsertPage />} />
           <Route path="/pos" element={<PointOfSalePage />} />
           <Route path="/pos/restaurant" element={<RestaurantPosPage />} />
           <Route path="/products" element={<ProductsPage />} />

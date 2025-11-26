@@ -52,7 +52,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { DatePresetButtons } from "@/components/sales/DatePresetButtons";
 import { SalesStatisticsCards } from "@/components/sales/SalesStatisticsCards";
 import { SaleDetailModal } from "@/components/sales/SaleDetailModal";
-import { SaleFormDialog } from "@/components/sales/SaleFormDialog";
 import type { DatePreset } from "@/types/salesHistory";
 import { exportToExcel, exportToPDF } from "@/utils/salesExport";
 import { toast } from "sonner";
@@ -88,8 +87,6 @@ export function SalesPage() {
   // UI state
   const [selectedSale, setSelectedSale] = useState<SaleDto | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [formDialogOpen, setFormDialogOpen] = useState(false);
-  const [editingSale, setEditingSale] = useState<SaleDto | null>(null);
 
   // Calcular fechas según el preset seleccionado
   const getDateRangeFromPreset = (preset: DatePreset) => {
@@ -183,7 +180,7 @@ export function SalesPage() {
         !search ||
         sale.saleNumber.toString().includes(searchLower) ||
         sale.customerName?.toLowerCase().includes(searchLower);
-      
+
       const matchesStatus = status === "all" || sale.status === status;
 
       return matchesSearch && matchesStatus;
@@ -279,21 +276,11 @@ export function SalesPage() {
   };
 
   const handleCreate = () => {
-    setEditingSale(null);
-    setFormDialogOpen(true);
+    navigate("/sales/new");
   };
 
   const handleEdit = (sale: SaleDto) => {
-    setEditingSale(sale);
-    setFormDialogOpen(true);
-  };
-
-  const handleFormDialogClose = (saved: boolean) => {
-    setFormDialogOpen(false);
-    setEditingSale(null);
-    if (saved) {
-      loadData();
-    }
+    navigate(`/sales/${sale.id}/edit`);
   };
 
   // Formateo
@@ -453,7 +440,10 @@ export function SalesPage() {
 
               {/* Filtro de Estado */}
               <div className="space-y-2">
-                <Label htmlFor="status-filter" className="text-sm font-semibold">
+                <Label
+                  htmlFor="status-filter"
+                  className="text-sm font-semibold"
+                >
                   Estado
                 </Label>
                 <Select value={status} onValueChange={setStatus}>
@@ -696,12 +686,6 @@ export function SalesPage() {
             setSelectedSale(null);
           }}
           onPrint={handlePrint}
-        />
-
-        <SaleFormDialog
-          open={formDialogOpen}
-          sale={editingSale}
-          onClose={handleFormDialogClose}
         />
       </DashboardLayout>
     </PageTransition>

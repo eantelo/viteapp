@@ -160,6 +160,7 @@ export function PointOfSalePage() {
               brand: "",
               category: "",
               price: item.price,
+              cost: 0,
               stock: item.quantity,
               isActive: true,
             };

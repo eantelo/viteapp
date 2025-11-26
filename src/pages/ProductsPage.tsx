@@ -311,8 +311,9 @@ export function ProductsPage() {
                           <TableHead>Marca</TableHead>
                           <TableHead>Categoría</TableHead>
                           <TableHead>SKU</TableHead>
-                          <TableHead>Código de Barras</TableHead>
                           <TableHead className="text-right">Precio</TableHead>
+                          <TableHead className="text-right">Costo</TableHead>
+                          <TableHead className="text-right">Utilidad</TableHead>
                           <TableHead className="text-right">Stock</TableHead>
                           <TableHead>Estado</TableHead>
                           <TableHead className="text-right">Acciones</TableHead>
@@ -336,9 +337,22 @@ export function ProductsPage() {
                             <TableCell>{product.brand || "-"}</TableCell>
                             <TableCell>{product.category || "-"}</TableCell>
                             <TableCell>{product.sku}</TableCell>
-                            <TableCell>{product.barcode || "-"}</TableCell>
                             <TableCell className="text-right">
                               {formatPrice(product.price)}
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">
+                              {formatPrice(product.cost)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span
+                                className={
+                                  product.price - product.cost >= 0
+                                    ? "text-success"
+                                    : "text-error"
+                                }
+                              >
+                                {formatPrice(product.price - product.cost)}
+                              </span>
                             </TableCell>
                             <TableCell className="text-right">
                               <span
