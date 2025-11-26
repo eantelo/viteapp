@@ -5,9 +5,9 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { ProductsPage } from "@/pages/ProductsPage";
-import { ProductDetailPage } from "@/pages/ProductDetailPage";
 import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
+import { ProductDetailPage } from "@/pages/ProductDetailPage";
+import { ProductUpsertPage } from "@/pages/ProductUpsertPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { SalesPage } from "@/pages/SalesPage";
@@ -39,9 +39,14 @@ function App() {
           <Route path="/sales/:id/edit" element={<SaleUpsertPage />} />
           <Route path="/pos" element={<PointOfSalePage />} />
           <Route path="/pos/restaurant" element={<RestaurantPosPage />} />
-          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products" element={<ProductCatalogPage />} />
+          <Route path="/products/new" element={<ProductUpsertPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/catalog" element={<ProductCatalogPage />} />
+          <Route path="/products/:id/edit" element={<ProductUpsertPage />} />
+          <Route
+            path="/catalog"
+            element={<Navigate to="/products" replace />}
+          />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />

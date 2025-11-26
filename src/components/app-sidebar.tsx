@@ -5,7 +5,6 @@ import {
   IconPackage,
   IconReport,
   IconAddressBook,
-  IconLayoutGrid,
   IconReceipt,
   IconInnerShadowTop,
   IconCashRegister,
@@ -59,11 +58,6 @@ const data = {
       title: "Categorías",
       url: "/categories",
       icon: IconTags,
-    },
-    {
-      title: "Catálogo",
-      url: "/catalog",
-      icon: IconLayoutGrid,
     },
     {
       title: "Clientes",

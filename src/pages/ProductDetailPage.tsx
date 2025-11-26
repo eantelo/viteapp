@@ -3,11 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Card,
   CardContent,
@@ -25,21 +20,18 @@ import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
   IconArrowLeft,
-  IconDeviceFloppy,
   IconPencil,
   IconHistory,
   IconArrowsDiff,
   IconTrash,
-  IconX,
+  IconPackage,
+  IconBarcode,
+  IconTag,
+  IconCategory,
+  IconBox,
 } from "@tabler/icons-react";
-import type { ProductDto, ProductUpdateDto } from "@/api/productsApi";
-import {
-  getProductById,
-  updateProduct,
-  deleteProduct,
-  getCategories,
-  getBrands,
-} from "@/api/productsApi";
+import type { ProductDto } from "@/api/productsApi";
+import { getProductById, deleteProduct } from "@/api/productsApi";
 import {
   onProductUpdated,
   type ProductUpdatedEventDetail,
@@ -65,26 +57,6 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estado del formulario de edición
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Campos del formulario
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [sku, setSku] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [brand, setBrand] = useState("");
-  const [category, setCategory] = useState("");
-  const [price, setPrice] = useState("");
-  const [cost, setCost] = useState("");
-  const [isActive, setIsActive] = useState(true);
-
-  // Sugerencias de marca y categoría
-  const [categories, setCategories] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
-
   // Diálogos de stock
   const [stockAdjustmentOpen, setStockAdjustmentOpen] = useState(false);
   const [stockHistoryOpen, setStockHistoryOpen] = useState(false);
@@ -100,7 +72,6 @@ export function ProductDetailPage() {
       setError(null);
       const data = await getProductById(id);
       setProduct(data);
-      resetFormToProduct(data);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al cargar el producto"
@@ -110,72 +81,23 @@ export function ProductDetailPage() {
     }
   }, [id]);
 
-  // Cargar sugerencias
-  const loadSuggestions = async () => {
-    try {
-      const [categoriesData, brandsData] = await Promise.all([
-        getCategories(),
-        getBrands(),
-      ]);
-      setCategories(categoriesData);
-      setBrands(brandsData);
-    } catch (err) {
-      console.error("Error loading suggestions:", err);
-    }
-  };
-
-  // Resetear el formulario al estado del producto
-  const resetFormToProduct = (prod: ProductDto) => {
-    setName(prod.name);
-    setDescription(prod.description || "");
-    setSku(prod.sku);
-    setBarcode(prod.barcode || "");
-    setBrand(prod.brand || "");
-    setCategory(prod.category || "");
-    setPrice(prod.price.toString());
-    setCost(prod.cost.toString());
-    setIsActive(prod.isActive);
-  };
-
   useEffect(() => {
     loadProduct();
-    loadSuggestions();
   }, [loadProduct]);
 
   // Suscribirse a eventos de actualización de productos desde el chat
   useEffect(() => {
-    // Solo suscribirse si hay un ID de producto
     if (!id) return;
 
     const handleProductUpdate = (detail: ProductUpdatedEventDetail) => {
-      console.log(
-        "[ProductDetailPage] Evento de actualización recibido:",
-        detail
-      );
-
-      // Refrescar si:
-      // 1. El evento es para este producto específico (por ID)
-      // 2. El evento no tiene ID (actualización general que podría afectar este producto)
-      // 3. El tipo de actualización es stock, updated o created
       const shouldRefresh =
         detail.productId === id ||
         (!detail.productId &&
           (detail.updateType === "stock" || detail.updateType === "updated"));
 
-      console.log(
-        "[ProductDetailPage] ¿Debe refrescar?:",
-        shouldRefresh,
-        "ID actual:",
-        id,
-        "ID evento:",
-        detail.productId
-      );
-
       if (shouldRefresh) {
-        // Recargar el producto para obtener los datos actualizados
         loadProduct();
 
-        // Mostrar notificación al usuario
         if (detail.updateType === "stock") {
           toast.info("Stock actualizado desde el asistente", {
             description: detail.productName
@@ -186,92 +108,15 @@ export function ProductDetailPage() {
       }
     };
 
-    // Suscribirse al evento
     const unsubscribe = onProductUpdated(handleProductUpdate);
-    console.log(
-      "[ProductDetailPage] Suscrito a eventos de actualización para producto:",
-      id
-    );
 
-    // Limpiar suscripción al desmontar
     return () => {
-      console.log("[ProductDetailPage] Cancelando suscripción");
       unsubscribe();
     };
   }, [id, loadProduct]);
 
   const handleEdit = () => {
-    setIsEditing(true);
-    setFormError(null);
-  };
-
-  const handleCancelEdit = () => {
-    if (product) {
-      resetFormToProduct(product);
-    }
-    setIsEditing(false);
-    setFormError(null);
-  };
-
-  const handleSave = async () => {
-    if (!product) return;
-
-    // Validaciones
-    if (!name.trim()) {
-      setFormError("El nombre del producto es requerido.");
-      return;
-    }
-    if (!sku.trim()) {
-      setFormError("El SKU es requerido.");
-      return;
-    }
-    if (!price.trim()) {
-      setFormError("El precio es requerido.");
-      return;
-    }
-
-    const priceValue = parseFloat(price);
-    if (isNaN(priceValue) || priceValue < 0) {
-      setFormError("El precio debe ser un número válido mayor o igual a 0.");
-      return;
-    }
-
-    const costValue = parseFloat(cost) || 0;
-    if (costValue < 0) {
-      setFormError("El costo debe ser un número válido mayor o igual a 0.");
-      return;
-    }
-
-    setSaving(true);
-    setFormError(null);
-
-    try {
-      const dto: ProductUpdateDto = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        sku: sku.trim(),
-        barcode: barcode.trim(),
-        brand: brand.trim(),
-        category: category.trim(),
-        price: priceValue,
-        cost: costValue,
-        stock: product.stock, // Stock no se modifica aquí
-        isActive,
-      };
-
-      await updateProduct(product.id, dto);
-      toast.success("Producto actualizado correctamente");
-
-      // Recargar el producto para obtener los datos actualizados
-      await loadProduct();
-      setIsEditing(false);
-    } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Error al guardar el producto"
-      );
-    } finally {
-      setSaving(false);
-    }
+    navigate(`/products/${id}/edit`);
   };
 
   const handleDelete = async () => {
@@ -307,7 +152,7 @@ export function ProductDetailPage() {
     }).format(priceValue);
   };
 
-  // Renderizar estado de carga
+  // Estado de carga
   if (loading) {
     return (
       <PageTransition>
@@ -323,23 +168,37 @@ export function ProductDetailPage() {
             <Skeleton className="h-10 w-10" />
             <Skeleton className="h-8 w-64" />
           </div>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-72" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-72" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+            <div>
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-32 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </DashboardLayout>
       </PageTransition>
     );
   }
 
-  // Renderizar estado de error
+  // Estado de error
   if (error) {
     return (
       <PageTransition>
@@ -377,6 +236,9 @@ export function ProductDetailPage() {
     return null;
   }
 
+  const profit = product.price - product.cost;
+  const profitMargin = product.price > 0 ? (profit / product.price) * 100 : 0;
+
   return (
     <PageTransition>
       <DashboardLayout
@@ -389,7 +251,7 @@ export function ProductDetailPage() {
       >
         {/* Header con acciones */}
         <motion.div
-          className="flex items-center justify-between"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
@@ -403,58 +265,41 @@ export function ProductDetailPage() {
               <IconArrowLeft size={20} />
             </Button>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold">{product.name}</h1>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-bold">
+                  {product.name}
+                </h1>
                 <Badge variant={product.isActive ? "default" : "secondary"}>
                   {product.isActive ? "Activo" : "Inactivo"}
                 </Badge>
               </div>
-              <p className="text-slate-500 mt-1">
+              <p className="text-slate-500 mt-1 text-sm">
                 SKU: {product.sku}
-                {product.barcode && ` | Código: ${product.barcode}`}
+                {product.barcode && ` • Código: ${product.barcode}`}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {isEditing ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                >
-                  <IconX size={20} className="mr-2" />
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave} disabled={saving}>
-                  <IconDeviceFloppy size={20} className="mr-2" />
-                  {saving ? "Guardando..." : "Guardar"}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={handleEdit}>
-                  <IconPencil size={20} className="mr-2" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-error hover:text-error/90"
-                  onClick={handleDelete}
-                >
-                  <IconTrash size={20} className="mr-2" />
-                  Eliminar
-                </Button>
-              </>
-            )}
+            <Button variant="outline" onClick={handleEdit}>
+              <IconPencil size={20} className="mr-2" />
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              className="text-error hover:text-error/90"
+              onClick={handleDelete}
+            >
+              <IconTrash size={20} className="mr-2" />
+              Eliminar
+            </Button>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Información principal */}
           <motion.div
-            className="lg:col-span-2"
+            className="lg:col-span-2 space-y-4"
             initial={motionInitial}
             animate={motionAnimate}
             transition={{
@@ -462,228 +307,112 @@ export function ProductDetailPage() {
               delay: prefersReducedMotion ? 0 : 0.08,
             }}
           >
+            {/* Detalles del producto */}
             <Card>
               <CardHeader>
                 <CardTitle>Información del Producto</CardTitle>
                 <CardDescription>
-                  {isEditing
-                    ? "Modifica los datos del producto"
-                    : "Detalles generales del producto"}
+                  Detalles generales del producto
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {formError && (
-                  <div className="text-sm text-error bg-error/10 px-3 py-2 rounded-md mb-4">
-                    {formError}
-                  </div>
-                )}
-
                 <div className="grid gap-6">
-                  {/* Nombre */}
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">
-                      Nombre{" "}
-                      {isEditing && <span className="text-error">*</span>}
-                    </Label>
-                    {isEditing ? (
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nombre del producto"
-                        maxLength={200}
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">{product.name}</p>
-                    )}
-                  </div>
-
                   {/* Descripción */}
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Descripción</Label>
-                    {isEditing ? (
-                      <Textarea
-                        id="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Descripción del producto (opcional)"
-                        maxLength={1000}
-                        rows={3}
-                      />
-                    ) : (
-                      <p className="text-slate-600">
-                        {product.description || "Sin descripción"}
+                  {product.description && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <IconPackage size={16} />
+                        Descripción
+                      </h4>
+                      <p className="text-base">{product.description}</p>
+                    </div>
+                  )}
+
+                  {product.description && <Separator />}
+
+                  {/* Identificadores */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <IconTag size={16} />
+                        SKU
+                      </h4>
+                      <p className="font-mono text-lg">{product.sku}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <IconBarcode size={16} />
+                        Código de Barras
+                      </h4>
+                      <p className="font-mono text-lg">
+                        {product.barcode || "—"}
                       </p>
-                    )}
+                    </div>
                   </div>
 
                   <Separator />
-
-                  {/* SKU y Código de barras */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="sku">
-                        SKU {isEditing && <span className="text-error">*</span>}
-                      </Label>
-                      {isEditing ? (
-                        <Input
-                          id="sku"
-                          value={sku}
-                          onChange={(e) => setSku(e.target.value)}
-                          placeholder="Código SKU"
-                          maxLength={100}
-                        />
-                      ) : (
-                        <p className="font-mono text-lg">{product.sku}</p>
-                      )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="barcode">Código de Barras</Label>
-                      {isEditing ? (
-                        <Input
-                          id="barcode"
-                          value={barcode}
-                          onChange={(e) => setBarcode(e.target.value)}
-                          placeholder="Código de barras"
-                          maxLength={100}
-                        />
-                      ) : (
-                        <p className="font-mono text-lg">
-                          {product.barcode || "-"}
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
                   {/* Marca y Categoría */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="brand">Marca</Label>
-                      {isEditing ? (
-                        <Combobox
-                          value={brand}
-                          onValueChange={setBrand}
-                          options={brands}
-                          placeholder="Seleccionar marca"
-                          emptyText="Escribe para crear una nueva marca"
-                          maxLength={120}
-                        />
-                      ) : (
-                        <p className="text-lg">{product.brand || "-"}</p>
-                      )}
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <IconBox size={16} />
+                        Marca
+                      </h4>
+                      <p className="text-lg">{product.brand || "—"}</p>
                     </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="category">Categoría</Label>
-                      {isEditing ? (
-                        <Combobox
-                          value={category}
-                          onValueChange={setCategory}
-                          options={categories}
-                          placeholder="Seleccionar categoría"
-                          emptyText="Escribe para crear una nueva categoría"
-                          maxLength={120}
-                        />
-                      ) : (
-                        <p className="text-lg">{product.category || "-"}</p>
-                      )}
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <IconCategory size={16} />
+                        Categoría
+                      </h4>
+                      <p className="text-lg">{product.category || "—"}</p>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <Separator />
-
-                  {/* Precio y Costo */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="price">
-                        Precio{" "}
-                        {isEditing && <span className="text-error">*</span>}
-                      </Label>
-                      {isEditing ? (
-                        <Input
-                          id="price"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="0.00"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold text-primary">
-                          {formatPrice(product.price)}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="cost">Costo</Label>
-                      {isEditing ? (
-                        <Input
-                          id="cost"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={cost}
-                          onChange={(e) => setCost(e.target.value)}
-                          placeholder="0.00"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold text-muted-foreground">
-                          {formatPrice(product.cost)}
-                        </p>
-                      )}
-                    </div>
+            {/* Precios */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Precios</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 rounded-lg bg-primary/5">
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Precio de Venta
+                    </p>
+                    <p className="text-3xl font-bold text-primary">
+                      {formatPrice(product.price)}
+                    </p>
                   </div>
-
-                  {/* Utilidad */}
-                  {!isEditing && (
-                    <div className="grid gap-2">
-                      <Label>Utilidad</Label>
-                      <div className="flex items-center gap-3">
-                        <p
-                          className={`text-2xl font-bold ${
-                            product.price - product.cost >= 0
-                              ? "text-success"
-                              : "text-error"
-                          }`}
-                        >
-                          {formatPrice(product.price - product.cost)}
-                        </p>
-                        <span className="text-muted-foreground text-lg">
-                          (
-                          {product.price > 0
-                            ? (
-                                ((product.price - product.cost) /
-                                  product.price) *
-                                100
-                              ).toFixed(1)
-                            : 0}
-                          %)
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Estado (solo en edición) */}
-                  {isEditing && (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="isActive"
-                        checked={isActive}
-                        onCheckedChange={(checked) =>
-                          setIsActive(checked === true)
-                        }
-                      />
-                      <Label
-                        htmlFor="isActive"
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        Producto activo
-                      </Label>
-                    </div>
-                  )}
+                  <div className="text-center p-4 rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground mb-1">Costo</p>
+                    <p className="text-3xl font-bold text-muted-foreground">
+                      {formatPrice(product.cost)}
+                    </p>
+                  </div>
+                  <div
+                    className={`text-center p-4 rounded-lg ${
+                      profit >= 0 ? "bg-success/10" : "bg-error/10"
+                    }`}
+                  >
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Utilidad
+                    </p>
+                    <p
+                      className={`text-3xl font-bold ${
+                        profit >= 0 ? "text-success" : "text-error"
+                      }`}
+                    >
+                      {formatPrice(profit)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ({profitMargin.toFixed(1)}%)
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -766,9 +495,9 @@ export function ProductDetailPage() {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => navigate("/catalog")}
+                  onClick={() => navigate("/products")}
                 >
-                  Ver en Catálogo
+                  Ver Catálogo
                 </Button>
               </CardContent>
             </Card>

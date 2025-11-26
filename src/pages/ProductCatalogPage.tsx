@@ -26,7 +26,6 @@ import {
 } from "@/api/productsApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
-import { ProductFormDialog } from "@/components/products/ProductFormDialog";
 import { DeleteProductDialog } from "@/components/products/DeleteProductDialog";
 import {
   DropdownMenu,
@@ -298,7 +297,6 @@ export function ProductCatalogPage() {
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [showFormDialog, setShowFormDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
     null
@@ -573,8 +571,7 @@ export function ProductCatalogPage() {
   };
 
   const handleCreateProduct = () => {
-    setSelectedProduct(null);
-    setShowFormDialog(true);
+    navigate("/products/new");
   };
 
   const handleViewDetail = (product: ProductDto) => {
@@ -582,8 +579,7 @@ export function ProductCatalogPage() {
   };
 
   const handleEditProduct = (product: ProductDto) => {
-    setSelectedProduct(product);
-    setShowFormDialog(true);
+    navigate(`/products/${product.id}/edit`);
   };
 
   const handleDeleteProduct = (product: ProductDto) => {
@@ -654,20 +650,6 @@ export function ProductCatalogPage() {
     } finally {
       setDeletingProduct(false);
     }
-  };
-
-  const handleFormClose = async (saved: boolean) => {
-    setShowFormDialog(false);
-    if (saved) {
-      toast({
-        title: selectedProduct ? "Producto actualizado" : "Producto creado",
-        description: selectedProduct
-          ? "Los cambios se han guardado correctamente."
-          : "El producto se ha creado correctamente.",
-      });
-      await loadProducts();
-    }
-    setSelectedProduct(null);
   };
 
   const applyMobileFilters = () => {
@@ -1133,12 +1115,6 @@ export function ProductCatalogPage() {
         </motion.div>
 
         {/* Diálogos */}
-        <ProductFormDialog
-          open={showFormDialog}
-          product={selectedProduct}
-          onClose={handleFormClose}
-        />
-
         <DeleteProductDialog
           open={showDeleteDialog}
           product={selectedProduct}
