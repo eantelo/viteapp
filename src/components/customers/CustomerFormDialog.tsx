@@ -19,10 +19,12 @@ import type {
   CustomerUpdateDto,
 } from "@/api/customersApi";
 import { createCustomer, updateCustomer } from "@/api/customersApi";
+import type { CustomerPrefillData } from "@/contexts/FormPrefillContext";
 
 interface CustomerFormDialogProps {
   open: boolean;
   customer: CustomerDto | null;
+  prefillData?: CustomerPrefillData | null;
   onClose: (saved: boolean) => void;
 }
 
@@ -35,6 +37,7 @@ interface FieldValidation {
 export function CustomerFormDialog({
   open,
   customer,
+  prefillData,
   onClose,
 }: CustomerFormDialogProps) {
   const [name, setName] = useState("");
@@ -69,6 +72,14 @@ export function CustomerFormDialog({
       setAddress(customer.address ?? "");
       setTaxId(customer.taxId ?? "");
       setIsActive(customer.isActive);
+    } else if (prefillData) {
+      // Apply prefill data from interface agent
+      setName(prefillData.name ?? "");
+      setEmail(prefillData.email ?? "");
+      setPhone(prefillData.phone ?? "");
+      setAddress(prefillData.address ?? "");
+      setTaxId(prefillData.taxId ?? "");
+      setIsActive(true);
     } else {
       setName("");
       setEmail("");
@@ -85,7 +96,7 @@ export function CustomerFormDialog({
       address: false,
       taxId: false,
     });
-  }, [open, customer]);
+  }, [open, customer, prefillData]);
 
   // Validations
   const validations = useMemo(() => {

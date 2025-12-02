@@ -28,6 +28,8 @@ import {
   detectProductUpdateFromChatMessage,
   emitProductUpdated,
 } from "@/lib/product-events";
+import { useInterfaceAgent } from "@/hooks/useInterfaceAgent";
+import { ConfirmActionDialog } from "./ConfirmActionDialog";
 
 // Sugerencias de conversación para mostrar al inicio
 const CONVERSATION_SUGGESTIONS = [
@@ -72,6 +74,15 @@ export function ChatWidget() {
     setConversationId,
     resetConversation,
   } = useChatDock();
+
+  // Interface agent for navigation and action handling
+  const {
+    processResponse,
+    pendingConfirmation,
+    confirmAction,
+    cancelAction,
+    isExecuting,
+  } = useInterfaceAgent();
 
   const [isResizing, setIsResizing] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -160,17 +171,40 @@ export function ChatWidget() {
         conversationId
       );
 
+      console.log("[ChatWidget] Raw response from API:", response.response);
+      console.log(
+        "[ChatWidget] Response contains ACTION_DATA:",
+        response.response.includes("<<<ACTION_DATA>>>")
+      );
+
       if (response.conversationId) {
         setConversationId(response.conversationId);
       }
 
+      // Process interface agent actions first (navigation, form prefill, etc.)
+      const agentResult = processResponse(response.response);
+      console.log("[ChatWidget] Agent result:", agentResult);
+
+      // Use the cleaned text content (without ACTION_DATA markers)
+      const responseToProcess = agentResult.hasAction
+        ? agentResult.textContent
+        : response.response;
+
       // Extraer datos del gráfico si existen
-      const { chartData, textContent } = extractChartData(response.response);
+      const { chartData, textContent } = extractChartData(responseToProcess);
+
+      // Build final content with feedback message if action was executed
+      let finalContent = textContent;
+      if (agentResult.hasAction && agentResult.feedbackMessage) {
+        // Add a navigation indicator at the start of the message
+        const feedbackPrefix = `🚀 *${agentResult.feedbackMessage}*\n\n`;
+        finalContent = feedbackPrefix + textContent;
+      }
 
       const systemMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "system",
-        content: textContent,
+        content: finalContent,
         timestamp: new Date().toISOString(),
         chartData: chartData ?? undefined,
       };
@@ -496,6 +530,14 @@ export function ChatWidget() {
           </div>
         </CardFooter>
       </Card>
+
+      {/* Confirmation dialog for destructive actions */}
+      <ConfirmActionDialog
+        confirmation={pendingConfirmation}
+        onConfirm={confirmAction}
+        onCancel={cancelAction}
+        isLoading={isExecuting}
+      />
     </div>
   );
 }

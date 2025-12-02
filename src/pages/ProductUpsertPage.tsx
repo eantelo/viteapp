@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useProductPrefill } from "@/contexts/FormPrefillContext";
 import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -44,6 +45,11 @@ export function ProductUpsertPage() {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const isEditing = Boolean(id);
+
+  // Prefill data from interface agent
+  const { hasData: hasPrefillData, getData: getPrefillData } =
+    useProductPrefill();
+  const prefillAppliedRef = useRef(false);
 
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -139,6 +145,32 @@ export function ProductUpsertPage() {
       loadProduct();
     }
   }, [isEditing, loadProduct, loadSuggestions]);
+
+  // Apply prefill data from interface agent (only once for new products)
+  useEffect(() => {
+    if (isEditing || prefillAppliedRef.current) return;
+
+    if (hasPrefillData) {
+      const prefillData = getPrefillData();
+      if (prefillData) {
+        prefillAppliedRef.current = true;
+        console.log("[ProductUpsertPage] Applying prefill data:", prefillData);
+
+        if (prefillData.name) setName(prefillData.name);
+        if (prefillData.price !== undefined)
+          setPrice(prefillData.price.toString());
+        if (prefillData.sku) setSku(prefillData.sku);
+        if (prefillData.stock !== undefined)
+          setStock(prefillData.stock.toString());
+        if (prefillData.categoryId) setCategory(prefillData.categoryId);
+        if (prefillData.description) setDescription(prefillData.description);
+
+        toast.info("Datos pre-cargados desde el asistente", {
+          description: "Revisa y completa los campos restantes",
+        });
+      }
+    }
+  }, [isEditing, hasPrefillData, getPrefillData]);
 
   // Sugerencias de IA basadas en el nombre
   const normalizedName = useMemo(() => name.trim(), [name]);

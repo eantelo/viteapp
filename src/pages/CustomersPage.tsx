@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -22,6 +22,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import {
+  useCustomerPrefill,
+  type CustomerPrefillData,
+} from "@/contexts/FormPrefillContext";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   IconPlus,
@@ -32,11 +36,21 @@ import {
 import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export function CustomersPage() {
   useDocumentTitle("Clientes");
   const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
+
+  // Prefill data from interface agent
+  const { hasData: hasPrefillData, getData: getPrefillData } =
+    useCustomerPrefill();
+  const prefillAppliedRef = useRef(false);
+  const [prefillData, setPrefillData] = useState<CustomerPrefillData | null>(
+    null
+  );
+
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
     : { opacity: 0, y: 16 };
@@ -102,6 +116,25 @@ export function CustomersPage() {
     loadCustomers();
   }, [loadCustomers]);
 
+  // Apply prefill data from interface agent (only once)
+  useEffect(() => {
+    if (prefillAppliedRef.current) return;
+
+    if (hasPrefillData) {
+      const data = getPrefillData();
+      if (data) {
+        prefillAppliedRef.current = true;
+        console.log("[CustomersPage] Applying prefill data:", data);
+        setPrefillData(data);
+        setEditingCustomer(null);
+        setDialogOpen(true);
+        toast.info("Datos pre-cargados desde el asistente", {
+          description: "Revisa y completa los campos restantes",
+        });
+      }
+    }
+  }, [hasPrefillData, getPrefillData]);
+
   // Manejar el parámetro highlight de la URL
   useEffect(() => {
     const highlightId = searchParams.get("highlight");
@@ -135,11 +168,13 @@ export function CustomersPage() {
   }, [pendingHighlightId, customers, loading]);
 
   const handleCreate = () => {
+    setPrefillData(null);
     setEditingCustomer(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (customer: CustomerDto) => {
+    setPrefillData(null);
     setEditingCustomer(customer);
     setDialogOpen(true);
   };
@@ -164,6 +199,7 @@ export function CustomersPage() {
   const handleDialogClose = (saved: boolean) => {
     setDialogOpen(false);
     setEditingCustomer(null);
+    setPrefillData(null);
     if (saved) {
       void loadCustomers();
     }
@@ -327,6 +363,7 @@ export function CustomersPage() {
         <CustomerFormDialog
           open={dialogOpen}
           customer={editingCustomer}
+          prefillData={prefillData}
           onClose={handleDialogClose}
         />
       </DashboardLayout>
