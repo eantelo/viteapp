@@ -136,15 +136,19 @@ export function detectProductUpdateFromChatMessage(
   }
 
   // Detectar actualización general de producto
+  // Patrón: "✅ **Producto actualizado exitosamente**" o "producto actualizado" o "producto modificado"
   if (
+    normalizedMessage.includes("producto actualizado exitosamente") ||
     normalizedMessage.includes("producto actualizado") ||
     normalizedMessage.includes("producto modificado")
   ) {
     const idMatch = message.match(/\/products\/([a-f0-9-]+)/i);
+    const nameMatch = message.match(/\*\*Producto:\*\*\s*(.+)/i);
     console.log("[product-events] Detectada actualización de producto");
     return {
       productId: idMatch?.[1],
       updateType: "updated",
+      productName: nameMatch?.[1]?.trim(),
       message: message,
     };
   }

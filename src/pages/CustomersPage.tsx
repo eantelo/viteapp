@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,11 @@ import {
 } from "@tabler/icons-react";
 import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
+import { cn } from "@/lib/utils";
 
 export function CustomersPage() {
   useDocumentTitle("Clientes");
+  const [searchParams, setSearchParams] = useSearchParams();
   const prefersReducedMotion = useReducedMotion();
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -52,6 +55,12 @@ export function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerDto | null>(
     null
   );
+  const [highlightedCustomerId, setHighlightedCustomerId] = useState<
+    string | null
+  >(null);
+  const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
+    null
+  );
 
   const filteredCustomers = useMemo(() => {
     if (!search.trim()) {
@@ -69,26 +78,61 @@ export function CustomersPage() {
     });
   }, [customers, search]);
 
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getCustomers();
       setCustomers(data);
+      return data;
     } catch (loadError) {
       setError(
         loadError instanceof Error
           ? loadError.message
           : "Error al cargar clientes"
       );
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Carga inicial
   useEffect(() => {
     loadCustomers();
-  }, []);
+  }, [loadCustomers]);
+
+  // Manejar el parámetro highlight de la URL
+  useEffect(() => {
+    const highlightId = searchParams.get("highlight");
+    if (highlightId) {
+      setPendingHighlightId(highlightId);
+      // Limpiar el parámetro de la URL inmediatamente
+      setSearchParams({}, { replace: true });
+      // Forzar recarga de clientes para asegurar que el nuevo cliente esté disponible
+      loadCustomers();
+    }
+  }, [searchParams, setSearchParams, loadCustomers]);
+
+  // Efecto para abrir el diálogo cuando se encuentra el cliente pendiente
+  useEffect(() => {
+    if (pendingHighlightId && customers.length > 0 && !loading) {
+      const customerToHighlight = customers.find(
+        (c) => c.id === pendingHighlightId
+      );
+      if (customerToHighlight) {
+        setHighlightedCustomerId(pendingHighlightId);
+        setEditingCustomer(customerToHighlight);
+        setDialogOpen(true);
+        setPendingHighlightId(null);
+        // Quitar el highlight visual después de un tiempo
+        const timer = setTimeout(() => {
+          setHighlightedCustomerId(null);
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [pendingHighlightId, customers, loading]);
 
   const handleCreate = () => {
     setEditingCustomer(null);
@@ -226,7 +270,13 @@ export function CustomersPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredCustomers.map((customer) => (
-                        <TableRow key={customer.id}>
+                        <TableRow
+                          key={customer.id}
+                          className={cn(
+                            highlightedCustomerId === customer.id &&
+                              "bg-primary/10 animate-pulse"
+                          )}
+                        >
                           <TableCell className="font-medium">
                             {customer.name}
                           </TableCell>
