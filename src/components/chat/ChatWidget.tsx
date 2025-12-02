@@ -368,7 +368,28 @@ export function ChatWidget() {
                               return (
                                 <button
                                   onClick={() => {
-                                    navigate(href);
+                                    // Si es un enlace a productos, emitir evento de actualización
+                                    // después de la navegación para forzar recarga de datos
+                                    const productMatch = href.match(
+                                      /^\/products\/([a-f0-9-]+)$/i
+                                    );
+                                    if (productMatch) {
+                                      const productId = productMatch[1];
+                                      // Navegar primero
+                                      navigate(href);
+                                      // Emitir evento después de un pequeño delay para
+                                      // asegurar que la página se monte y reciba el evento
+                                      setTimeout(() => {
+                                        emitProductUpdated({
+                                          productId,
+                                          updateType: "updated",
+                                          message:
+                                            "Navegación desde chat - forzar recarga",
+                                        });
+                                      }, 100);
+                                    } else {
+                                      navigate(href);
+                                    }
                                   }}
                                   className="text-primary hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
                                   type="button"

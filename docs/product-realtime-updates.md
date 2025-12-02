@@ -32,8 +32,18 @@ Se implementó un sistema de eventos personalizados que permite la comunicación
 |------|-------------|---------------------|
 | `stock` | Ajuste de inventario | "Entrada registrada", "Salida registrada", "Stock actualizado" |
 | `created` | Producto nuevo | "Producto creado exitosamente" |
-| `updated` | Modificación general | "Producto actualizado", "Producto modificado" |
+| `updated` | Modificación general | "Producto actualizado", "Producto modificado", "Estado: Activo → Inactivo", "Estado: Inactivo → Activo" |
 | `deleted` | Eliminación | "Producto eliminado", "Producto borrado" |
+
+## Navegación desde Enlaces del Chat
+
+Cuando el usuario hace clic en un enlace a un producto desde el chat (por ejemplo, "👉 Ver o editar producto"), el sistema:
+
+1. Navega a la página del producto
+2. Emite automáticamente un evento de actualización con un pequeño delay
+3. La página recarga los datos más recientes del producto
+
+Esto asegura que si el chat acaba de modificar el producto (como desactivarlo), la página mostrará el estado actualizado inmediatamente.
 
 ## Uso del Sistema de Eventos
 

@@ -135,6 +135,42 @@ export function detectProductUpdateFromChatMessage(
     };
   }
 
+  // Detectar desactivación de producto
+  // Patrón: "Estado: Activo → Inactivo" en los cambios
+  if (
+    normalizedMessage.includes("estado: activo → inactivo") ||
+    normalizedMessage.includes("ha sido desactivado") ||
+    normalizedMessage.includes("producto desactivado")
+  ) {
+    const idMatch = message.match(/\/products\/([a-f0-9-]+)/i);
+    const nameMatch = message.match(/\*\*Producto:\*\*\s*(.+)/i);
+    console.log("[product-events] Detectada desactivación de producto");
+    return {
+      productId: idMatch?.[1],
+      updateType: "updated",
+      productName: nameMatch?.[1]?.trim(),
+      message: message,
+    };
+  }
+
+  // Detectar activación de producto
+  // Patrón: "Estado: Inactivo → Activo" en los cambios
+  if (
+    normalizedMessage.includes("estado: inactivo → activo") ||
+    normalizedMessage.includes("ha sido activado") ||
+    normalizedMessage.includes("producto activado")
+  ) {
+    const idMatch = message.match(/\/products\/([a-f0-9-]+)/i);
+    const nameMatch = message.match(/\*\*Producto:\*\*\s*(.+)/i);
+    console.log("[product-events] Detectada activación de producto");
+    return {
+      productId: idMatch?.[1],
+      updateType: "updated",
+      productName: nameMatch?.[1]?.trim(),
+      message: message,
+    };
+  }
+
   // Detectar actualización general de producto
   // Patrón: "✅ **Producto actualizado exitosamente**" o "producto actualizado" o "producto modificado"
   if (

@@ -29,6 +29,7 @@ import {
   IconTag,
   IconCategory,
   IconBox,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
 import { getProductById, deleteProduct } from "@/api/productsApi";
@@ -98,12 +99,24 @@ export function ProductDetailPage() {
       if (shouldRefresh) {
         loadProduct();
 
+        // Notificar al usuario según el tipo de actualización
         if (detail.updateType === "stock") {
           toast.info("Stock actualizado desde el asistente", {
             description: detail.productName
               ? `Se actualizó el stock de ${detail.productName}`
               : "Los datos del producto han sido actualizados",
           });
+        } else if (detail.updateType === "updated") {
+          // Solo mostrar notificación si tiene nombre de producto o mensaje específico
+          // Evitar mostrar para la recarga forzada desde el chat
+          if (
+            detail.productName &&
+            !detail.message?.includes("forzar recarga")
+          ) {
+            toast.info("Producto actualizado desde el asistente", {
+              description: `Se actualizaron los datos de ${detail.productName}`,
+            });
+          }
         }
       }
     };
@@ -269,7 +282,10 @@ export function ProductDetailPage() {
                 <h1 className="text-2xl md:text-3xl font-bold">
                   {product.name}
                 </h1>
-                <Badge variant={product.isActive ? "default" : "secondary"}>
+                <Badge
+                  variant={product.isActive ? "default" : "destructive"}
+                  className={!product.isActive ? "animate-pulse" : ""}
+                >
                   {product.isActive ? "Activo" : "Inactivo"}
                 </Badge>
               </div>
@@ -295,6 +311,41 @@ export function ProductDetailPage() {
             </Button>
           </div>
         </motion.div>
+
+        {/* Banner de advertencia para productos inactivos */}
+        {!product.isActive && (
+          <motion.div
+            className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3"
+            initial={motionInitial}
+            animate={motionAnimate}
+            transition={{
+              ...motionTransition,
+              delay: prefersReducedMotion ? 0 : 0.04,
+            }}
+          >
+            <div className="bg-destructive/20 p-2 rounded-full">
+              <IconAlertTriangle className="text-destructive" size={24} />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-destructive">
+                Producto Inactivo
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Este producto no está disponible para la venta. Puedes activarlo
+                desde la opción de editar.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEdit}
+              className="border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              <IconPencil size={16} className="mr-2" />
+              Activar producto
+            </Button>
+          </motion.div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Información principal */}
