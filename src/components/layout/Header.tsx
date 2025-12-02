@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Bell,
   Bot,
-  Building2,
   Check,
   ChevronDown,
   HelpCircle,
@@ -129,40 +128,8 @@ export function Header({ breadcrumbs }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right Section: Tenant Switcher + Notifications + Help + User Menu */}
+      {/* Right Section: Notifications + Help + User Menu */}
       <div className="flex items-center gap-2 flex-1 justify-end">
-        {/* Tenant Switcher */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden md:flex items-center gap-2 h-9 px-3"
-            >
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">
-                {auth?.tenantId || "Sin tenant"}
-              </span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Cambiar Tenant</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Building2 className="mr-2 h-4 w-4" />
-              <span>{auth?.tenantId || "Tenant Actual"}</span>
-              <Badge variant="secondary" className="ml-auto">
-                Actual
-              </Badge>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-xs text-muted-foreground">
-              Más tenants disponibles próximamente
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Theme Toggle */}
         <ModeToggle />
 
