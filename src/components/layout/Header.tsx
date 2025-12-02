@@ -4,15 +4,18 @@ import {
   Bell,
   Bot,
   Building2,
+  Check,
   ChevronDown,
   HelpCircle,
   Laptop,
   Search,
   Settings,
+  Trash2,
   User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useChatDock } from "@/contexts/ChatDockContext";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -49,7 +52,14 @@ export function Header({ breadcrumbs }: HeaderProps) {
   const { auth, logout } = useAuth();
   const { isEnabled, setIsEnabled, isChatVisibleAndDocked } = useChatDock();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [notificationCount] = useState(3); // Mock notification count
+  const {
+    notifications,
+    unreadCount,
+    isLoading: isLoadingNotifications,
+    markAsRead,
+    markAllAsRead,
+    remove,
+  } = useNotifications();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -175,9 +185,9 @@ export function Header({ breadcrumbs }: HeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
               <Bell className="h-4 w-4 text-muted-foreground" />
-              {notificationCount > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {notificationCount}
+                  {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </Button>
@@ -185,50 +195,90 @@ export function Header({ breadcrumbs }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notificaciones</span>
-              <Badge variant="secondary">{notificationCount}</Badge>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      markAllAsRead();
+                    }}
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    Marcar todas
+                  </Button>
+                )}
+                <Badge variant="secondary">{notifications.length}</Badge>
+              </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="max-h-[300px] overflow-y-auto">
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span className="font-medium text-sm">
-                    Nueva venta registrada
-                  </span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    5m
-                  </span>
+              {isLoadingNotifications && notifications.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner size="sm" className="text-muted-foreground" />
                 </div>
-                <p className="text-xs text-muted-foreground pl-4">
-                  Se ha completado una venta por $1,234.56
-                </p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="font-medium text-sm">
-                    Producto actualizado
-                  </span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    1h
-                  </span>
+              ) : notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    No hay notificaciones
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground pl-4">
-                  El inventario de "Producto X" ha sido actualizado
-                </p>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex flex-col items-start gap-1 p-3">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="font-medium text-sm">Stock bajo</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    2h
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground pl-4">
-                  El producto "Producto Y" tiene stock bajo
-                </p>
-              </DropdownMenuItem>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`flex flex-col items-start gap-1 p-3 hover:bg-accent cursor-pointer ${
+                      !notification.isRead ? "bg-accent/50" : ""
+                    }`}
+                    onClick={() => {
+                      if (!notification.isRead) {
+                        markAsRead(notification.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <div
+                        className={`h-2 w-2 rounded-full ${
+                          notification.colorClass === "blue"
+                            ? "bg-blue-500"
+                            : notification.colorClass === "green"
+                            ? "bg-green-500"
+                            : notification.colorClass === "yellow"
+                            ? "bg-yellow-500"
+                            : notification.colorClass === "red"
+                            ? "bg-red-500"
+                            : notification.colorClass === "purple"
+                            ? "bg-purple-500"
+                            : "bg-gray-500"
+                        }`}
+                      />
+                      <span className="font-medium text-sm flex-1 truncate">
+                        {notification.title}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {notification.timeAgo}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          remove(notification.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-4 line-clamp-2">
+                      {notification.message}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="justify-center text-sm text-primary">
