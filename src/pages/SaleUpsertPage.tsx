@@ -149,6 +149,48 @@ export function SaleUpsertPage() {
     }
   }, [isEditing, loadSale]);
 
+  // Cargar producto desde catálogo (quick sale)
+  useEffect(() => {
+    if (isEditing) return; // Solo en modo creación
+
+    const quickSaleData = localStorage.getItem("quickSaleProduct");
+    if (quickSaleData) {
+      try {
+        const product = JSON.parse(quickSaleData) as {
+          productId: string;
+          productName: string;
+          quantity: number;
+          price: number;
+        };
+
+        // Agregar el producto a la lista de items
+        setItems((current) => {
+          // Verificar si ya existe
+          if (current.some((item) => item.productId === product.productId)) {
+            return current;
+          }
+          return [
+            ...current,
+            {
+              productId: product.productId,
+              productName: product.productName,
+              quantity: product.quantity,
+              price: product.price,
+              subtotal: product.quantity * product.price,
+            },
+          ];
+        });
+
+        toast.success(`Producto "${product.productName}" agregado a la orden`);
+      } catch (error) {
+        console.error("Error al cargar producto de quick sale:", error);
+      } finally {
+        // Limpiar localStorage
+        localStorage.removeItem("quickSaleProduct");
+      }
+    }
+  }, [isEditing]);
+
   const calculateSubtotal = (quantity: number, price: number) => {
     return quantity * price;
   };

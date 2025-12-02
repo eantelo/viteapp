@@ -318,6 +318,8 @@ export function ProductUpsertPage() {
         };
         await updateProduct(id, dto);
         toast.success("Producto actualizado correctamente");
+        // Navegar de vuelta a la grilla con el producto resaltado
+        navigate(`/products?highlight=${id}`);
       } else {
         const dto: ProductCreateDto = {
           name: name.trim(),
@@ -330,11 +332,11 @@ export function ProductUpsertPage() {
           cost: costValue,
           stock: stockValue,
         };
-        await createProduct(dto);
+        const newProduct = await createProduct(dto);
         toast.success("Producto creado correctamente");
+        // Navegar de vuelta a la grilla con el nuevo producto resaltado
+        navigate(`/products?highlight=${newProduct.id}`);
       }
-
-      navigate("/products");
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : "Error al guardar el producto"

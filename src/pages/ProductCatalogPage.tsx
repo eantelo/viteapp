@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconShoppingCart,
 } from "@tabler/icons-react";
 import type { ProductDto } from "@/api/productsApi";
 import {
@@ -305,12 +306,21 @@ export function ProductCatalogPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedProductId, setHighlightedProductId] = useState<
+    string | null
+  >(null);
+  const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
+    null
+  );
+  const highlightedRowRef = useRef<HTMLTableRowElement>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Estados de paginación
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  const loadProducts = async (searchTerm?: string) => {
+  const loadProducts = useCallback(async (searchTerm?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -326,17 +336,76 @@ export function ProductCatalogPage() {
       );
       setAvailableCategories(categories);
       setAvailableBrands(brands);
+      return data;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al cargar productos"
       );
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadProducts();
+  }, [loadProducts]);
+
+  // Manejar el parámetro highlight de la URL
+  useEffect(() => {
+    const highlightId = searchParams.get("highlight");
+    if (highlightId) {
+      setPendingHighlightId(highlightId);
+      // Limpiar el parámetro de la URL inmediatamente
+      setSearchParams({}, { replace: true });
+      // Forzar recarga de productos para asegurar que el producto actualizado esté disponible
+      loadProducts();
+    }
+  }, [searchParams, setSearchParams, loadProducts]);
+
+  // Efecto para resaltar el producto cuando está disponible en la lista
+  useEffect(() => {
+    if (pendingHighlightId && filteredProducts.length > 0 && !loading) {
+      const productIndex = filteredProducts.findIndex(
+        (p) => p.id === pendingHighlightId
+      );
+      if (productIndex !== -1) {
+        // Calcular la página donde se encuentra el producto
+        const targetPage = Math.floor(productIndex / pageSize);
+        setPageIndex(targetPage);
+
+        setHighlightedProductId(pendingHighlightId);
+        setPendingHighlightId(null);
+
+        // Hacer scroll hacia la fila resaltada después de que se renderice la página correcta
+        setTimeout(() => {
+          highlightedRowRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }, 300);
+
+        // Limpiar timer anterior si existe
+        if (highlightTimerRef.current) {
+          clearTimeout(highlightTimerRef.current);
+        }
+
+        // Quitar el highlight visual después de 3 segundos
+        highlightTimerRef.current = setTimeout(() => {
+          setHighlightedProductId(null);
+          highlightTimerRef.current = null;
+        }, 3000);
+      }
+    }
+  }, [pendingHighlightId, filteredProducts, loading, pageSize]);
+
+  // Limpiar timer al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
   }, []);
 
   // Suscribirse a eventos de actualización de productos desde el chat
@@ -446,10 +515,12 @@ export function ProductCatalogPage() {
 
   const isExportDisabled = exporting || filteredProducts.length === 0;
 
-  // Resetear a la primera página cuando cambien los filtros
+  // Resetear a la primera página cuando cambien los filtros (pero no cuando hay un producto pendiente de resaltar)
   useEffect(() => {
-    setPageIndex(0);
-  }, [filteredProducts.length]);
+    if (!pendingHighlightId && !highlightedProductId) {
+      setPageIndex(0);
+    }
+  }, [filteredProducts.length, pendingHighlightId, highlightedProductId]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("es-MX", {
@@ -585,6 +656,22 @@ export function ProductCatalogPage() {
   const handleDeleteProduct = (product: ProductDto) => {
     setSelectedProduct(product);
     setShowDeleteDialog(true);
+  };
+
+  const handleQuickSale = (product: ProductDto) => {
+    // Guardar producto en localStorage para precargar en formulario de venta
+    const quickSaleProduct = {
+      productId: product.id,
+      productName: product.name,
+      quantity: 1,
+      price: product.price,
+    };
+    localStorage.setItem("quickSaleProduct", JSON.stringify(quickSaleProduct));
+    toast({
+      title: "Producto agregado",
+      description: `${product.name} listo para venta`,
+    });
+    navigate("/sales/new");
   };
 
   const confirmDeleteProduct = async () => {
@@ -873,6 +960,11 @@ export function ProductCatalogPage() {
                           paginatedProducts.map((product) => (
                             <tr
                               key={product.id}
+                              ref={
+                                highlightedProductId === product.id
+                                  ? highlightedRowRef
+                                  : undefined
+                              }
                               onClick={() => handleViewDetail(product)}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
@@ -881,7 +973,11 @@ export function ProductCatalogPage() {
                                 }
                               }}
                               tabIndex={0}
-                              className="bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+                              className={`bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
+                                highlightedProductId === product.id
+                                  ? "bg-primary/10! dark:bg-primary/20! animate-pulse ring-2 ring-primary/50"
+                                  : ""
+                              }`}
                               aria-label={`Ver producto ${product.name}`}
                             >
                               <th
@@ -955,6 +1051,17 @@ export function ProductCatalogPage() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleQuickSale(product)}
+                                      className="cursor-pointer"
+                                      disabled={
+                                        product.stock === 0 || !product.isActive
+                                      }
+                                    >
+                                      <IconShoppingCart className="mr-2 h-4 w-4" />
+                                      Vender
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                       onClick={() => handleEditProduct(product)}
                                       className="cursor-pointer"
