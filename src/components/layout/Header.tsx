@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
@@ -12,6 +12,8 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { useGlobalSearchShortcut } from "@/hooks/useGlobalSearchShortcut";
+import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useChatDock } from "@/contexts/ChatDockContext";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -35,7 +37,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/Spinner";
@@ -51,6 +52,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
   const { auth, logout } = useAuth();
   const { isEnabled, setIsEnabled, isChatVisibleAndDocked } = useChatDock();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -69,6 +71,16 @@ export function Header({ breadcrumbs }: HeaderProps) {
       setIsLoggingOut(false);
     }
   };
+
+  // Handle opening search dialog
+  const handleSearchClick = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
+  // Register global Ctrl+K shortcut
+  useGlobalSearchShortcut({
+    onTrigger: () => setIsSearchOpen(true),
+  });
 
   // Separar último breadcrumb (página actual) del resto
   const parentBreadcrumbs = breadcrumbs.slice(0, -1);
@@ -116,17 +128,22 @@ export function Header({ breadcrumbs }: HeaderProps) {
         </Breadcrumb>
       </div>
 
-      {/* Center Section: Search (hidden on mobile) */}
+      {/* Center Section: Search Button (hidden on mobile) */}
       <div className="hidden lg:flex items-center flex-1 max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar..."
-            className="w-full pl-9 pr-4 h-9 bg-muted/50 border-input focus:bg-background"
-          />
-        </div>
+        <button
+          onClick={handleSearchClick}
+          className="relative w-full flex items-center gap-2 h-9 px-3 text-sm text-muted-foreground bg-muted/50 border border-input rounded-md hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          <Search className="h-4 w-4" />
+          <span className="flex-1 text-left">Buscar...</span>
+          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </button>
       </div>
+
+      {/* Global Search Dialog */}
+      <GlobalSearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
       {/* Right Section: Notifications + Help + User Menu */}
       <div className="flex items-center gap-2 flex-1 justify-end">
