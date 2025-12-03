@@ -60,6 +60,12 @@ export function CustomerSelector({
 
   // Filtrar clientes por búsqueda
   const filteredCustomers = useMemo(() => {
+    console.log(
+      "[CustomerSelector] customers:",
+      customers.length,
+      "searchQuery:",
+      searchQuery
+    );
     if (!searchQuery.trim()) return customers;
     const query = searchQuery.toLowerCase();
     return customers.filter(

@@ -50,11 +50,8 @@ import {
   getSalesStatistics,
   deleteSale,
   downloadInvoicePdf,
-  completeSale,
-  cancelSale,
   refundSale,
   closeSale,
-  PaymentMethod,
 } from "@/api/salesApi";
 import type { SalesStatistics, SalesHistoryParams } from "@/api/salesApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -231,56 +228,6 @@ export function SalesPage() {
       console.error(err);
       toast.error(
         err instanceof Error ? err.message : "Error al descargar la factura"
-      );
-    }
-  };
-
-  const handleCancel = async (sale: SaleDto) => {
-    if (
-      !confirm(
-        `¿Estás seguro de cancelar la venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer y el stock será devuelto.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await cancelSale(sale.id);
-      toast.success("Venta cancelada correctamente");
-      loadData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Error al cancelar la venta"
-      );
-    }
-  };
-
-  const handleComplete = async (sale: SaleDto) => {
-    // Para simplificar, completamos con pago en efectivo por el total
-    // En un flujo real, podrías mostrar un modal para seleccionar método de pago
-    if (
-      !confirm(
-        `¿Completar la venta #${
-          sale.saleNumber
-        } con pago en efectivo por ${formatCurrency(sale.total)}?`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await completeSale(sale.id, [
-        {
-          method: PaymentMethod.Cash,
-          amount: sale.total,
-          amountReceived: sale.total,
-        },
-      ]);
-      toast.success("Venta completada correctamente");
-      loadData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Error al completar la venta"
       );
     }
   };
@@ -772,20 +719,11 @@ export function SalesPage() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => handleComplete(sale)}
-                                      title="Completar venta"
-                                      className="text-green-600 hover:text-green-700"
-                                    >
-                                      <IconCash size={18} />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleCancel(sale)}
-                                      title="Cancelar venta"
+                                      onClick={() => handleDelete(sale)}
+                                      title="Borrar orden"
                                       className="text-error hover:text-error"
                                     >
-                                      <IconX size={18} />
+                                      <IconTrash size={18} />
                                     </Button>
                                   </>
                                 )}
@@ -862,19 +800,6 @@ export function SalesPage() {
                                     className="text-green-600 hover:text-green-700"
                                   >
                                     <IconRepeat size={18} />
-                                  </Button>
-                                )}
-
-                                {/* Eliminar solo para ventas que no están cerradas */}
-                                {sale.status !== "Closed" && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDelete(sale)}
-                                    title="Eliminar permanentemente"
-                                    className="text-error/70 hover:text-error"
-                                  >
-                                    <IconTrash size={18} />
                                   </Button>
                                 )}
                               </div>

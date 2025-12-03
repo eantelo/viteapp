@@ -24,9 +24,22 @@ import {
   IconDeviceFloppy,
   IconShoppingCart,
   IconAlertTriangle,
+  IconLock,
+  IconRefresh,
+  IconTrash,
+  IconCheck,
 } from "@tabler/icons-react";
 import type { SaleDto, SaleCreateDto, SaleUpdateDto } from "@/api/salesApi";
-import { getSaleById, createSale, updateSale } from "@/api/salesApi";
+import {
+  getSaleById,
+  createSale,
+  updateSale,
+  deleteSale,
+  closeSale,
+  refundSale,
+  completeSale,
+  PaymentMethod,
+} from "@/api/salesApi";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
@@ -120,6 +133,11 @@ export function SaleUpsertPage() {
   // Estado del formulario
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Estado para transiciones de estado
+  const [statusAction, setStatusAction] = useState<
+    "delete" | "close" | "refund" | "approve" | null
+  >(null);
 
   // Solo se pueden editar ventas en estado Pending
   const isReadOnly = isEditing && sale?.status !== "Pending";
@@ -347,6 +365,130 @@ export function SaleUpsertPage() {
     }
   };
 
+  // Funciones para transiciones de estado
+  const handleDeleteSale = async () => {
+    if (!sale) return;
+    if (
+      !confirm(
+        `¿Eliminar la orden de venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`
+      )
+    ) {
+      return;
+    }
+    setStatusAction("delete");
+    try {
+      await deleteSale(sale.id);
+      toast.success("Orden de venta eliminada correctamente");
+      navigate("/sales");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al eliminar la orden"
+      );
+      setStatusAction(null);
+    }
+  };
+
+  const handleCloseSale = async () => {
+    if (!sale) return;
+    setStatusAction("close");
+    try {
+      await closeSale(sale.id);
+      toast.success("Venta cerrada para contabilidad");
+      await loadSale();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al cerrar la venta"
+      );
+    } finally {
+      setStatusAction(null);
+    }
+  };
+
+  const handleRefundSale = async () => {
+    if (!sale) return;
+    setStatusAction("refund");
+    try {
+      await refundSale(sale.id);
+      toast.success("Venta reembolsada - Stock devuelto");
+      await loadSale();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al reembolsar la venta"
+      );
+    } finally {
+      setStatusAction(null);
+    }
+  };
+
+  // Aprobar venta: guarda y completa con pago en efectivo
+  const handleApproveSale = async () => {
+    setSaving(true);
+    setFormError(null);
+
+    try {
+      if (!customerId) {
+        throw new Error("Debes seleccionar un cliente");
+      }
+
+      if (!saleDate) {
+        throw new Error("Debes especificar la fecha de venta");
+      }
+
+      if (items.length === 0) {
+        throw new Error("Debes agregar al menos un producto");
+      }
+
+      const baseItems = items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      }));
+
+      let saleId: string;
+
+      if (isEditing && sale) {
+        // Actualizar la venta existente primero
+        const dto: SaleUpdateDto = {
+          date: new Date(saleDate).toISOString(),
+          customerId,
+          items: baseItems,
+        };
+        await updateSale(sale.id, dto);
+        saleId = sale.id;
+      } else {
+        // Crear nueva venta
+        const dto: SaleCreateDto = {
+          date: new Date(saleDate).toISOString(),
+          customerId,
+          items: baseItems,
+        };
+        const newSale = await createSale(dto);
+        saleId = newSale.id;
+      }
+
+      // Completar la venta con pago en efectivo por el total
+      setStatusAction("approve");
+      await completeSale(saleId, [
+        {
+          method: PaymentMethod.Cash,
+          amount: totalAmount,
+          amountReceived: totalAmount,
+        },
+      ]);
+
+      toast.success("Venta aprobada y completada correctamente");
+      navigate("/sales");
+    } catch (submitError) {
+      setFormError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Error al aprobar la venta"
+      );
+      setStatusAction(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -478,19 +620,97 @@ export function SaleUpsertPage() {
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={saving}
+                disabled={saving || statusAction !== null}
               >
                 {isReadOnly ? "Volver" : "Cancelar"}
               </Button>
-              {!isReadOnly && (
-                <Button type="submit" disabled={saving}>
-                  <IconDeviceFloppy size={20} className="mr-2" />
-                  {saving
-                    ? "Guardando..."
-                    : isEditing
-                    ? "Actualizar Orden"
-                    : "Crear Orden"}
-                </Button>
+
+              {/* Botones según el estado de la venta */}
+              {isEditing && sale?.status === "Pending" && (
+                <>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={saving || statusAction !== null}
+                  >
+                    <IconDeviceFloppy size={20} className="mr-2" />
+                    {saving && statusAction !== "approve"
+                      ? "Guardando..."
+                      : "Guardar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={saving || statusAction !== null}
+                    onClick={handleApproveSale}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <IconCheck size={20} className="mr-2" />
+                    {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={saving || statusAction !== null}
+                    onClick={handleDeleteSale}
+                  >
+                    <IconTrash size={20} className="mr-2" />
+                    {statusAction === "delete" ? "Eliminando..." : "Borrar"}
+                  </Button>
+                </>
+              )}
+
+              {/* Nueva venta - guardar como pendiente o aprobar */}
+              {!isEditing && (
+                <>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    disabled={saving || statusAction !== null}
+                  >
+                    <IconDeviceFloppy size={20} className="mr-2" />
+                    {saving && statusAction !== "approve"
+                      ? "Guardando..."
+                      : "Guardar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={saving || statusAction !== null}
+                    onClick={handleApproveSale}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <IconCheck size={20} className="mr-2" />
+                    {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
+                  </Button>
+                </>
+              )}
+
+              {/* Venta Completada - puede cerrar o reembolsar */}
+              {isEditing && sale?.status === "Completed" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={statusAction !== null}
+                    onClick={handleCloseSale}
+                  >
+                    <IconLock size={20} className="mr-2" />
+                    {statusAction === "close"
+                      ? "Cerrando..."
+                      : "Cerrar para Contabilidad"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                    disabled={statusAction !== null}
+                    onClick={handleRefundSale}
+                  >
+                    <IconRefresh size={20} className="mr-2" />
+                    {statusAction === "refund"
+                      ? "Reembolsando..."
+                      : "Reembolsar"}
+                  </Button>
+                </>
               )}
             </div>
           </motion.div>
@@ -738,6 +958,119 @@ export function SaleUpsertPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Estado de la Venta - solo para ventas existentes */}
+              {isEditing && sale && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      Estado de la Venta
+                      {getStatusBadge(sale.status)}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Info del estado actual */}
+                    <div className="text-sm space-y-1">
+                      {sale.status === "Pending" && (
+                        <>
+                          <p className="text-muted-foreground">
+                            <span className="font-medium text-amber-600">
+                              Stock reservado
+                            </span>{" "}
+                            - Los productos están apartados.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Puedes guardar o borrar esta orden.
+                          </p>
+                        </>
+                      )}
+                      {sale.status === "Completed" && (
+                        <>
+                          <p className="text-muted-foreground">
+                            <span className="font-medium text-green-600">
+                              Pagada y entregada
+                            </span>{" "}
+                            - Stock descontado.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Puedes cerrar para contabilidad o reembolsar.
+                          </p>
+                        </>
+                      )}
+                      {sale.status === "Closed" && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-slate-600">
+                            Contabilizada
+                          </span>{" "}
+                          - Esta venta es inmutable.
+                        </p>
+                      )}
+                      {sale.status === "Cancelled" && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-red-600">
+                            Cancelada
+                          </span>{" "}
+                          - Stock devuelto al inventario.
+                        </p>
+                      )}
+                      {sale.status === "Refunded" && (
+                        <p className="text-muted-foreground">
+                          <span className="font-medium text-purple-600">
+                            Reembolsada
+                          </span>{" "}
+                          - Stock devuelto al inventario.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Botones de acción según estado */}
+                    <div className="border-t pt-3 space-y-2">
+                      {sale.status === "Pending" && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          className="w-full"
+                          disabled={statusAction !== null}
+                          onClick={handleDeleteSale}
+                        >
+                          <IconTrash size={18} className="mr-2" />
+                          {statusAction === "delete"
+                            ? "Eliminando..."
+                            : "Borrar Orden"}
+                        </Button>
+                      )}
+                      {sale.status === "Completed" && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="w-full"
+                            disabled={statusAction !== null}
+                            onClick={handleCloseSale}
+                          >
+                            <IconLock size={18} className="mr-2" />
+                            {statusAction === "close"
+                              ? "Cerrando..."
+                              : "Cerrar para Contabilidad"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                            disabled={statusAction !== null}
+                            onClick={handleRefundSale}
+                          >
+                            <IconRefresh size={18} className="mr-2" />
+                            {statusAction === "refund"
+                              ? "Reembolsando..."
+                              : "Reembolsar Venta"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Acciones rápidas */}
               <Card>
