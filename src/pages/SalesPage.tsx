@@ -39,6 +39,10 @@ import {
   IconRefresh,
   IconPlus,
   IconPencil,
+  IconCheck,
+  IconX,
+  IconLock,
+  IconCash,
 } from "@tabler/icons-react";
 import type { SaleDto } from "@/api/salesApi";
 import {
@@ -46,6 +50,11 @@ import {
   getSalesStatistics,
   deleteSale,
   downloadInvoicePdf,
+  completeSale,
+  cancelSale,
+  refundSale,
+  closeSale,
+  PaymentMethod,
 } from "@/api/salesApi";
 import type { SalesStatistics, SalesHistoryParams } from "@/api/salesApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -229,7 +238,97 @@ export function SalesPage() {
   const handleCancel = async (sale: SaleDto) => {
     if (
       !confirm(
-        `¿Estás seguro de cancelar la venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`
+        `¿Estás seguro de cancelar la venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer y el stock será devuelto.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await cancelSale(sale.id);
+      toast.success("Venta cancelada correctamente");
+      loadData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al cancelar la venta"
+      );
+    }
+  };
+
+  const handleComplete = async (sale: SaleDto) => {
+    // Para simplificar, completamos con pago en efectivo por el total
+    // En un flujo real, podrías mostrar un modal para seleccionar método de pago
+    if (
+      !confirm(
+        `¿Completar la venta #${
+          sale.saleNumber
+        } con pago en efectivo por ${formatCurrency(sale.total)}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await completeSale(sale.id, [
+        {
+          method: PaymentMethod.Cash,
+          amount: sale.total,
+          amountReceived: sale.total,
+        },
+      ]);
+      toast.success("Venta completada correctamente");
+      loadData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al completar la venta"
+      );
+    }
+  };
+
+  const handleRefund = async (sale: SaleDto) => {
+    if (
+      !confirm(
+        `¿Estás seguro de reembolsar la venta #${sale.saleNumber}?\n\nEl stock será devuelto al inventario. Esta acción no se puede deshacer.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await refundSale(sale.id);
+      toast.success("Venta reembolsada correctamente");
+      loadData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al reembolsar la venta"
+      );
+    }
+  };
+
+  const handleClose = async (sale: SaleDto) => {
+    if (
+      !confirm(
+        `¿Cerrar contablemente la venta #${sale.saleNumber}?\n\nUna vez cerrada, no podrá ser modificada ni reembolsada.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await closeSale(sale.id);
+      toast.success("Venta cerrada correctamente");
+      loadData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al cerrar la venta"
+      );
+    }
+  };
+
+  const handleDelete = async (sale: SaleDto) => {
+    if (
+      !confirm(
+        `¿Eliminar permanentemente la venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`
       )
     ) {
       return;
@@ -237,11 +336,11 @@ export function SalesPage() {
 
     try {
       await deleteSale(sale.id);
-      toast.success("Venta cancelada correctamente");
+      toast.success("Venta eliminada correctamente");
       loadData();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Error al cancelar la venta"
+        err instanceof Error ? err.message : "Error al eliminar la venta"
       );
     }
   };
@@ -323,18 +422,46 @@ export function SalesPage() {
   const getStatusBadge = (status: string) => {
     const variants: Record<
       string,
-      { variant: "default" | "secondary" | "destructive"; label: string }
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+        className?: string;
+      }
     > = {
-      Completed: { variant: "default", label: "Completada" },
-      Closed: { variant: "secondary", label: "Cerrada" },
+      Pending: {
+        variant: "outline",
+        label: "Pendiente",
+        className:
+          "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950",
+      },
+      Completed: {
+        variant: "default",
+        label: "Completada",
+        className: "bg-green-600 hover:bg-green-700",
+      },
+      Closed: {
+        variant: "secondary",
+        label: "Cerrada",
+        className: "bg-slate-600 text-white",
+      },
       Cancelled: { variant: "destructive", label: "Cancelada" },
+      Refunded: {
+        variant: "outline",
+        label: "Reembolsada",
+        className:
+          "border-purple-500 text-purple-600 bg-purple-50 dark:bg-purple-950",
+      },
     };
 
     const config = variants[status] || {
       variant: "secondary" as const,
       label: status,
     };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
   return (
@@ -452,9 +579,11 @@ export function SalesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="Pending">Pendiente</SelectItem>
                     <SelectItem value="Completed">Completada</SelectItem>
                     <SelectItem value="Closed">Cerrada</SelectItem>
                     <SelectItem value="Cancelled">Cancelada</SelectItem>
+                    <SelectItem value="Refunded">Reembolsada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -627,39 +756,123 @@ export function SalesPage() {
                                 >
                                   <IconEye size={18} />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handlePrint(sale)}
-                                  title="Reimprimir"
-                                >
-                                  <IconPrinter size={18} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleRepeatSale(sale)}
-                                  title="Repetir venta"
-                                  className="text-green-600 hover:text-green-700"
-                                >
-                                  <IconRepeat size={18} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(sale)}
-                                  title="Editar venta"
-                                  className="text-blue-600 hover:text-blue-700"
-                                >
-                                  <IconPencil size={18} />
-                                </Button>
-                                {sale.status !== "Cancelled" && (
+
+                                {/* Acciones según estado */}
+                                {sale.status === "Pending" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEdit(sale)}
+                                      title="Editar venta"
+                                      className="text-blue-600 hover:text-blue-700"
+                                    >
+                                      <IconPencil size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleComplete(sale)}
+                                      title="Completar venta"
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <IconCash size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleCancel(sale)}
+                                      title="Cancelar venta"
+                                      className="text-error hover:text-error"
+                                    >
+                                      <IconX size={18} />
+                                    </Button>
+                                  </>
+                                )}
+
+                                {sale.status === "Completed" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handlePrint(sale)}
+                                      title="Reimprimir factura"
+                                    >
+                                      <IconPrinter size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRepeatSale(sale)}
+                                      title="Repetir venta"
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <IconRepeat size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleClose(sale)}
+                                      title="Cerrar contablemente"
+                                      className="text-slate-600 hover:text-slate-700"
+                                    >
+                                      <IconLock size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRefund(sale)}
+                                      title="Reembolsar venta"
+                                      className="text-purple-600 hover:text-purple-700"
+                                    >
+                                      <IconCash size={18} />
+                                    </Button>
+                                  </>
+                                )}
+
+                                {sale.status === "Closed" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handlePrint(sale)}
+                                      title="Reimprimir factura"
+                                    >
+                                      <IconPrinter size={18} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRepeatSale(sale)}
+                                      title="Repetir venta"
+                                      className="text-green-600 hover:text-green-700"
+                                    >
+                                      <IconRepeat size={18} />
+                                    </Button>
+                                  </>
+                                )}
+
+                                {(sale.status === "Cancelled" ||
+                                  sale.status === "Refunded") && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleCancel(sale)}
-                                    title="Cancelar venta"
-                                    className="text-error hover:text-error"
+                                    onClick={() => handleRepeatSale(sale)}
+                                    title="Repetir venta"
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    <IconRepeat size={18} />
+                                  </Button>
+                                )}
+
+                                {/* Eliminar solo para ventas que no están cerradas */}
+                                {sale.status !== "Closed" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDelete(sale)}
+                                    title="Eliminar permanentemente"
+                                    className="text-error/70 hover:text-error"
                                   >
                                     <IconTrash size={18} />
                                   </Button>

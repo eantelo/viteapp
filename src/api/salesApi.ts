@@ -41,7 +41,7 @@ export interface SaleDto {
   customerId: string | null;
   customerName?: string | null;
   total: number;
-  status: "Completed" | "Closed" | "Cancelled";
+  status: "Pending" | "Completed" | "Closed" | "Cancelled" | "Refunded";
   items: SaleItemDto[];
   payments: PaymentDto[];
 }
@@ -98,6 +98,50 @@ export async function updateSale(
 export async function deleteSale(id: string): Promise<void> {
   return apiClient<void>(`/api/sales/${id}`, {
     method: "DELETE",
+  });
+}
+
+/**
+ * Completa una venta pendiente con información de pago.
+ * Transición: Pending → Completed
+ */
+export async function completeSale(
+  id: string,
+  payments: PaymentCreateDto[]
+): Promise<SaleDto> {
+  return apiClient<SaleDto>(`/api/sales/${id}/complete`, {
+    method: "PUT",
+    body: JSON.stringify({ payments }),
+  });
+}
+
+/**
+ * Cancela una venta pendiente y libera el stock reservado.
+ * Transición: Pending → Cancelled
+ */
+export async function cancelSale(id: string): Promise<void> {
+  return apiClient<void>(`/api/sales/${id}/cancel`, {
+    method: "PUT",
+  });
+}
+
+/**
+ * Cierra una venta completada para contabilidad.
+ * Transición: Completed → Closed
+ */
+export async function closeSale(id: string): Promise<void> {
+  return apiClient<void>(`/api/sales/${id}/close`, {
+    method: "PUT",
+  });
+}
+
+/**
+ * Reembolsa una venta completada y devuelve el stock.
+ * Transición: Completed → Refunded
+ */
+export async function refundSale(id: string): Promise<void> {
+  return apiClient<void>(`/api/sales/${id}/refund`, {
+    method: "PUT",
   });
 }
 
@@ -197,7 +241,7 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
   const downloadUrl = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = downloadUrl;
-  
+
   // Intentar obtener el nombre del archivo del header Content-Disposition
   const contentDisposition = response.headers.get("Content-Disposition");
   let filename = `Factura-${id}.pdf`;
@@ -207,7 +251,7 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
       filename = filenameMatch[1];
     }
   }
-  
+
   link.download = filename;
   document.body.appendChild(link);
   link.click();

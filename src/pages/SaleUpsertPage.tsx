@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,13 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CustomerSelector } from "@/components/sales/CustomerSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { motion, useReducedMotion } from "framer-motion";
@@ -27,8 +22,8 @@ import { toast } from "sonner";
 import {
   IconArrowLeft,
   IconDeviceFloppy,
-  IconPlus,
   IconShoppingCart,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import type { SaleDto, SaleCreateDto, SaleUpdateDto } from "@/api/salesApi";
 import { getSaleById, createSale, updateSale } from "@/api/salesApi";
@@ -36,7 +31,8 @@ import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts } from "@/api/productsApi";
-import { OrderProductTable } from "@/components/sales/OrderProductTable";
+import { ProductSearchSelector } from "@/components/sales/ProductSearchSelector";
+import { OrderProductTableEnhanced } from "@/components/sales/OrderProductTableEnhanced";
 
 interface SaleItemForm {
   productId: string;
@@ -44,6 +40,49 @@ interface SaleItemForm {
   quantity: number;
   price: number;
   subtotal: number;
+}
+
+// Helper para obtener badge de estado
+function getStatusBadge(status: SaleDto["status"]) {
+  const variants: Record<
+    SaleDto["status"],
+    {
+      variant: "default" | "secondary" | "destructive" | "outline";
+      label: string;
+      className?: string;
+    }
+  > = {
+    Pending: {
+      variant: "outline",
+      label: "Pendiente",
+      className:
+        "border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950",
+    },
+    Completed: {
+      variant: "default",
+      label: "Completada",
+      className: "bg-green-600 hover:bg-green-700",
+    },
+    Closed: {
+      variant: "secondary",
+      label: "Cerrada",
+      className: "bg-slate-600 text-white",
+    },
+    Cancelled: { variant: "destructive", label: "Cancelada" },
+    Refunded: {
+      variant: "outline",
+      label: "Reembolsada",
+      className:
+        "border-purple-500 text-purple-600 bg-purple-50 dark:bg-purple-950",
+    },
+  };
+
+  const config = variants[status];
+  return (
+    <Badge variant={config.variant} className={config.className}>
+      {config.label}
+    </Badge>
+  );
 }
 
 export function SaleUpsertPage() {
@@ -78,11 +117,12 @@ export function SaleUpsertPage() {
   // Datos de referencia
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState("");
-
   // Estado del formulario
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Solo se pueden editar ventas en estado Pending
+  const isReadOnly = isEditing && sale?.status !== "Pending";
 
   useDocumentTitle(
     isEditing
@@ -195,19 +235,16 @@ export function SaleUpsertPage() {
     return quantity * price;
   };
 
-  const handleAddProduct = () => {
-    if (!selectedProduct) {
-      return;
-    }
-
-    const product = products.find((p) => p.id === selectedProduct);
-    if (!product) {
-      return;
-    }
-
+  const handleAddProduct = (product: ProductDto) => {
     // Verificar si el producto ya está en la lista
     if (items.some((item) => item.productId === product.id)) {
       setFormError("El producto ya está agregado a la venta");
+      return;
+    }
+
+    // Verificar stock
+    if (product.stock === 0) {
+      setFormError("El producto no tiene stock disponible");
       return;
     }
 
@@ -220,8 +257,8 @@ export function SaleUpsertPage() {
     };
 
     setItems([...items, newItem]);
-    setSelectedProduct("");
     setFormError(null);
+    toast.success(`${product.name} agregado a la orden`);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -249,10 +286,6 @@ export function SaleUpsertPage() {
     }
 
     setItems(newItems);
-  };
-
-  const handleEditProduct = (index: number, product: ProductDto) => {
-    console.log("Editar producto:", product, "en índice:", index);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -423,12 +456,17 @@ export function SaleUpsertPage() {
                   <IconShoppingCart size={28} className="text-primary" />
                   <h1 className="text-3xl font-bold">
                     {isEditing
-                      ? `Editar Orden #${sale?.saleNumber ?? ""}`
+                      ? `Orden #${sale?.saleNumber ?? ""}`
                       : "Nueva Orden de Venta"}
                   </h1>
+                  {isEditing && sale && (
+                    <span className="ml-2">{getStatusBadge(sale.status)}</span>
+                  )}
                 </div>
                 <p className="text-slate-500 mt-1">
-                  {isEditing
+                  {isReadOnly
+                    ? "Esta orden no puede ser editada porque ya no está en estado pendiente."
+                    : isEditing
                     ? "Actualiza los datos de la orden de venta."
                     : "Captura la información de la nueva orden de venta."}
                 </p>
@@ -442,18 +480,49 @@ export function SaleUpsertPage() {
                 onClick={handleCancel}
                 disabled={saving}
               >
-                Cancelar
+                {isReadOnly ? "Volver" : "Cancelar"}
               </Button>
-              <Button type="submit" disabled={saving}>
-                <IconDeviceFloppy size={20} className="mr-2" />
-                {saving
-                  ? "Guardando..."
-                  : isEditing
-                  ? "Actualizar Orden"
-                  : "Crear Orden"}
-              </Button>
+              {!isReadOnly && (
+                <Button type="submit" disabled={saving}>
+                  <IconDeviceFloppy size={20} className="mr-2" />
+                  {saving
+                    ? "Guardando..."
+                    : isEditing
+                    ? "Actualizar Orden"
+                    : "Crear Orden"}
+                </Button>
+              )}
             </div>
           </motion.div>
+
+          {/* Alerta de solo lectura */}
+          {isReadOnly && (
+            <motion.div
+              className="mb-4 p-4 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-lg flex items-center gap-3"
+              initial={motionInitial}
+              animate={motionAnimate}
+              transition={motionTransition}
+            >
+              <IconAlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  Orden no editable
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Solo las órdenes en estado "Pendiente" pueden ser modificadas.
+                  Esta orden está en estado "
+                  {sale?.status === "Completed"
+                    ? "Completada"
+                    : sale?.status === "Closed"
+                    ? "Cerrada"
+                    : sale?.status === "Cancelled"
+                    ? "Cancelada"
+                    : "Reembolsada"}
+                  ".
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Información principal */}
@@ -482,22 +551,19 @@ export function SaleUpsertPage() {
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="sale-customer">
-                        Cliente <span className="text-error">*</span>
-                      </Label>
-                      <Select value={customerId} onValueChange={setCustomerId}>
-                        <SelectTrigger id="sale-customer">
-                          <SelectValue placeholder="Selecciona un cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="md:col-span-2">
+                      <CustomerSelector
+                        customers={customers}
+                        selectedCustomerId={customerId}
+                        onSelectCustomer={setCustomerId}
+                        onCustomerCreated={(newCustomer) => {
+                          setCustomers((prev) => [...prev, newCustomer]);
+                          toast.success(
+                            `Cliente "${newCustomer.name}" creado y seleccionado`
+                          );
+                        }}
+                        disabled={saving || isReadOnly}
+                      />
                     </div>
 
                     <div className="grid gap-2">
@@ -510,6 +576,7 @@ export function SaleUpsertPage() {
                         value={saleDate}
                         onChange={(e) => setSaleDate(e.target.value)}
                         required
+                        disabled={isReadOnly}
                       />
                     </div>
                   </div>
@@ -522,6 +589,7 @@ export function SaleUpsertPage() {
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Notas adicionales sobre la orden..."
                       rows={2}
+                      disabled={isReadOnly}
                     />
                   </div>
                 </CardContent>
@@ -532,60 +600,49 @@ export function SaleUpsertPage() {
                 <CardHeader>
                   <CardTitle>Productos</CardTitle>
                   <CardDescription>
-                    Agrega los productos a la orden de venta
+                    {isReadOnly
+                      ? "Productos en la orden"
+                      : "Agrega los productos a la orden de venta"}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {/* Selector de producto */}
-                  <div className="flex items-end gap-2 mb-4">
-                    <div className="flex-1">
-                      <Label htmlFor="product-select">Agregar Producto</Label>
-                      <Select
-                        value={selectedProduct}
-                        onValueChange={setSelectedProduct}
-                      >
-                        <SelectTrigger id="product-select">
-                          <SelectValue placeholder="Selecciona un producto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} - {formatCurrency(product.price)}{" "}
-                              (Stock: {product.stock})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                <CardContent className="space-y-4">
+                  {/* Buscador de productos mejorado - oculto en modo solo lectura */}
+                  {!isReadOnly && (
+                    <div>
+                      <Label className="mb-2 block">
+                        Buscar y Agregar Productos
+                      </Label>
+                      <ProductSearchSelector
+                        products={products}
+                        onAddProduct={handleAddProduct}
+                        existingProductIds={items.map((i) => i.productId)}
+                        disabled={saving}
+                        formatCurrency={formatCurrency}
+                      />
                     </div>
-                    <Button
-                      type="button"
-                      onClick={handleAddProduct}
-                      disabled={!selectedProduct}
-                    >
-                      <IconPlus size={16} className="mr-2" />
-                      Agregar
-                    </Button>
-                  </div>
+                  )}
 
-                  {/* Tabla de productos */}
+                  {/* Tabla de productos mejorada */}
                   {items.length > 0 ? (
-                    <OrderProductTable
+                    <OrderProductTableEnhanced
                       items={items}
                       products={products}
                       onRemoveItem={handleRemoveItem}
                       onItemChange={handleItemChange}
-                      onEditProduct={handleEditProduct}
                       formatCurrency={formatCurrency}
+                      readOnly={isReadOnly}
                     />
                   ) : (
-                    <div className="text-center py-12 text-gray-500 border rounded-md">
+                    <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
                       <IconShoppingCart
                         size={48}
-                        className="mx-auto mb-4 opacity-50"
+                        className="mx-auto mb-4 opacity-40"
                       />
-                      <p className="text-base">
-                        No hay productos agregados. Selecciona productos desde
-                        arriba.
+                      <p className="text-base font-medium">
+                        No hay productos en la orden
+                      </p>
+                      <p className="text-sm mt-1">
+                        Usa el buscador para agregar productos
                       </p>
                     </div>
                   )}
@@ -604,25 +661,66 @@ export function SaleUpsertPage() {
               }}
             >
               {/* Resumen de la orden */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumen</CardTitle>
-                  <CardDescription>Detalles del total</CardDescription>
+              <Card className="sticky top-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <IconShoppingCart size={20} className="text-primary" />
+                    Resumen de la Orden
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Productos</span>
-                      <span>{items.length} artículo(s)</span>
+                  <div className="space-y-4">
+                    {/* Desglose */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Productos</span>
+                        <span className="font-medium">
+                          {items.length} artículo{items.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Cantidad total
+                        </span>
+                        <span className="font-medium">
+                          {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
+                          unidad
+                          {items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          ) !== 1
+                            ? "es"
+                            : ""}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500">Cantidad total</span>
-                      <span>
-                        {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-                        unidad(es)
-                      </span>
-                    </div>
-                    <div className="border-t pt-3 mt-3">
+
+                    {/* Lista resumida de productos */}
+                    {items.length > 0 && (
+                      <div className="border-t pt-3">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Productos en la orden:
+                        </p>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                          {items.map((item) => (
+                            <div
+                              key={item.productId}
+                              className="flex items-center justify-between text-xs bg-muted/50 px-2 py-1.5 rounded"
+                            >
+                              <span className="truncate flex-1 mr-2">
+                                {item.productName}
+                              </span>
+                              <span className="shrink-0 text-muted-foreground">
+                                x{item.quantity}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Total */}
+                    <div className="border-t pt-4">
                       <div className="flex justify-between items-center">
                         <span className="font-semibold text-lg">Total</span>
                         <span className="font-bold text-2xl text-primary">
@@ -630,43 +728,16 @@ export function SaleUpsertPage() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Indicador de estado */}
+                    {items.length === 0 && (
+                      <div className="text-center py-2 text-xs text-muted-foreground bg-muted/50 rounded">
+                        Agrega productos para continuar
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Cliente seleccionado */}
-              {customerId && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Cliente Seleccionado
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {(() => {
-                      const customer = customers.find(
-                        (c) => c.id === customerId
-                      );
-                      if (!customer) return null;
-                      return (
-                        <div className="space-y-2">
-                          <p className="font-semibold">{customer.name}</p>
-                          {customer.email && (
-                            <p className="text-sm text-slate-500">
-                              {customer.email}
-                            </p>
-                          )}
-                          {customer.phone && (
-                            <p className="text-sm text-slate-500">
-                              {customer.phone}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Acciones rápidas */}
               <Card>
