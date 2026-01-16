@@ -8,6 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -29,7 +36,12 @@ import {
   IconTrash,
   IconCheck,
 } from "@tabler/icons-react";
-import type { SaleDto, SaleCreateDto, SaleUpdateDto } from "@/api/salesApi";
+import type {
+  PaymentMethodType,
+  SaleDto,
+  SaleCreateDto,
+  SaleUpdateDto,
+} from "@/api/salesApi";
 import {
   getSaleById,
   createSale,
@@ -126,6 +138,11 @@ export function SaleUpsertPage() {
   );
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItemForm[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(
+    PaymentMethod.Cash
+  );
+  const [amountReceived, setAmountReceived] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
 
   // Datos de referencia
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
@@ -170,6 +187,18 @@ export function SaleUpsertPage() {
           subtotal: item.quantity * item.price,
         }))
       );
+
+      if (data.payments && data.payments.length > 0) {
+        const [firstPayment] = data.payments;
+        setPaymentMethod(firstPayment.method);
+        setAmountReceived(
+          firstPayment.amountReceived !== undefined &&
+            firstPayment.amountReceived !== null
+            ? firstPayment.amountReceived.toString()
+            : ""
+        );
+        setPaymentReference(firstPayment.reference ?? "");
+      }
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Error al cargar la orden de venta"
@@ -438,6 +467,28 @@ export function SaleUpsertPage() {
         throw new Error("Debes agregar al menos un producto");
       }
 
+      let normalizedAmountReceived: number | undefined;
+      if (paymentMethod === PaymentMethod.Cash) {
+        if (amountReceived.trim().length > 0) {
+          const parsedAmount = Number(amountReceived);
+          if (Number.isNaN(parsedAmount)) {
+            throw new Error("El monto recibido debe ser un número válido");
+          }
+          normalizedAmountReceived = parsedAmount;
+        } else {
+          normalizedAmountReceived = totalAmount;
+        }
+
+        if (
+          typeof normalizedAmountReceived === "number" &&
+          normalizedAmountReceived < totalAmount
+        ) {
+          throw new Error("El monto recibido debe ser mayor o igual al total");
+        }
+      }
+
+      const normalizedReference = paymentReference.trim() || undefined;
+
       const baseItems = items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -469,9 +520,10 @@ export function SaleUpsertPage() {
       setStatusAction("approve");
       await completeSale(saleId, [
         {
-          method: PaymentMethod.Cash,
+          method: paymentMethod,
           amount: totalAmount,
-          amountReceived: totalAmount,
+          amountReceived: normalizedAmountReceived,
+          reference: normalizedReference,
         },
       ]);
 
@@ -880,6 +932,85 @@ export function SaleUpsertPage() {
                 delay: prefersReducedMotion ? 0 : 0.16,
               }}
             >
+              {/* Método de Pago */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Método de Pago</CardTitle>
+                  <CardDescription>
+                    Selecciona cómo se pagará la orden al aprobarla.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="payment-method">Método</Label>
+                    <Select
+                      value={paymentMethod.toString()}
+                      onValueChange={(value) => {
+                        const nextMethod = Number(value) as PaymentMethodType;
+                        setPaymentMethod(nextMethod);
+                        if (nextMethod !== PaymentMethod.Cash) {
+                          setAmountReceived("");
+                        }
+                      }}
+                      disabled={isReadOnly}
+                    >
+                      <SelectTrigger id="payment-method">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={PaymentMethod.Cash.toString()}>
+                          Efectivo
+                        </SelectItem>
+                        <SelectItem value={PaymentMethod.Card.toString()}>
+                          Tarjeta
+                        </SelectItem>
+                        <SelectItem value={PaymentMethod.Voucher.toString()}>
+                          Voucher
+                        </SelectItem>
+                        <SelectItem value={PaymentMethod.Transfer.toString()}>
+                          Transferencia
+                        </SelectItem>
+                        <SelectItem value={PaymentMethod.Other.toString()}>
+                          Otro
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {paymentMethod === PaymentMethod.Cash && (
+                    <div className="space-y-2">
+                      <Label htmlFor="amount-received">Monto recibido</Label>
+                      <Input
+                        id="amount-received"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={amountReceived}
+                        onChange={(e) => setAmountReceived(e.target.value)}
+                        placeholder={totalAmount ? totalAmount.toString() : "0"}
+                        disabled={isReadOnly}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Si lo dejas vacío, se usará el total.
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentMethod !== PaymentMethod.Cash && (
+                    <div className="space-y-2">
+                      <Label htmlFor="payment-reference">Referencia</Label>
+                      <Input
+                        id="payment-reference"
+                        value={paymentReference}
+                        onChange={(e) => setPaymentReference(e.target.value)}
+                        placeholder="Opcional"
+                        disabled={isReadOnly}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Resumen de la orden */}
               <Card className="sticky top-4">
                 <CardHeader className="pb-3">

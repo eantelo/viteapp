@@ -34,6 +34,12 @@ La página `SaleUpsertPage` permite crear y editar órdenes de venta en una inte
 - Información del cliente seleccionado
 - Acciones rápidas (navegación a POS, Clientes, Productos)
 
+### Método de Pago
+- Selector de método de pago para la acción **Aprobar** (Efectivo, Tarjeta, Voucher, Transferencia, Otro)
+- Para **Efectivo** permite capturar el **monto recibido** y valida que sea mayor o igual al total
+- Para métodos no efectivo permite capturar **referencia** opcional
+- Si el monto recibido se deja vacío, se asume el total de la orden
+
 ## Estructura del Archivo
 
 ```
@@ -54,8 +60,9 @@ viteapp/src/pages/SaleUpsertPage.tsx
 2. Selecciona cliente y fecha
 3. Agrega productos desde el selector
 4. Ajusta cantidades según necesidad
-5. Click en "Crear Orden"
-6. Redirección a `/sales` con mensaje de éxito
+5. (Opcional) Selecciona **método de pago** si va a aprobar la venta
+6. Click en "Guardar" para dejarla pendiente, o "Aprobar" para completarla con pago
+7. Redirección a `/sales` con mensaje de éxito
 
 ### Editar Orden Existente
 1. Usuario navega a `/sales/:id/edit` (botón editar en SalesPage)
@@ -71,6 +78,7 @@ viteapp/src/pages/SaleUpsertPage.tsx
 | GET | `/api/sales/:id` | Obtener datos de orden existente |
 | POST | `/api/sales` | Crear nueva orden |
 | PUT | `/api/sales/:id` | Actualizar orden existente |
+| PUT | `/api/sales/:id/complete` | Completar venta pendiente con pagos |
 | GET | `/api/customers` | Listar clientes activos |
 | GET | `/api/products` | Listar productos activos |
 

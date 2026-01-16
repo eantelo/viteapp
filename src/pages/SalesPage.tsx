@@ -824,6 +824,11 @@ export function SalesPage() {
             setSelectedSale(null);
           }}
           onPrint={handlePrint}
+          onEdit={(sale) => {
+            setDetailModalOpen(false);
+            setSelectedSale(null);
+            handleEdit(sale);
+          }}
         />
       </DashboardLayout>
     </PageTransition>

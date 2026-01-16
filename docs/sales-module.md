@@ -16,9 +16,10 @@ viteapp/src/
 │   └── salesApi.ts              # Cliente HTTP para el endpoint de ventas
 ├── pages/
 │   └── SalesPage.tsx            # Página principal con listado de ventas
+│   └── SaleUpsertPage.tsx        # Página de creación/edición de ventas
 ├── components/
 │   └── sales/
-│       └── SaleFormDialog.tsx   # Diálogo modal para crear/editar ventas
+│       └── SaleDetailModal.tsx  # Modal de detalle con acciones rápidas
 └── App.tsx                      # Router con ruta /sales
 ```
 
@@ -63,13 +64,18 @@ El backend expone el endpoint `/api/sales` con los siguientes métodos:
 | `Shipped`    | `default`      | Verde/Azul     | Enviada              |
 | `Cancelled`  | `destructive`  | Rojo           | Cancelada            |
 
-### 2. Formulario de Venta (`SaleFormDialog.tsx`)
+**Edición desde UI:**
+
+- El listado muestra la acción **Editar** para ventas en estado `Pending`.
+- El modal de detalle incluye botón **Editar** cuando la venta está en `Pending`.
+
+### 2. Formulario de Venta (`SaleUpsertPage.tsx`)
 
 **Funcionalidades:**
 
 - **Selección de cliente**: Dropdown con lista de clientes activos.
 - **Fecha de venta**: Input tipo `date` (por defecto: fecha actual).
-- **Estado**: Solo editable en modo edición (Pendiente, Facturada, Enviada, Cancelada).
+- **Estado**: La edición de órdenes está habilitada únicamente para ventas `Pending`.
 - **Notas**: Campo de texto opcional para observaciones.
 - **Gestión de productos**:
   - Agregar productos desde un dropdown con precio y stock visible.

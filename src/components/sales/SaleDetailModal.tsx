@@ -16,6 +16,7 @@ import {
   IconPrinter,
   IconX,
   IconReceipt,
+  IconPencil,
 } from "@tabler/icons-react";
 
 interface SaleDetailModalProps {
@@ -23,6 +24,7 @@ interface SaleDetailModalProps {
   sale: SaleDto | null;
   onClose: () => void;
   onPrint?: (sale: SaleDto) => void;
+  onEdit?: (sale: SaleDto) => void;
 }
 
 export function SaleDetailModal({
@@ -30,6 +32,7 @@ export function SaleDetailModal({
   sale,
   onClose,
   onPrint,
+  onEdit,
 }: SaleDetailModalProps) {
   if (!sale) return null;
 
@@ -213,6 +216,16 @@ export function SaleDetailModal({
 
           {/* Acciones */}
           <div className="flex items-center justify-end gap-3">
+            {onEdit && sale.status === "Pending" && (
+              <Button
+                variant="outline"
+                onClick={() => onEdit(sale)}
+                className="gap-2"
+              >
+                <IconPencil size={18} />
+                Editar
+              </Button>
+            )}
             {onPrint && (
               <Button
                 variant="outline"
