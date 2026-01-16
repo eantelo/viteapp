@@ -13,6 +13,17 @@ export function extractChartData(content: string): {
   );
 
   if (!chartMatch) {
+    if (
+      content.includes("<<<CHART_DATA>>>") ||
+      content.includes("<<<END_CHART_DATA>>>")
+    ) {
+      const textContent = content
+        .replace(/<<<CHART_DATA>>>/g, "")
+        .replace(/<<<END_CHART_DATA>>>/g, "")
+        .trim();
+      return { chartData: null, textContent };
+    }
+
     return { chartData: null, textContent: content };
   }
 
@@ -23,6 +34,9 @@ export function extractChartData(content: string): {
       .trim();
     return { chartData, textContent };
   } catch {
-    return { chartData: null, textContent: content };
+    const textContent = content
+      .replace(/<<<CHART_DATA>>>[\s\S]*?<<<END_CHART_DATA>>>/, "")
+      .trim();
+    return { chartData: null, textContent };
   }
 }

@@ -101,9 +101,11 @@ Los datos se envían al frontend usando un formato especial:
 
 ### Frontend (React/TypeScript)
 
-El componente `ChatInlineChart.tsx` renderiza los gráficos usando la librería `recharts`.
+El componente `ChatChart.tsx` renderiza los gráficos usando la librería `recharts`.
 
 La función `extractChartData()` extrae los datos del marcador especial y los separa del texto del mensaje.
+
+> Nota: si el backend envía un marcador incompleto o malformado (por ejemplo, sin `<<<END_CHART_DATA>>>`), el frontend **elimina el placeholder** para que no se muestre texto técnico al usuario. En ese caso no se renderiza el gráfico y solo se muestra el mensaje.
 
 ## Componentes
 
