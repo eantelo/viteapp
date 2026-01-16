@@ -68,23 +68,35 @@ export function DashboardPage() {
 
   return (
     <PageTransition>
-      <DashboardLayout breadcrumbs={[{ label: "Panel de Análisis" }]}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Tablero
-          </h2>
-          <div className="flex items-center space-x-2">
-            <DateRangeSelector
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-            />
+      <DashboardLayout
+        breadcrumbs={[{ label: "Panel de Análisis" }]}
+        className="gap-6 p-6 pt-4"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Panel de análisis
+            </p>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                Tablero
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Resumen de ventas y actividad reciente en tiempo real.
+              </p>
+            </div>
           </div>
+          <DateRangeSelector
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            className="justify-self-end"
+          />
         </div>
 
-        <div className="space-y-4">
+        <div className="grid gap-6">
           <SalesStatisticsCards statistics={statistics} loading={loading} />
 
-          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             <RecentSalesActivity sales={recentSales} loading={loading} />
             {/* Placeholder for future charts like Top Products */}
           </div>

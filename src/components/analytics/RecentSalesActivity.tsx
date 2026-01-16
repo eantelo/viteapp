@@ -1,6 +1,12 @@
 import type { SaleDto } from "@/api/salesApi";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface RecentSalesActivityProps {
@@ -47,9 +53,12 @@ export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps
 
   if (loading) {
     return (
-      <Card className="col-span-1 h-full">
-        <CardHeader>
-          <CardTitle>Ventas Recientes</CardTitle>
+      <Card className="col-span-1 h-full rounded-lg border-border/60 bg-card shadow-none">
+        <CardHeader className="gap-2">
+          <CardTitle className="text-base font-semibold tracking-tight">
+            Ventas recientes
+          </CardTitle>
+          <CardDescription>Últimas operaciones registradas</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-8">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -57,7 +66,7 @@ export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps
               <Skeleton className="h-9 w-9 rounded-full" />
               <div className="grid gap-1">
                 <Skeleton className="h-4 w-[120px]" />
-                <Skeleton className="h-3 w-[80px]" />
+                <Skeleton className="h-3 w-20" />
               </div>
               <div className="ml-auto font-medium">
                 <Skeleton className="h-4 w-[60px]" />
@@ -70,21 +79,24 @@ export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps
   }
 
   return (
-    <Card className="col-span-1 h-full">
-      <CardHeader>
-        <CardTitle>Ventas Recientes</CardTitle>
+    <Card className="col-span-1 h-full rounded-lg border-border/60 bg-card shadow-none">
+      <CardHeader className="gap-2">
+        <CardTitle className="text-base font-semibold tracking-tight">
+          Ventas recientes
+        </CardTitle>
+        <CardDescription>Últimas operaciones registradas</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-8">
+        <div className="space-y-6">
           {sales.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               No hay ventas recientes en este periodo.
             </p>
           ) : (
             sales.map((sale) => (
-              <div key={sale.id} className="flex items-center">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+              <div key={sale.id} className="flex items-center gap-3">
+                <Avatar className="h-9 w-9 border border-border/60">
+                  <AvatarFallback className="bg-muted/40 text-xs font-semibold text-muted-foreground">
                     {getInitials(sale.customerName)}
                   </AvatarFallback>
                 </Avatar>
@@ -93,11 +105,12 @@ export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps
                     {sale.customerName || "Cliente General"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {sale.items.length} {sale.items.length === 1 ? "artículo" : "artículos"} •{" "}
+                    {sale.items.length}{" "}
+                    {sale.items.length === 1 ? "artículo" : "artículos"} •{" "}
                     {timeAgo(sale.date)}
                   </p>
                 </div>
-                <div className="ml-auto font-medium text-foreground">
+                <div className="ml-auto text-sm font-semibold text-foreground tabular-nums font-mono">
                   +{formatCurrency(sale.total)}
                 </div>
               </div>

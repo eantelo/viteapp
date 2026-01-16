@@ -2,42 +2,40 @@
 
 ## Objetivo
 
-Se reescribió `src/pages/DashboardPage.tsx` para aprovechar el layout completo proporcionado por **shadcn/ui** (Sidebar + Breadcrumb + Cards) y ofrecer un panel que combine información de la sesión JWT con acciones rápidas (renovar tokens, cerrar sesión) y recordatorios operativos.
+Actualizar `src/pages/DashboardPage.tsx` para ofrecer un panel de análisis de ventas con jerarquía visual precisa y una estética minimalista orientada a confianza. Se prioriza una interfaz de alta densidad, monocroma y con énfasis en datos, alineada con los principios de diseño del sistema.
 
 ## Secciones principales
 
-1. **Sidebar + Header anclado**
-   - `<SidebarProvider>` + `<AppSidebar />` enmarcan toda la vista.
-   - El header incluye `SidebarTrigger`, `Breadcrumb` y datos del usuario autenticado con un botón de cierre de sesión.
+1. **Encabezado + filtros**
+   - Título, subtítulo y selector de rango de fechas integrados en una sola franja.
 2. **Tarjetas de métricas**
-   - Grid responsivo (`sm:grid-cols-2`, `xl:grid-cols-4`) con `Card` + `CardDescription` para correo, rol, tenant activo y última renovación.
-3. **Gestión de sesión**
-   - Card con `Alert` para errores/éxitos, botón **Renovar ahora** (usa `Spinner` cuando `isRefreshing` es true) y listado de tokens/claims (`TenantId`, `UserId`, access/refresh token).
-   - Incluye recordatorio de buenas prácticas (renovar antes de expirar, revocar al cerrar sesión, etc.).
-4. **Panel de diagnóstico**
-   - Tarjeta lateral con bloques informativos sobre estado del refresh automático, autenticación y recomendaciones rápidas.
+   - Grid responsivo con totales, transacciones, ticket promedio y métodos de pago.
+3. **Desglose por método**
+   - Lista con porcentaje y barra de distribución por canal de pago.
+4. **Ventas recientes**
+   - Card con actividad reciente y valores en formato monetario.
 
 ## Comportamiento
 
-- `useAuth` continúa exponiendo `refreshSession`, `logout`, `isRefreshing`, `refreshError` y `lastRefreshAt`.
-- Mensajes secundarios:
-  - `manualMessage` muestra confirmación al renovar manualmente.
-  - `Alert` alterna entre variantes `error`/`success` según `refreshError`.
-- Se utilizan `Spinner`, `Badge` y `Button` de shadcn para estados de carga e indicadores visuales.
+- El selector de rango actualiza `dateRange` y recarga estadísticas y ventas recientes.
+- Las tarjetas muestran skeletons durante la carga y el layout conserva estabilidad.
+- Los valores numéricos usan tipografía monoespaciada para alineación visual.
 
 ## Acciones del usuario
 
-- **Renovar ahora**: invoca `refreshSession()` y actualiza `manualMessage` cuando la API responde correctamente.
-- **Cerrar sesión**: deshabilita el botón mientras `logout()` está en curso para evitar múltiples solicitudes.
-- El grid de tokens permite copiar valores (se usa `font-mono` + `break-all`).
+- **Filtrar periodo**: selecciona un preset o define fechas manuales en el selector.
+- **Explorar ventas**: revisa operaciones recientes desde el panel principal.
 
 ## Requisitos de estilo
 
-- Fondo general `bg-slate-50`, cards blancas con `shadow-sm` para seguir la guía del sistema de diseño (`viteapp/agents.md`).
-- `aria-invalid` se aplica en inputs de login/registro para aprovechar las clases `aria-invalid:*` definidas en los componentes de shadcn.
+- Dirección visual: **sofisticación y confianza** con base fría y monocromática.
+- Profundidad: **bordes sutiles sin sombras** (`border-border/60`, `shadow-none`).
+- Tipografía: títulos `tracking-tight` y números en `font-mono tabular-nums`.
+- Iconografía: **Phosphor Icons** con contenedores discretos.
+- Espaciado: escala de 4px (`p-6`, `gap-6`).
 
 ## Próximos pasos sugeridos
 
-1. Integrar datos reales (ventas, clientes, etc.) en nuevas tarjetas reutilizando el layout existente.
-2. Añadir tabla con actividad reciente usando `data-table.tsx` para mantener consistencia visual.
-3. Conectar el sidebar (`AppSidebar`) con las rutas reales cuando se publiquen más módulos.
+1. Incorporar gráficos analíticos con estilos monocromos (líneas o barras neutras).
+2. Añadir un panel de tendencias semanales con comparación porcentual.
+3. Habilitar navegación hacia el listado completo de ventas.

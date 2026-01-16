@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CalendarIcon } from "lucide-react";
+import { CalendarBlank } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -112,35 +112,38 @@ export function DateRangeSelector({
             id="date"
             variant={"outline"}
             className={cn(
-              "w-[260px] justify-start text-left font-normal",
+              "inline-flex w-[260px] items-center justify-between gap-2 whitespace-nowrap border-border/60 text-left text-sm font-medium",
               !dateRange && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {formatDate(dateRange.from)} - {formatDate(dateRange.to)}
-                </>
+            <span className="inline-flex items-center gap-2">
+              <CalendarBlank className="h-4 w-4 text-muted-foreground" weight="duotone" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {formatDate(dateRange.from)} - {formatDate(dateRange.to)}
+                  </>
+                ) : (
+                  formatDate(dateRange.from)
+                )
               ) : (
-                formatDate(dateRange.from)
-              )
-            ) : (
-              <span>Seleccionar fechas</span>
-            )}
+                <span>Seleccionar fechas</span>
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground">Filtrar</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-4" align="end">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <h4 className="font-medium leading-none">Rango de fechas</h4>
+              <h4 className="text-sm font-semibold leading-none">Rango de fechas</h4>
               <p className="text-sm text-muted-foreground">
                 Filtra los datos del tablero.
               </p>
             </div>
             <div className="grid gap-2">
               <Select value={preset} onValueChange={handlePresetChange}>
-                <SelectTrigger>
+                <SelectTrigger className="inline-flex whitespace-nowrap">
                   <SelectValue placeholder="Seleccionar periodo" />
                 </SelectTrigger>
                 <SelectContent position="popper">
@@ -160,20 +163,28 @@ export function DateRangeSelector({
                     <Label htmlFor="from">Desde</Label>
                     <Input
                       id="from"
-                      type="date"
-                      className="h-8"
-                      value={dateRange.from.toISOString().split('T')[0]}
-                      onChange={(e) => handleCustomDateChange('from', e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="YYYY-MM-DD"
+                      className="h-8 text-xs"
+                      value={dateRange.from.toISOString().split("T")[0]}
+                      onChange={(e) =>
+                        handleCustomDateChange("from", e.target.value)
+                      }
                     />
                   </div>
                   <div className="grid gap-1">
                     <Label htmlFor="to">Hasta</Label>
                     <Input
                       id="to"
-                      type="date"
-                      className="h-8"
-                      value={dateRange.to.toISOString().split('T')[0]}
-                      onChange={(e) => handleCustomDateChange('to', e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="YYYY-MM-DD"
+                      className="h-8 text-xs"
+                      value={dateRange.to.toISOString().split("T")[0]}
+                      onChange={(e) =>
+                        handleCustomDateChange("to", e.target.value)
+                      }
                     />
                   </div>
                 </div>
