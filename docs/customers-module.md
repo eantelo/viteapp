@@ -93,9 +93,14 @@ El token JWT se inyecta automaticamente mediante `apiClient`, por lo que no se e
 ## Caracteristicas de UI/UX
 
 - Borde superior con breadcrumb `Panel principal / Clientes`.
+- Header compacto con etiqueta de contexto y accion principal.
 - Busqueda inmediata (filtrado en memoria) por nombre, email, telefono, ciudad, RFC, nota o GPS.
+- Indicador de resultados (filtrados vs totales).
 - Tabla con columnas: Nombre, Email, Telefono, Direccion, Ciudad, RFC/Tax ID, Nota, GPS, Estado, Acciones.
-- Estados vacio, error y loading claros.
+- Jerarquia tipografica refinada (titulos 600, labels en mayusculas, cuerpo neutro).
+- Datos sensibles alineados en monospace con `tabular-nums` (telefono, RFC, GPS).
+- Badges de estado con bordes suaves y color semantico discreto.
+- Estados vacio, error y loading en superficies sutiles y consistentes.
 - Confirmacion nativa antes de eliminar.
 
 ## Validaciones

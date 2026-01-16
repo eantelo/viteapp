@@ -192,29 +192,27 @@ La ruta `/sales` está protegida por autenticación y se accede desde:
 
 ## Estilo Visual
 
-El módulo utiliza el sistema de diseño establecido siguiendo el formato del ejemplo HTML proporcionado:
+El módulo de Ventas adopta una dirección **Sophistication & Trust** con base fría (cool neutrals), priorizando claridad y densidad moderada para usuarios frecuentes.
 
-- **Tailwind CSS**: Clases utilitarias para estilos.
-- **Shadcn/ui**: Componentes base (`Button`, `Input`, `Table`, `Badge`, `Select`, `Dialog`, etc.).
-- **Modo oscuro**: Soporte completo con clases `dark:`.
-- **Colores primarios**:
-  - Primary: `#135bec` (azul)
-  - Background light: `#f6f6f8`
-  - Background dark: `#101622`
-- **Iconos**: Tabler Icons (`@tabler/icons-react`).
+- **Superficies**: enfoque *borders-only* y cambios sutiles de fondo (`bg-white/70`, `bg-slate-50/70`), evitando sombras pesadas.
+- **Tipografía**: títulos `font-semibold` y jerarquía compacta; datos numéricos con `font-mono` y `tabular-nums`.
+- **Contraste**: cuatro niveles (foreground → secondary → muted → faint) para lectura rápida.
+- **Controles**: inputs y selects con fondos suaves para separación visual.
+- **Modo oscuro**: soporte completo con `dark:` ajustando bordes y fondos.
+- **Iconos**: Tabler Icons (`@tabler/icons-react`) por consistencia actual del proyecto.
 
-### Ejemplos visuales:
+### Ejemplos visuales
 
 **Barra de búsqueda y filtros:**
 - Input con icono de búsqueda a la izquierda.
-- Select para filtrar por estado.
-- Filtros activos mostrados como chips removibles.
+- Selects con fondo sutil y etiquetas en `text-xs` con `uppercase`.
+- Presets de fecha dentro de contenedor con borde suave.
 
 **Tabla de ventas:**
-- Header con fondo gris claro (`bg-gray-50 dark:bg-gray-800`).
-- Filas con hover y efecto de selección.
-- Badges de colores según el estado.
-- Botones de acción con iconos.
+- Encabezado en `bg-slate-50/70 dark:bg-slate-900/40` con títulos en `text-xs` y `tracking-wide`.
+- Filas con hover discreto (`hover:bg-slate-50/60`).
+- Columnas numéricas en monospace y `tabular-nums`.
+- Badges de estado conservan color semántico.
 
 **Paginación:**
 - Información de registros mostrados.

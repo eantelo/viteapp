@@ -28,11 +28,11 @@ import {
 } from "@/contexts/FormPrefillContext";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  IconPlus,
-  IconPencil,
-  IconTrash,
-  IconSearch,
-} from "@tabler/icons-react";
+  MagnifyingGlass,
+  PencilSimple,
+  Plus,
+  Trash,
+} from "@phosphor-icons/react";
 import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
@@ -228,25 +228,32 @@ export function CustomersPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Clientes" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
       >
-        <motion.div
-          className="flex items-center justify-between"
+        <motion.header
+          className="flex flex-col gap-3"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
         >
-          <div>
-            <h1 className="text-3xl font-bold">Clientes</h1>
-            <p className="text-slate-500 mt-1">
-              Gestiona los clientes registrados en Sales
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Directorio
+            </span>
+            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+              Clientes
+            </h1>
+            <p className="text-sm text-slate-500">
+              Gestiona clientes, estados y detalles de contacto con precisión.
             </p>
           </div>
-          <Button onClick={handleCreate}>
-            <IconPlus size={20} className="mr-2" />
-            Nuevo Cliente
-          </Button>
-        </motion.div>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleCreate} className="gap-2">
+              <Plus size={18} weight="bold" />
+              Nuevo cliente
+            </Button>
+          </div>
+        </motion.header>
 
         <motion.div
           initial={motionInitial}
@@ -256,117 +263,173 @@ export function CustomersPage() {
             delay: prefersReducedMotion ? 0 : 0.08,
           }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>Directorio de Clientes</CardTitle>
-              <CardDescription>
-                Consulta, crea o edita clientes usando los datos reales de
-                Sales.Api
+          <Card className="border-slate-200/80 shadow-none">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-lg text-slate-900">
+                Directorio de clientes
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Consulta, crea o edita clientes con información actualizada del
+                sistema.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2 mb-6">
-                <div className="relative flex-1">
-                  <IconSearch
-                    size={20}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <Input
-                    placeholder="Buscar por nombre, email, telefono, ciudad, RFC, nota o GPS..."
-                    value={search}
-                    onChange={handleSearchInput}
-                    onKeyDown={handleSearchKeyDown}
-                    className="pl-10"
-                  />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-slate-500">
+                      Buscar clientes
+                    </span>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-slate-400">
+                        <MagnifyingGlass size={16} weight="bold" />
+                      </span>
+                      <Input
+                        placeholder="Nombre, email, teléfono, ciudad, RFC, nota o GPS"
+                        value={search}
+                        onChange={handleSearchInput}
+                        onKeyDown={handleSearchKeyDown}
+                        className="pl-12 bg-slate-50 focus-visible:ring-slate-300"
+                        aria-label="Buscar clientes"
+                      />
+                    </div>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span className="font-medium text-slate-700">
+                      {filteredCustomers.length}
+                    </span>
+                    resultados
+                    <span className="text-slate-300">•</span>
+                    <span>{customers.length} clientes totales</span>
+                  </div>
                 </div>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                </div>
-              ) : error ? (
-                <div className="text-center py-8 text-error">{error}</div>
-              ) : filteredCustomers.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {customers.length === 0
-                    ? "No hay clientes registrados"
-                    : "Ningun cliente coincide con la busqueda"}
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Telefono</TableHead>
-                        <TableHead>Direccion</TableHead>
-                        <TableHead>Ciudad</TableHead>
-                        <TableHead>RFC / Tax ID</TableHead>
-                        <TableHead>Nota</TableHead>
-                        <TableHead>GPS</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCustomers.map((customer) => (
-                        <TableRow
-                          key={customer.id}
-                          className={cn(
-                            highlightedCustomerId === customer.id &&
-                              "bg-primary/10 animate-pulse"
-                          )}
-                        >
-                          <TableCell className="font-medium">
-                            {customer.name}
-                          </TableCell>
-                          <TableCell>{customer.email || "-"}</TableCell>
-                          <TableCell>{customer.phone || "-"}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {customer.address || "-"}
-                          </TableCell>
-                          <TableCell>{customer.city || "-"}</TableCell>
-                          <TableCell>{customer.taxId || "-"}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {customer.note || "-"}
-                          </TableCell>
-                          <TableCell>{customer.gps || "-"}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                customer.isActive ? "default" : "secondary"
-                              }
-                            >
-                              {customer.isActive ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(customer)}
-                              >
-                                <IconPencil size={16} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-error hover:text-error/90"
-                                onClick={() => handleDelete(customer)}
-                              >
-                                <IconTrash size={16} />
-                              </Button>
-                            </div>
-                          </TableCell>
+                {loading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                  </div>
+                ) : error ? (
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-600">
+                    {error}
+                  </div>
+                ) : filteredCustomers.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                    {customers.length === 0
+                      ? "No hay clientes registrados todavía."
+                      : "Ningún cliente coincide con la búsqueda."}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-slate-200">
+                    <Table className="text-sm">
+                      <TableHeader className="bg-slate-50">
+                        <TableRow>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Nombre
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Email
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Teléfono
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Dirección
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Ciudad
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            RFC / Tax ID
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Nota
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            GPS
+                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                            Estado
+                          </TableHead>
+                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500">
+                            Acciones
+                          </TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                      </TableHeader>
+                      <TableBody>
+                        {filteredCustomers.map((customer) => (
+                          <TableRow
+                            key={customer.id}
+                            className={cn(
+                              "text-slate-700",
+                              highlightedCustomerId === customer.id &&
+                                "bg-primary/10 ring-1 ring-primary/30"
+                            )}
+                          >
+                            <TableCell className="font-medium text-slate-900">
+                              {customer.name}
+                            </TableCell>
+                            <TableCell className="text-slate-600">
+                              {customer.email || "-"}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                              {customer.phone || "-"}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate text-slate-600">
+                              {customer.address || "-"}
+                            </TableCell>
+                            <TableCell className="text-slate-600">
+                              {customer.city || "-"}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                              {customer.taxId || "-"}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate text-slate-600">
+                              {customer.note || "-"}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                              {customer.gps || "-"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "border px-2 py-0.5 text-xs",
+                                  customer.isActive
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : "border-slate-200 bg-slate-100 text-slate-600"
+                                )}
+                              >
+                                {customer.isActive ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => handleEdit(customer)}
+                                  aria-label={`Editar ${customer.name}`}
+                                >
+                                  <PencilSimple size={16} weight="bold" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-error hover:text-error/90"
+                                  onClick={() => handleDelete(customer)}
+                                  aria-label={`Eliminar ${customer.name}`}
+                                >
+                                  <Trash size={16} weight="bold" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </motion.div>
