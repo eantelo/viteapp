@@ -85,9 +85,12 @@ export function CustomersPage() {
     return customers.filter((customer) => {
       return (
         customer.name.toLowerCase().includes(term) ||
-        customer.email.toLowerCase().includes(term) ||
+        (customer.email ?? "").toLowerCase().includes(term) ||
         (customer.phone ?? "").toLowerCase().includes(term) ||
-        (customer.taxId ?? "").toLowerCase().includes(term)
+        (customer.taxId ?? "").toLowerCase().includes(term) ||
+        (customer.city ?? "").toLowerCase().includes(term) ||
+        (customer.note ?? "").toLowerCase().includes(term) ||
+        (customer.gps ?? "").toLowerCase().includes(term)
       );
     });
   }, [customers, search]);
@@ -269,7 +272,7 @@ export function CustomersPage() {
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                   />
                   <Input
-                    placeholder="Buscar por nombre, email, telefono o RFC..."
+                    placeholder="Buscar por nombre, email, telefono, ciudad, RFC, nota o GPS..."
                     value={search}
                     onChange={handleSearchInput}
                     onKeyDown={handleSearchKeyDown}
@@ -299,7 +302,10 @@ export function CustomersPage() {
                         <TableHead>Email</TableHead>
                         <TableHead>Telefono</TableHead>
                         <TableHead>Direccion</TableHead>
+                        <TableHead>Ciudad</TableHead>
                         <TableHead>RFC / Tax ID</TableHead>
+                        <TableHead>Nota</TableHead>
+                        <TableHead>GPS</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
@@ -316,12 +322,17 @@ export function CustomersPage() {
                           <TableCell className="font-medium">
                             {customer.name}
                           </TableCell>
-                          <TableCell>{customer.email}</TableCell>
+                          <TableCell>{customer.email || "-"}</TableCell>
                           <TableCell>{customer.phone || "-"}</TableCell>
                           <TableCell className="max-w-xs truncate">
                             {customer.address || "-"}
                           </TableCell>
+                          <TableCell>{customer.city || "-"}</TableCell>
                           <TableCell>{customer.taxId || "-"}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {customer.note || "-"}
+                          </TableCell>
+                          <TableCell>{customer.gps || "-"}</TableCell>
                           <TableCell>
                             <Badge
                               variant={

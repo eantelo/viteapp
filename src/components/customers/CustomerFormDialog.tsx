@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +45,10 @@ export function CustomerFormDialog({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
   const [taxId, setTaxId] = useState("");
+  const [note, setNote] = useState("");
+  const [gps, setGps] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +59,10 @@ export function CustomerFormDialog({
     email: false,
     phone: false,
     address: false,
+    city: false,
     taxId: false,
+    note: false,
+    gps: false,
   });
 
   const isEditing = customer !== null;
@@ -67,10 +74,13 @@ export function CustomerFormDialog({
 
     if (customer) {
       setName(customer.name);
-      setEmail(customer.email);
+      setEmail(customer.email ?? "");
       setPhone(customer.phone ?? "");
       setAddress(customer.address ?? "");
+      setCity(customer.city ?? "");
       setTaxId(customer.taxId ?? "");
+      setNote(customer.note ?? "");
+      setGps(customer.gps ?? "");
       setIsActive(customer.isActive);
     } else if (prefillData) {
       // Apply prefill data from interface agent
@@ -78,14 +88,20 @@ export function CustomerFormDialog({
       setEmail(prefillData.email ?? "");
       setPhone(prefillData.phone ?? "");
       setAddress(prefillData.address ?? "");
+      setCity(prefillData.city ?? "");
       setTaxId(prefillData.taxId ?? "");
+      setNote(prefillData.note ?? "");
+      setGps(prefillData.gps ?? "");
       setIsActive(true);
     } else {
       setName("");
       setEmail("");
       setPhone("");
       setAddress("");
+      setCity("");
       setTaxId("");
+      setNote("");
+      setGps("");
       setIsActive(true);
     }
     setError(null);
@@ -94,17 +110,26 @@ export function CustomerFormDialog({
       email: false,
       phone: false,
       address: false,
+      city: false,
       taxId: false,
+      note: false,
+      gps: false,
     });
   }, [open, customer, prefillData]);
 
   // Validations
   const validations = useMemo(() => {
     const nameValid = name.trim().length > 0;
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    const trimmedEmail = email.trim();
+    const emailValid =
+      trimmedEmail.length === 0 ||
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
     const phoneValid = phone.trim().length === 0 || phone.trim().length >= 10;
     const addressValid = true; // Optional field
+    const cityValid = true; // Optional field
     const taxIdValid = true; // Optional field
+    const noteValid = true; // Optional field
+    const gpsValid = true; // Optional field
 
     return {
       name: {
@@ -132,13 +157,28 @@ export function CustomerFormDialog({
         isTouched: touched.address,
         error: undefined,
       },
+      city: {
+        isValid: cityValid,
+        isTouched: touched.city,
+        error: undefined,
+      },
       taxId: {
         isValid: taxIdValid,
         isTouched: touched.taxId,
         error: undefined,
       },
+      note: {
+        isValid: noteValid,
+        isTouched: touched.note,
+        error: undefined,
+      },
+      gps: {
+        isValid: gpsValid,
+        isTouched: touched.gps,
+        error: undefined,
+      },
     };
-  }, [name, email, phone, address, taxId, touched]);
+  }, [name, email, phone, address, city, taxId, note, gps, touched]);
 
   const isFormValid = validations.name.isValid && validations.email.isValid;
 
@@ -155,21 +195,25 @@ export function CustomerFormDialog({
     try {
       const trimmedName = name.trim();
       const trimmedEmail = email.trim();
+      const hasEmail = trimmedEmail.length > 0;
 
       if (!trimmedName) {
         throw new Error("El nombre es obligatorio.");
       }
 
-      if (!trimmedEmail) {
-        throw new Error("El correo electronico es obligatorio.");
+      if (hasEmail && !validations.email.isValid) {
+        throw new Error("Ingresa un correo electrónico válido.");
       }
 
       const baseDto = {
         name: trimmedName,
-        email: trimmedEmail,
+        email: normalizeOptional(trimmedEmail) ?? null,
         phone: normalizeOptional(phone),
         address: normalizeOptional(address),
+        city: normalizeOptional(city),
         taxId: normalizeOptional(taxId),
+        note: normalizeOptional(note),
+        gps: normalizeOptional(gps),
       };
 
       if (isEditing && customer) {
@@ -263,7 +307,7 @@ export function CustomerFormDialog({
             {/* Email */}
             <div className="grid gap-2">
               <Label htmlFor="customer-email">
-                Email <span className="text-destructive">*</span>
+                Email
               </Label>
               <div className="relative">
                 <Input
@@ -274,7 +318,6 @@ export function CustomerFormDialog({
                   onBlur={() => handleFieldBlur("email")}
                   placeholder="ventas@cliente.com"
                   maxLength={320}
-                  required
                   className={cn("pr-9", getFieldClasses(validations.email))}
                 />
                 {validations.email.isTouched && validations.email.isValid && (
@@ -328,6 +371,19 @@ export function CustomerFormDialog({
               />
             </div>
 
+            {/* Ciudad */}
+            <div className="grid gap-2">
+              <Label htmlFor="customer-city">Ciudad</Label>
+              <Input
+                id="customer-city"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                onBlur={() => handleFieldBlur("city")}
+                placeholder="Ej: Ciudad de México"
+                maxLength={120}
+              />
+            </div>
+
             {/* RFC / Tax ID */}
             <div className="grid gap-2">
               <Label htmlFor="customer-tax-id">RFC / Tax ID</Label>
@@ -338,6 +394,32 @@ export function CustomerFormDialog({
                 onBlur={() => handleFieldBlur("taxId")}
                 placeholder="XAXX010101000"
                 maxLength={30}
+              />
+            </div>
+
+            {/* Nota */}
+            <div className="grid gap-2">
+              <Label htmlFor="customer-note">Nota</Label>
+              <Textarea
+                id="customer-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                onBlur={() => handleFieldBlur("note")}
+                placeholder="Información adicional del cliente"
+                maxLength={1000}
+              />
+            </div>
+
+            {/* GPS */}
+            <div className="grid gap-2">
+              <Label htmlFor="customer-gps">GPS</Label>
+              <Input
+                id="customer-gps"
+                value={gps}
+                onChange={(event) => setGps(event.target.value)}
+                onBlur={() => handleFieldBlur("gps")}
+                placeholder="Ej: 19.4326,-99.1332"
+                maxLength={120}
               />
             </div>
 

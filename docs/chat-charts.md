@@ -18,7 +18,7 @@ El agente de chat mostrará gráficos cuando el usuario:
 
 ### Tipos de Gráficos Disponibles
 
-#### 1. Ventas Diarias (`GetSalesDailyChart`)
+#### 1. Tendencia de Ventas (`GetTrendAnalysis`)
 
 Muestra las ventas diarias en un rango de fechas.
 
@@ -28,8 +28,8 @@ Muestra las ventas diarias en un rango de fechas.
 - "Grafica las ventas de los últimos 7 días"
 
 **Tipos de visualización:**
-- `bar`: Gráfico de barras (por defecto) - mejor para comparar días
-- `line`: Gráfico de líneas - mejor para ver tendencias
+- `line`: Gráfico de líneas (por defecto) - mejor para ver tendencias
+- `bar`: Gráfico de barras - mejor para comparar días
 
 **Información mostrada:**
 - Monto de ventas por día
@@ -37,7 +37,7 @@ Muestra las ventas diarias en un rango de fechas.
 - Número de transacciones
 - Promedio diario
 
-#### 2. Productos Más Vendidos (`GetTopProductsChart`)
+#### 2. Productos Estrella / Más Vendidos (`GetTopProducts`)
 
 Muestra un ranking de los productos más vendidos.
 
@@ -56,17 +56,42 @@ Muestra un ranking de los productos más vendidos.
 - Total de unidades vendidas
 - Ingresos totales
 
+#### 3. Comparación de Períodos (`ComparePeriods`)
+
+Permite preguntas como:
+- "¿Cuánto vendí este mes vs el anterior?"
+- "Comparar esta semana con la anterior"
+
+Devuelve un gráfico de barras con 2 barras (Período A vs Período B) + variación.
+
+#### 4. Predicción de Ventas (`PredictSales`)
+
+Devuelve un gráfico de líneas con histórico + proyección (estimación) y un resumen.
+
+#### 5. Pagos (tools separadas)
+
+- `GetPaymentMethodBreakdown`: barras por método de pago
+- `GetPaymentTrend`: tendencia diaria
+
 ## Arquitectura Técnica
 
 ### Backend (C#)
 
-Los gráficos se generan en `Sales.Agents/Plugins/SalesPlugin.cs` mediante dos nuevas herramientas:
+Los gráficos se generan en `Sales.Agents/Plugins/AnalyticsPlugin.cs` (analytics) y `Sales.Agents/Plugins/PaymentsAnalyticsPlugin.cs` (pagos).
 
 ```csharp
-// Herramientas disponibles
-GetSalesDailyChart(startDate, endDate, chartType)
-GetTopProductsChart(startDate, endDate, limit, metric)
+// Herramientas canónicas (AnalyticsPlugin)
+GetTrendAnalysis(startDate, endDate, chartType)
+ComparePeriods(periodA, periodB, ...)
+GetTopProducts(startDate, endDate, limit, metric, includeChart)
+PredictSales(historyStartDate?, historyEndDate?, horizonDays?, alpha?)
+
+// Pagos (PaymentsAnalyticsPlugin)
+GetPaymentMethodBreakdown(startDate, endDate)
+GetPaymentTrend(startDate, endDate)
 ```
+
+> Nota: `GetSalesDailyChart` y `GetTopProductsChart` siguen existiendo como compatibilidad, pero están marcadas como **DEPRECATED**.
 
 Los datos se envían al frontend usando un formato especial:
 
@@ -76,7 +101,7 @@ Los datos se envían al frontend usando un formato especial:
 
 ### Frontend (React/TypeScript)
 
-El componente `ChatChart.tsx` renderiza los gráficos usando la librería `recharts`.
+El componente `ChatInlineChart.tsx` renderiza los gráficos usando la librería `recharts`.
 
 La función `extractChartData()` extrae los datos del marcador especial y los separa del texto del mensaje.
 
@@ -129,10 +154,11 @@ El system prompt del agente incluye instrucciones específicas para usar los gr�
 
 ```
 GRÁFICOS Y VISUALIZACIONES:
-- Cuando el usuario pida "gráficos", "visualizaciones", usar herramientas de gráficos
-- Para ventas diarias usar GetSalesDailyChart
-- Para productos top usar GetTopProductsChart
-- Calcular fechas automáticamente si el usuario dice "última semana" o "este mes"
+- Para tendencias usar GetTrendAnalysis
+- Para comparaciones "vs" usar ComparePeriods
+- Para productos estrella usar GetTopProducts
+- Para predicción usar PredictSales
+- Para pagos usar GetPaymentMethodBreakdown / GetPaymentTrend
 ```
 
 ## Ejemplos de Conversación

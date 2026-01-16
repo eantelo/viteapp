@@ -697,8 +697,12 @@ export function ProductCatalogPage() {
 
       setDeleteError(errorMessage);
 
+      const shouldOfferDeactivate =
+        errorMessage.toLowerCase().includes("ventas asociadas") ||
+        errorMessage.toLowerCase().includes("movimientos de stock");
+
       // Si el error indica ventas asociadas, no cerrar el diálogo
-      if (!errorMessage.toLowerCase().includes("ventas asociadas")) {
+      if (!shouldOfferDeactivate) {
         toast({
           title: "Error al eliminar",
           description: errorMessage,

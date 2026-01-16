@@ -41,21 +41,30 @@ export function DeleteProductDialog({
 
   // Detectar si el error indica que hay ventas asociadas
   const hasSalesError = error?.toLowerCase().includes("ventas asociadas");
+  const hasStockError = error
+    ?.toLowerCase()
+    .includes("movimientos de stock");
+  const shouldShowAlternative = hasSalesError || hasStockError || showAlternative;
+  const blockReason = hasSalesError
+    ? "ventas asociadas"
+    : hasStockError
+    ? "movimientos de stock asociados"
+    : null;
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {hasSalesError || showAlternative
+            {shouldShowAlternative
               ? "¿Desactivar producto?"
               : "¿Eliminar producto?"}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {hasSalesError || showAlternative ? (
+            {shouldShowAlternative ? (
               <>
-                Este producto tiene ventas asociadas y no puede ser eliminado
-                permanentemente.
+                Este producto tiene {blockReason ?? "datos asociados"} y no
+                puede ser eliminado permanentemente.
                 <br />
                 <br />
                 Sin embargo, puedes <strong>desactivarlo</strong> para que no
@@ -88,7 +97,7 @@ export function DeleteProductDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
-          {hasSalesError || showAlternative ? (
+          {shouldShowAlternative ? (
             <Button
               onClick={(e) => {
                 e.preventDefault();

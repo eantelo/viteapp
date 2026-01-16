@@ -71,8 +71,11 @@ export function CustomerSelector({
     return customers.filter(
       (c) =>
         c.name.toLowerCase().includes(query) ||
-        c.email.toLowerCase().includes(query) ||
-        c.phone?.toLowerCase().includes(query)
+        (c.email ?? "").toLowerCase().includes(query) ||
+        c.phone?.toLowerCase().includes(query) ||
+        c.city?.toLowerCase().includes(query) ||
+        c.note?.toLowerCase().includes(query) ||
+        c.gps?.toLowerCase().includes(query)
     );
   }, [customers, searchQuery]);
 
@@ -210,7 +213,7 @@ export function CustomerSelector({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar por nombre, email o teléfono..."
+                  placeholder="Buscar por nombre, email, teléfono o ciudad..."
                   className="pl-8 h-9"
                   autoComplete="off"
                 />
@@ -247,7 +250,7 @@ export function CustomerSelector({
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
-                          {customer.email}
+                          {customer.email || "Sin email"}
                         </p>
                       </div>
                       {customer.totalPurchases !== undefined &&
@@ -336,7 +339,7 @@ function CustomerPreviewCard({ customer, onClear }: CustomerPreviewCardProps) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <IconMail className="size-3" />
-                {customer.email}
+                {customer.email ?? "Sin email"}
               </span>
               {customer.phone && (
                 <span className="flex items-center gap-1">
@@ -348,6 +351,23 @@ function CustomerPreviewCard({ customer, onClear }: CustomerPreviewCardProps) {
                 <span className="flex items-center gap-1">
                   <IconMapPin className="size-3" />
                   {customer.address}
+                </span>
+              )}
+              {customer.city && (
+                <span className="flex items-center gap-1">
+                  <IconMapPin className="size-3" />
+                  {customer.city}
+                </span>
+              )}
+              {customer.gps && (
+                <span className="flex items-center gap-1">
+                  <IconMapPin className="size-3" />
+                  {customer.gps}
+                </span>
+              )}
+              {customer.note && (
+                <span className="flex items-center gap-1">
+                  Nota: {customer.note}
                 </span>
               )}
             </div>
@@ -405,6 +425,9 @@ function QuickCustomerCreateDialog({
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [note, setNote] = useState("");
+  const [gps, setGps] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -414,14 +437,19 @@ function QuickCustomerCreateDialog({
       setName(initialName);
       setEmail("");
       setPhone("");
+      setCity("");
+      setNote("");
+      setGps("");
       setError(null);
     }
   }, [open, initialName]);
 
   const isValid = useMemo(() => {
-    return (
-      name.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-    );
+    const trimmedEmail = email.trim();
+    const emailValid =
+      trimmedEmail.length === 0 ||
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+    return name.trim().length > 0 && emailValid;
   }, [name, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -434,8 +462,11 @@ function QuickCustomerCreateDialog({
     try {
       const dto: CustomerCreateDto = {
         name: name.trim(),
-        email: email.trim(),
+        email: email.trim() || null,
         phone: phone.trim() || undefined,
+        city: city.trim() || undefined,
+        note: note.trim() || undefined,
+        gps: gps.trim() || undefined,
       };
       const newCustomer = await createCustomer(dto);
       onCreated(newCustomer);
@@ -490,7 +521,7 @@ function QuickCustomerCreateDialog({
             {/* Email */}
             <div className="grid gap-2">
               <Label htmlFor="quick-customer-email">
-                Email <span className="text-destructive">*</span>
+                Email
               </Label>
               <div className="relative">
                 <IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -519,6 +550,39 @@ function QuickCustomerCreateDialog({
                   className="pl-9"
                 />
               </div>
+            </div>
+
+            {/* Ciudad (opcional) */}
+            <div className="grid gap-2">
+              <Label htmlFor="quick-customer-city">Ciudad (opcional)</Label>
+              <Input
+                id="quick-customer-city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Ciudad"
+              />
+            </div>
+
+            {/* Nota (opcional) */}
+            <div className="grid gap-2">
+              <Label htmlFor="quick-customer-note">Nota (opcional)</Label>
+              <Input
+                id="quick-customer-note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Información adicional"
+              />
+            </div>
+
+            {/* GPS (opcional) */}
+            <div className="grid gap-2">
+              <Label htmlFor="quick-customer-gps">GPS (opcional)</Label>
+              <Input
+                id="quick-customer-gps"
+                value={gps}
+                onChange={(e) => setGps(e.target.value)}
+                placeholder="19.4326,-99.1332"
+              />
             </div>
           </div>
 

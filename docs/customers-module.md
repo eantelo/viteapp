@@ -27,10 +27,13 @@ CustomerFormDialog
    - Maneja validaciones basicas y estados de carga/error.
    - Campos soportados:
      - Nombre (obligatorio, max 200)
-     - Email (obligatorio, max 320)
+     - Email (opcional, max 320)
      - Telefono (opcional, max 30)
      - Direccion (opcional, max 250)
+    - Ciudad (opcional, max 120)
      - RFC/TaxId (opcional, max 30)
+     - Nota (opcional, max 1000)
+     - GPS (opcional, max 120)
      - Estado (solo en modo edicion)
 
 3. **customersApi** (`/src/api/customersApi.ts`)
@@ -44,19 +47,25 @@ CustomerFormDialog
 export interface CustomerDto {
   id: string;
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   address?: string | null;
+  city?: string | null;
   taxId?: string | null;
+  note?: string | null;
+  gps?: string | null;
   isActive: boolean;
 }
 
 export interface CustomerCreateDto {
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   address?: string | null;
+  city?: string | null;
   taxId?: string | null;
+  note?: string | null;
+  gps?: string | null;
 }
 
 export interface CustomerUpdateDto extends CustomerCreateDto {
@@ -84,15 +93,15 @@ El token JWT se inyecta automaticamente mediante `apiClient`, por lo que no se e
 ## Caracteristicas de UI/UX
 
 - Borde superior con breadcrumb `Panel principal / Clientes`.
-- Busqueda inmediata (filtrado en memoria) por nombre, email, telefono o RFC.
-- Tabla con columnas: Nombre, Email, Telefono, Direccion, RFC/Tax ID, Estado, Acciones.
+- Busqueda inmediata (filtrado en memoria) por nombre, email, telefono, ciudad, RFC, nota o GPS.
+- Tabla con columnas: Nombre, Email, Telefono, Direccion, Ciudad, RFC/Tax ID, Nota, GPS, Estado, Acciones.
 - Estados vacio, error y loading claros.
 - Confirmacion nativa antes de eliminar.
 
 ## Validaciones
 
 - Frontend valida campos obligatorios y maximos basicos antes de enviar.
-- Backend aplica DataAnnotations (Name, Email, Phone, Address, TaxId, IsActive) en `CustomerCreateDto` y `CustomerUpdateDto`.
+- Backend aplica DataAnnotations (Name, Email, Phone, Address, City, TaxId, Note, Gps, IsActive) en `CustomerCreateDto` y `CustomerUpdateDto`.
 
 ## Archivos afectados
 

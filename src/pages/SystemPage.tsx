@@ -17,7 +17,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { Laptop, Shield, Key } from "lucide-react";
+import { Laptop, Shield, Key, Server, Database, Globe } from "lucide-react";
+import { getSystemInfo, type SystemInfoDto } from "@/api/systemApi";
 
 type StatCard = {
   label: string;
@@ -44,6 +45,25 @@ export function SystemPage() {
   const fadeInAnimate = { opacity: 1, y: 0 };
 
   const [manualMessage, setManualMessage] = useState<string | null>(null);
+  const [systemInfo, setSystemInfo] = useState<SystemInfoDto | null>(null);
+  const [systemInfoLoading, setSystemInfoLoading] = useState(true);
+  const [systemInfoError, setSystemInfoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchSystemInfo() {
+      try {
+        const info = await getSystemInfo();
+        setSystemInfo(info);
+      } catch (error) {
+        setSystemInfoError(
+          error instanceof Error ? error.message : "Error al cargar información del sistema"
+        );
+      } finally {
+        setSystemInfoLoading(false);
+      }
+    }
+    fetchSystemInfo();
+  }, []);
 
   useEffect(() => {
     if (!refreshError) {
@@ -279,6 +299,93 @@ export function SystemPage() {
                   <li>Audita accesos sospechosos por tenant.</li>
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        <motion.section
+          initial={fadeInInitial}
+          animate={fadeInAnimate}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 0.5,
+            ease: defaultEase,
+          }}
+        >
+          <Card className="bg-card shadow-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Server className="h-5 w-5 text-primary" />
+                <CardTitle>Configuración del Sistema</CardTitle>
+              </div>
+              <CardDescription>
+                Información de conexión y configuración de la infraestructura.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {systemInfoLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner size="md" />
+                </div>
+              ) : systemInfoError ? (
+                <Alert variant="error" message={systemInfoError} />
+              ) : systemInfo ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                        URL de la API
+                      </dt>
+                    </div>
+                    <dd className="text-sm font-mono text-card-foreground break-all">
+                      {systemInfo.apiBaseUrl}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database className="h-4 w-4 text-primary" />
+                      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Cadena de conexión BD
+                      </dt>
+                    </div>
+                    <dd className="text-xs font-mono text-muted-foreground break-all">
+                      {systemInfo.databaseConnectionString}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                      Entorno
+                    </dt>
+                    <dd className="text-sm font-medium text-card-foreground">
+                      <Badge variant="outline">{systemInfo.environment}</Badge>
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                      Versión .NET
+                    </dt>
+                    <dd className="text-sm font-mono text-card-foreground">
+                      {systemInfo.dotNetVersion}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                      Servidor
+                    </dt>
+                    <dd className="text-sm font-mono text-card-foreground">
+                      {systemInfo.machineName}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
+                      Hora del servidor (UTC)
+                    </dt>
+                    <dd className="text-sm font-mono text-card-foreground">
+                      {new Date(systemInfo.serverTime).toLocaleString("es-MX")}
+                    </dd>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </motion.section>

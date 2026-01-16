@@ -26,7 +26,10 @@ export interface CustomerPrefillData {
   email?: string;
   phone?: string;
   address?: string;
+  city?: string;
   taxId?: string;
+  note?: string;
+  gps?: string;
 }
 
 export interface SalePrefillData {

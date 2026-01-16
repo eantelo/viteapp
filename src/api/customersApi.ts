@@ -3,10 +3,13 @@ import { apiClient } from "./apiClient";
 export interface CustomerDto {
   id: string;
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   address?: string | null;
+  city?: string | null;
   taxId?: string | null;
+  note?: string | null;
+  gps?: string | null;
   isActive: boolean;
   lastPurchaseDate?: string | null;
   lastPurchaseAmount?: number;
@@ -17,10 +20,13 @@ export interface CustomerDto {
 
 export interface CustomerCreateDto {
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   address?: string | null;
+  city?: string | null;
   taxId?: string | null;
+  note?: string | null;
+  gps?: string | null;
 }
 
 export interface CustomerUpdateDto extends CustomerCreateDto {
