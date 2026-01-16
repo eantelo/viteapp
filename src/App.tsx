@@ -15,6 +15,7 @@ import { SaleUpsertPage } from "@/pages/SaleUpsertPage";
 
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
+import { CrmPage } from "@/pages/CrmPage";
 import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
 import { SystemPage } from "@/pages/SystemPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
@@ -49,6 +50,7 @@ function App() {
           />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/crm" element={<CrmPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />
           <Route path="/system" element={<SystemPage />} />
         </Route>

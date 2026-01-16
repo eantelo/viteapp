@@ -6,6 +6,7 @@ export interface AuthResponse {
   email: string;
   role: string;
   tenantId: string;
+  tenantName: string;
   userId: string;
   isSetupComplete: boolean;
 }

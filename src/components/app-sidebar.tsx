@@ -2,6 +2,7 @@ import * as React from "react";
 import {
   IconChartBar,
   IconDashboard,
+  IconLayoutKanban,
   IconPackage,
   IconReport,
   IconAddressBook,
@@ -14,6 +15,7 @@ import {
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -65,6 +67,11 @@ const data = {
       icon: IconAddressBook,
     },
     {
+      title: "CRM",
+      url: "/crm",
+      icon: IconLayoutKanban,
+    },
+    {
       title: "POS Restaurante",
       url: "/pos/restaurant",
       icon: IconCoffee,
@@ -90,6 +97,9 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { auth } = useAuth();
+  const tenantName = auth?.tenantName || "Mi Empresa";
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -101,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="#">
                 <IconInnerShadowTop className="size-5!" />
-                <span className="sidebar-text-lg font-semibold">Acme Inc.</span>
+                <span className="sidebar-text-lg font-semibold">{tenantName}</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
