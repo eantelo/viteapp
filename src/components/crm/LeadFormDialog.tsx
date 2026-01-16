@@ -24,6 +24,7 @@ import { LeadStatus, LeadSource } from "@/api/leadsApi";
 import { createLead, updateLead } from "@/api/leadsApi";
 import { getProducts, type ProductDto } from "@/api/productsApi";
 import type { LeadPrefillData } from "@/contexts/FormPrefillContext";
+import type { ApiError } from "@/api/apiClient";
 
 interface LeadFormDialogProps {
   open: boolean;
@@ -150,6 +151,39 @@ export function LeadFormDialog({
     return trimmed === "" ? undefined : trimmed;
   };
 
+  const formatApiError = (submitError: unknown): string => {
+    const defaultMessage = "Error al guardar el lead";
+
+    if (submitError && typeof submitError === "object") {
+      const apiError = submitError as ApiError;
+      const details = apiError.details as
+        | { message?: string; errors?: Record<string, string[]> }
+        | undefined;
+
+      if (details?.errors && typeof details.errors === "object") {
+        const entries = Object.entries(details.errors)
+          .flatMap(([field, messages]) =>
+            (messages ?? []).map((msg) => `${field}: ${msg}`)
+          )
+          .filter(Boolean);
+
+        if (entries.length > 0) {
+          return `Error de validación:\n${entries.map((m) => `• ${m}`).join("\n")}`;
+        }
+      }
+
+      if (details?.message) {
+        return details.message;
+      }
+
+      if (apiError.message) {
+        return apiError.message;
+      }
+    }
+
+    return submitError instanceof Error ? submitError.message : defaultMessage;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -184,11 +218,7 @@ export function LeadFormDialog({
 
       onClose(true);
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Error al guardar el lead"
-      );
+      setError(formatApiError(submitError));
     } finally {
       setLoading(false);
     }
