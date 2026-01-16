@@ -21,7 +21,7 @@ import { toast } from "sonner";
 interface KanbanBoardProps {
   leads: LeadDto[];
   isLoading: boolean;
-  onLeadsChange: () => Promise<void>;
+  onLeadsChange: (updatedLeads: LeadDto[]) => void;
   onEdit: (lead: LeadDto) => void;
   onDelete: (lead: LeadDto) => void;
 }
@@ -91,12 +91,14 @@ export function KanbanBoard({
   const handleDragEnd = useCallback(
     async (e: DragEndEvent) => {
       const { over } = e;
+      const currentDraggedLead = draggedLead;
+      
       setDraggedLead(null);
       setOverStatus(null);
 
-      if (!over || !draggedLead) return;
+      if (!over || !currentDraggedLead) return;
 
-      if (over.id === draggedLead.id) {
+      if (over.id === currentDraggedLead.id) {
         return;
       }
 
@@ -123,21 +125,35 @@ export function KanbanBoard({
         return;
       }
 
+      // Skip if no actual change
+      if (currentDraggedLead.status === targetStatus) {
+        return;
+      }
+
+      // Optimistic update: update local state immediately
+      const updatedLeads = leads.map((lead) =>
+        lead.id === currentDraggedLead.id
+          ? { ...lead, status: targetStatus!, position: targetIndex! }
+          : lead
+      );
+      onLeadsChange(updatedLeads);
+
+      // Sync with server in background
       try {
-        await updateLeadStatus(draggedLead.id, {
+        await updateLeadStatus(currentDraggedLead.id, {
           status: targetStatus,
           position: targetIndex,
           convertToCustomer: false,
         });
-
-        await onLeadsChange();
         toast.success(`Lead movido a ${STATUS_LABELS[targetStatus]}`);
       } catch (error) {
         console.error("Error updating lead status:", error);
+        // Revert on error
+        onLeadsChange(leads);
         toast.error("Error al mover el lead");
       }
     },
-    [draggedLead, groupedLeads, onLeadsChange]
+    [draggedLead, groupedLeads, leads, onLeadsChange]
   );
 
   if (isLoading) {

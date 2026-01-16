@@ -81,7 +81,8 @@ export function CrmPage() {
 
     try {
       await deleteLead(lead.id);
-      await loadLeads();
+      // Optimistic delete
+      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
       toast.success("Lead eliminado");
     } catch (deleteError) {
       toast.error(
@@ -91,6 +92,10 @@ export function CrmPage() {
       );
     }
   };
+
+  const handleLeadsChange = useCallback((updatedLeads: LeadDto[]) => {
+    setLeads(updatedLeads);
+  }, []);
 
   const handleDialogClose = (saved: boolean) => {
     setDialogOpen(false);
@@ -187,7 +192,7 @@ export function CrmPage() {
             <KanbanBoard
               leads={filteredLeads}
               isLoading={loading}
-              onLeadsChange={loadLeads}
+              onLeadsChange={handleLeadsChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

@@ -38,25 +38,25 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col w-96 h-full bg-slate-50 rounded-lg border-2 transition-all",
+        "flex flex-col w-96 h-full rounded-lg border border-border/60 bg-card/90 text-card-foreground transition-all",
         isOver
-          ? "border-primary/50 bg-primary/5 shadow-md"
-          : "border-slate-200 shadow-sm"
+          ? "border-primary/50 bg-primary/5 shadow-md dark:border-primary/40 dark:bg-primary/10"
+          : "shadow-sm dark:shadow-none"
       )}
     >
       {/* Column header */}
-      <div className="flex-0 border-b border-slate-200 bg-white rounded-t-[calc(0.5rem-1px)] px-4 py-3 sticky top-0 z-10">
+      <div className="flex-0 sticky top-0 z-10 rounded-t-[calc(0.5rem-1px)] border-b border-border/60 bg-background/90 px-4 py-3 dark:bg-background/60">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <LeadStatusBadge status={status} />
-            <span className="text-sm font-medium text-slate-600">
+            <span className="text-sm font-medium text-muted-foreground">
               {leads.length}
             </span>
           </div>
           {totalValue > 0 && (
             <div className="text-right">
-              <p className="text-xs text-slate-500">Total</p>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-sm font-semibold text-foreground">
                 ${totalValue.toLocaleString("es-ES", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
@@ -68,7 +68,7 @@ export function KanbanColumn({
       </div>
 
       {/* Cards area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto space-y-2 p-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200/80 dark:scrollbar-thumb-slate-700/60">
         <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {leads.length === 0 ? (
@@ -78,7 +78,7 @@ export function KanbanColumn({
                 exit={{ opacity: 0 }}
                 className="flex items-center justify-center h-32 text-center"
               >
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Arrastra leads aquí
                 </p>
               </motion.div>
