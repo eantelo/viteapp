@@ -258,3 +258,71 @@ export async function downloadInvoicePdf(id: string): Promise<void> {
   link.remove();
   window.URL.revokeObjectURL(downloadUrl);
 }
+
+/**
+ * Genera y descarga etiquetas de envío para múltiples ventas.
+ * @param saleIds Array de IDs de ventas para generar etiquetas.
+ */
+export async function downloadShippingLabels(saleIds: string[]): Promise<void> {
+  if (!saleIds || saleIds.length === 0) {
+    throw new Error("Debe proporcionar al menos un ID de venta.");
+  }
+
+  const baseUrl =
+    (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
+    "http://localhost:5205";
+  const url = `${baseUrl}/api/Sales/shipping-labels`;
+
+  // Obtener token de autenticación
+  let token: string | undefined;
+  try {
+    const authStorage = localStorage.getItem("salesnet.auth");
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      token = parsed.token;
+    }
+  } catch (e) {
+    console.warn("Error reading auth token", e);
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ saleIds }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message || `Error al generar etiquetas: ${response.statusText}`
+    );
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+
+  // Intentar obtener el nombre del archivo del header Content-Disposition
+  const contentDisposition = response.headers.get("Content-Disposition");
+  let filename = `etiquetas-envio-${Date.now()}.pdf`;
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(downloadUrl);
+}

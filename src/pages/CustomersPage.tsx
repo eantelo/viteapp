@@ -237,13 +237,13 @@ export function CustomersPage() {
           transition={motionTransition}
         >
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
               Directorio
             </span>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
               Clientes
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Gestiona clientes, estados y detalles de contacto con precisión.
             </p>
           </div>
@@ -263,12 +263,12 @@ export function CustomersPage() {
             delay: prefersReducedMotion ? 0 : 0.08,
           }}
         >
-          <Card className="border-slate-200/80 shadow-none">
+          <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
             <CardHeader className="space-y-2">
-              <CardTitle className="text-lg text-slate-900">
+              <CardTitle className="text-lg text-slate-900 dark:text-slate-100">
                 Directorio de clientes
               </CardTitle>
-              <CardDescription className="text-slate-500">
+              <CardDescription className="text-slate-500 dark:text-slate-400">
                 Consulta, crea o edita clientes con información actualizada del
                 sistema.
               </CardDescription>
@@ -277,11 +277,11 @@ export function CustomersPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-slate-500">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                       Buscar clientes
                     </span>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-slate-400">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
                         <MagnifyingGlass size={16} weight="bold" />
                       </span>
                       <Input
@@ -289,67 +289,67 @@ export function CustomersPage() {
                         value={search}
                         onChange={handleSearchInput}
                         onKeyDown={handleSearchKeyDown}
-                        className="pl-12 bg-slate-50 focus-visible:ring-slate-300"
+                        className="pl-12 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600"
                         aria-label="Buscar clientes"
                       />
                     </div>
                   </label>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                    <span className="font-medium text-slate-700">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
                       {filteredCustomers.length}
                     </span>
                     resultados
-                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-300 dark:text-slate-600">•</span>
                     <span>{customers.length} clientes totales</span>
                   </div>
                 </div>
                 {loading ? (
                   <div className="flex items-center justify-center py-10">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-primary" />
                   </div>
                 ) : error ? (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-600">
+                  <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-6 text-center text-sm text-red-600 dark:text-red-400">
                     {error}
                   </div>
                 ) : filteredCustomers.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                  <div className="rounded-md border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                     {customers.length === 0
                       ? "No hay clientes registrados todavía."
                       : "Ningún cliente coincide con la búsqueda."}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-slate-200">
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-700">
                     <Table className="text-sm">
-                      <TableHeader className="bg-slate-50">
-                        <TableRow>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                      <TableHeader className="bg-slate-50 dark:bg-slate-800">
+                        <TableRow className="dark:border-slate-700">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Nombre
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Email
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Teléfono
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Dirección
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Ciudad
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             RFC / Tax ID
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Nota
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             GPS
                           </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Estado
                           </TableHead>
-                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                             Acciones
                           </TableHead>
                         </TableRow>
@@ -359,33 +359,33 @@ export function CustomersPage() {
                           <TableRow
                             key={customer.id}
                             className={cn(
-                              "text-slate-700",
+                              "text-slate-700 dark:text-slate-300 dark:border-slate-700",
                               highlightedCustomerId === customer.id &&
                                 "bg-primary/10 ring-1 ring-primary/30"
                             )}
                           >
-                            <TableCell className="font-medium text-slate-900">
+                            <TableCell className="font-medium text-slate-900 dark:text-slate-100">
                               {customer.name}
                             </TableCell>
-                            <TableCell className="text-slate-600">
+                            <TableCell className="text-slate-600 dark:text-slate-400">
                               {customer.email || "-"}
                             </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
                               {customer.phone || "-"}
                             </TableCell>
-                            <TableCell className="max-w-xs truncate text-slate-600">
+                            <TableCell className="max-w-xs truncate text-slate-600 dark:text-slate-400">
                               {customer.address || "-"}
                             </TableCell>
-                            <TableCell className="text-slate-600">
+                            <TableCell className="text-slate-600 dark:text-slate-400">
                               {customer.city || "-"}
                             </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
                               {customer.taxId || "-"}
                             </TableCell>
-                            <TableCell className="max-w-xs truncate text-slate-600">
+                            <TableCell className="max-w-xs truncate text-slate-600 dark:text-slate-400">
                               {customer.note || "-"}
                             </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600">
+                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
                               {customer.gps || "-"}
                             </TableCell>
                             <TableCell>
@@ -394,8 +394,8 @@ export function CustomersPage() {
                                 className={cn(
                                   "border px-2 py-0.5 text-xs",
                                   customer.isActive
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                    : "border-slate-200 bg-slate-100 text-slate-600"
+                                    ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                                    : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                 )}
                               >
                                 {customer.isActive ? "Activo" : "Inactivo"}
@@ -406,7 +406,7 @@ export function CustomersPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0"
+                                  className="h-8 w-8 p-0 dark:text-slate-400 dark:hover:text-slate-100"
                                   onClick={() => handleEdit(customer)}
                                   aria-label={`Editar ${customer.name}`}
                                 >

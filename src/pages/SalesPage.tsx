@@ -43,6 +43,7 @@ import {
   IconX,
   IconLock,
   IconCash,
+  IconPackage,
 } from "@tabler/icons-react";
 import type { SaleDto } from "@/api/salesApi";
 import {
@@ -50,6 +51,7 @@ import {
   getSalesStatistics,
   deleteSale,
   downloadInvoicePdf,
+  downloadShippingLabels,
   refundSale,
   closeSale,
 } from "@/api/salesApi";
@@ -60,6 +62,14 @@ import { SalesStatisticsCards } from "@/components/sales/SalesStatisticsCards";
 import { SaleDetailModal } from "@/components/sales/SaleDetailModal";
 import type { DatePreset } from "@/types/salesHistory";
 import { exportToExcel, exportToPDF } from "@/utils/salesExport";
+import {
+  getTodayDateString,
+  getYesterdayDateString,
+  getToday,
+  getMonthStartDateString,
+  formatDateToISO,
+  dateRangeToUTC,
+} from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -93,39 +103,38 @@ export function SalesPage() {
   // UI state
   const [selectedSale, setSelectedSale] = useState<SaleDto | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedSaleIds, setSelectedSaleIds] = useState<string[]>([]);
 
   // Calcular fechas según el preset seleccionado
   const getDateRangeFromPreset = (preset: DatePreset) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
     switch (preset) {
       case "today":
         return {
-          from: today.toISOString().split("T")[0],
-          to: today.toISOString().split("T")[0],
+          from: getTodayDateString(),
+          to: getTodayDateString(),
         };
-      case "yesterday": {
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+      case "yesterday":
         return {
-          from: yesterday.toISOString().split("T")[0],
-          to: yesterday.toISOString().split("T")[0],
+          from: getYesterdayDateString(),
+          to: getYesterdayDateString(),
         };
-      }
       case "thisWeek": {
-        const firstDay = new Date(today);
-        firstDay.setDate(today.getDate() - today.getDay());
+        const today = getTodayDateString();
+        const todayDate = new Date();
+        const dayOfWeek = todayDate.getDay();
+        const diff = todayDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const monday = new Date(todayDate.getFullYear(), todayDate.getMonth(), diff);
         return {
-          from: firstDay.toISOString().split("T")[0],
-          to: today.toISOString().split("T")[0],
+          from: formatDateToISO(monday),
+          to: today,
         };
       }
       case "thisMonth": {
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const today = getTodayDateString();
+        const firstDay = getMonthStartDateString();
         return {
-          from: firstDay.toISOString().split("T")[0],
-          to: today.toISOString().split("T")[0],
+          from: firstDay,
+          to: today,
         };
       }
       case "custom":
@@ -143,10 +152,12 @@ export function SalesPage() {
       setError(null);
 
       const dateRange = getDateRangeFromPreset(datePreset);
+      // Convertir fechas locales a UTC ISO strings para enviar al servidor
+      const utcDateRange = dateRangeToUTC(dateRange.from, dateRange.to);
 
       const params: SalesHistoryParams = {
-        dateFrom: dateRange.from,
-        dateTo: dateRange.to,
+        dateFrom: utcDateRange.from,
+        dateTo: utcDateRange.to,
         limit: 50,
       };
 
@@ -158,7 +169,7 @@ export function SalesPage() {
       // Cargar ventas y estadísticas en paralelo
       const [salesData, statsData] = await Promise.all([
         getSalesHistory(params),
-        getSalesStatistics(dateRange.from, dateRange.to),
+        getSalesStatistics(utcDateRange.from, utcDateRange.to),
       ]);
 
       setSales(salesData);
@@ -311,6 +322,43 @@ export function SalesPage() {
     }, 500);
   };
 
+  const handleToggleSelection = (saleId: string) => {
+    setSelectedSaleIds((prev) =>
+      prev.includes(saleId)
+        ? prev.filter((id) => id !== saleId)
+        : [...prev, saleId]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedSaleIds.length === filteredSales.length) {
+      setSelectedSaleIds([]);
+    } else {
+      setSelectedSaleIds(filteredSales.map((sale) => sale.id));
+    }
+  };
+
+  const handleGenerateShippingLabels = async () => {
+    if (selectedSaleIds.length === 0) {
+      toast.error("Debe seleccionar al menos una venta");
+      return;
+    }
+
+    try {
+      toast.info("Generando etiquetas de envío...");
+      await downloadShippingLabels(selectedSaleIds);
+      toast.success("Etiquetas descargadas correctamente");
+      setSelectedSaleIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Error al generar las etiquetas de envío"
+      );
+    }
+  };
+
   const handleExportExcel = () => {
     exportToExcel(filteredSales, statistics || undefined);
     toast.success("Exportado a Excel correctamente");
@@ -436,6 +484,16 @@ export function SalesPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {selectedSaleIds.length > 0 && (
+              <Button
+                variant="default"
+                onClick={handleGenerateShippingLabels}
+                className="gap-2 text-sm"
+              >
+                <IconPackage size={20} />
+                <span>Generar Etiquetas ({selectedSaleIds.length})</span>
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={handleExportExcel}
@@ -670,6 +728,18 @@ export function SalesPage() {
                     <Table>
                       <TableHeader className="bg-slate-50/70 dark:bg-slate-900/40">
                         <TableRow className="border-slate-200/60 dark:border-slate-800/60">
+                          <TableHead className="w-12">
+                            <input
+                              type="checkbox"
+                              checked={
+                                filteredSales.length > 0 &&
+                                selectedSaleIds.length === filteredSales.length
+                              }
+                              onChange={handleToggleSelectAll}
+                              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                              aria-label="Seleccionar todas las ventas"
+                            />
+                          </TableHead>
                           <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                             Orden #
                           </TableHead>
@@ -702,6 +772,15 @@ export function SalesPage() {
                             key={sale.id}
                             className="border-slate-200/60 dark:border-slate-800/60 hover:bg-slate-50/60 dark:hover:bg-slate-900/40"
                           >
+                            <TableCell>
+                              <input
+                                type="checkbox"
+                                checked={selectedSaleIds.includes(sale.id)}
+                                onChange={() => handleToggleSelection(sale.id)}
+                                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                aria-label={`Seleccionar venta #${sale.saleNumber}`}
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                               #{sale.saleNumber}
                             </TableCell>

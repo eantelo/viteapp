@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { motion } from "framer-motion";
-import type { LeadDto, LeadStatus } from "@/api/leadsApi";
+import { LeadStatus, type LeadDto } from "@/api/leadsApi";
 import { LeadCard } from "./LeadCard";
 import { KanbanColumn } from "./KanbanColumn";
 import { updateLeadStatus } from "@/api/leadsApi";
@@ -92,33 +92,39 @@ export function KanbanBoard({
     async (e: DragEndEvent) => {
       const { over } = e;
       const currentDraggedLead = draggedLead;
+      const lastOverStatus = overStatus;
       
       setDraggedLead(null);
       setOverStatus(null);
 
-      if (!over || !currentDraggedLead) return;
+      if (!currentDraggedLead) return;
 
-      if (over.id === currentDraggedLead.id) {
+      if (over && over.id === currentDraggedLead.id) {
         return;
       }
 
       let targetStatus: LeadStatus | null = null;
       let targetIndex: number | null = null;
 
-      if (typeof over.id === "string" && over.id.startsWith("status-")) {
-        const statusStr = over.id.replace("status-", "");
-        targetStatus = parseInt(statusStr, 10) as LeadStatus;
-        targetIndex = groupedLeads[targetStatus]?.length ?? 0;
-      } else {
-        const overLead = leads.find((l) => l.id === over.id);
-        if (overLead) {
-          targetStatus = overLead.status;
-          const targetLeads = groupedLeads[targetStatus] ?? [];
-          targetIndex = targetLeads.findIndex((l) => l.id === overLead.id);
-          if (targetIndex < 0) {
-            targetIndex = targetLeads.length;
+      if (over) {
+        if (typeof over.id === "string" && over.id.startsWith("status-")) {
+          const statusStr = over.id.replace("status-", "");
+          targetStatus = parseInt(statusStr, 10) as LeadStatus;
+          targetIndex = groupedLeads[targetStatus]?.length ?? 0;
+        } else {
+          const overLead = leads.find((l) => l.id === over.id);
+          if (overLead) {
+            targetStatus = overLead.status;
+            const targetLeads = groupedLeads[targetStatus] ?? [];
+            targetIndex = targetLeads.findIndex((l) => l.id === overLead.id);
+            if (targetIndex < 0) {
+              targetIndex = targetLeads.length;
+            }
           }
         }
+      } else if (lastOverStatus !== null) {
+        targetStatus = lastOverStatus;
+        targetIndex = groupedLeads[targetStatus]?.length ?? 0;
       }
 
       if (targetStatus === null || targetIndex === null) {
@@ -130,6 +136,14 @@ export function KanbanBoard({
         return;
       }
 
+      const shouldOfferConversion =
+        targetStatus === LeadStatus.Won && !currentDraggedLead.customerId;
+      const convertToCustomer = shouldOfferConversion
+        ? confirm(
+            `¿Deseas crear un cliente con los datos del lead "${currentDraggedLead.name}"?`
+          )
+        : false;
+
       // Optimistic update: update local state immediately
       const updatedLeads = leads.map((lead) =>
         lead.id === currentDraggedLead.id
@@ -140,11 +154,14 @@ export function KanbanBoard({
 
       // Sync with server in background
       try {
-        await updateLeadStatus(currentDraggedLead.id, {
+        const updated = await updateLeadStatus(currentDraggedLead.id, {
           status: targetStatus,
           position: targetIndex,
-          convertToCustomer: false,
+          convertToCustomer,
         });
+        onLeadsChange(
+          leads.map((lead) => (lead.id === updated.id ? updated : lead))
+        );
         toast.success(`Lead movido a ${STATUS_LABELS[targetStatus]}`);
       } catch (error) {
         console.error("Error updating lead status:", error);
@@ -153,7 +170,7 @@ export function KanbanBoard({
         toast.error("Error al mover el lead");
       }
     },
-    [draggedLead, groupedLeads, leads, onLeadsChange]
+    [draggedLead, groupedLeads, leads, onLeadsChange, overStatus]
   );
 
   if (isLoading) {

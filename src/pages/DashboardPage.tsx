@@ -14,6 +14,7 @@ import {
   type SalesStatistics,
   type SaleDto,
 } from "@/api/salesApi";
+import { getTodayRangeUTC } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
 export function DashboardPage() {
@@ -41,14 +42,14 @@ export function DashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const fromStr = dateRange.from.toISOString();
-        const toStr = dateRange.to.toISOString();
+        // Usar el rango de hoy en UTC
+        const utcRange = getTodayRangeUTC();
 
         const [statsData, historyData] = await Promise.all([
-          getSalesStatistics(fromStr, toStr),
+          getSalesStatistics(utcRange.from, utcRange.to),
           getSalesHistory({
-            dateFrom: fromStr,
-            dateTo: toStr,
+            dateFrom: utcRange.from,
+            dateTo: utcRange.to,
             limit: 5,
           }),
         ]);

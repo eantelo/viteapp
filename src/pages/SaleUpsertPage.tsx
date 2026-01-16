@@ -52,6 +52,7 @@ import {
   completeSale,
   PaymentMethod,
 } from "@/api/salesApi";
+import { getTodayDateString } from "@/utils/dateUtils";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
@@ -133,9 +134,7 @@ export function SaleUpsertPage() {
 
   // Campos del formulario
   const [customerId, setCustomerId] = useState("");
-  const [saleDate, setSaleDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [saleDate, setSaleDate] = useState(getTodayDateString);
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItemForm[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(

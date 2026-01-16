@@ -500,6 +500,13 @@ export function ProductDetailPage() {
                   </p>
                   <p className="text-slate-500 mt-1">unidades en stock</p>
 
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Reservado en ventas pendientes: {" "}
+                    <span className="font-medium text-foreground">
+                      {product.reservedStock}
+                    </span>
+                  </div>
+
                   {product.stock <= 10 && (
                     <Badge variant="destructive" className="mt-3">
                       Stock bajo

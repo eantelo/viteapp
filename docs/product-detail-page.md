@@ -27,6 +27,7 @@ Donde `:id` es el UUID del producto.
   - Verde: Stock > 25 unidades
   - Amarillo: Stock entre 11 y 25 unidades
   - Rojo: Stock ≤ 10 unidades (stock bajo)
+- **Reservado en ventas pendientes**: Muestra las unidades apartadas por ventas en estado `Pending`.
 - **Ajustar Stock**: Abre el diálogo de ajuste de stock
 - **Ver Historial**: Muestra el historial de movimientos de stock
 

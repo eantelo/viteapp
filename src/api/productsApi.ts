@@ -11,6 +11,7 @@ export interface ProductDto {
   price: number;
   cost: number;
   stock: number;
+  reservedStock: number;
   isActive: boolean;
 }
 
