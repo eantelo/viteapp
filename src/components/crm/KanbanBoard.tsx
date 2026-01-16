@@ -193,7 +193,7 @@ export function KanbanBoard({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="flex gap-4 overflow-x-auto pb-4 pr-4"
+        className="inline-flex gap-4 pb-4 pr-4 min-w-max"
       >
         {STATUSES.map((status) => (
           <KanbanColumn

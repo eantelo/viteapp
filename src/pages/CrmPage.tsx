@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useLeadPrefill, type LeadPrefillData } from "@/contexts/FormPrefillContext";
 import { motion, useReducedMotion } from "framer-motion";
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import type { LeadDto } from "@/api/leadsApi";
@@ -16,6 +18,13 @@ import { LeadFormDialog } from "@/components/crm/LeadFormDialog";
 export function CrmPage() {
   useDocumentTitle("CRM - Leads");
   const prefersReducedMotion = useReducedMotion();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Prefill data from interface agent
+  const { hasData: hasPrefillData, getData: getPrefillData } =
+    useLeadPrefill();
+  const prefillAppliedRef = useRef(false);
+  const [prefillData, setPrefillData] = useState<LeadPrefillData | null>(null);
 
   const motionInitial = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -33,6 +42,9 @@ export function CrmPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadDto | null>(null);
+  const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
+    null
+  );
 
   const filteredLeads = leads.filter((lead) => {
     const term = search.trim().toLowerCase();
@@ -66,12 +78,65 @@ export function CrmPage() {
     loadLeads();
   }, [loadLeads]);
 
+  // Apply prefill data from interface agent (only once)
+  useEffect(() => {
+    if (prefillAppliedRef.current) return;
+
+    if (hasPrefillData) {
+      const data = getPrefillData();
+      if (data) {
+        prefillAppliedRef.current = true;
+
+        if (data.id) {
+          setPendingHighlightId(data.id);
+          void loadLeads();
+          return;
+        }
+
+        console.log("[CrmPage] Applying prefill data:", data);
+        setPrefillData(data);
+        setEditingLead(null);
+        setDialogOpen(true);
+        toast.info("Datos pre-cargados desde el asistente", {
+          description: "Revisa y completa los campos restantes",
+        });
+      }
+    }
+  }, [hasPrefillData, getPrefillData, loadLeads]);
+
+  // Handle highlight parameter from URL
+  useEffect(() => {
+    const highlightId = searchParams.get("highlight");
+    if (highlightId) {
+      setPendingHighlightId(highlightId);
+      setSearchParams({}, { replace: true });
+      void loadLeads();
+    }
+  }, [searchParams, setSearchParams, loadLeads]);
+
+  // Open dialog when pending highlight lead is available
+  useEffect(() => {
+    if (pendingHighlightId && leads.length > 0 && !loading) {
+      const leadToHighlight = leads.find((l) => l.id === pendingHighlightId);
+      if (leadToHighlight) {
+        setEditingLead(leadToHighlight);
+        setPrefillData(null);
+        setDialogOpen(true);
+        setPendingHighlightId(null);
+      } else {
+        setPendingHighlightId(null);
+      }
+    }
+  }, [pendingHighlightId, leads, loading]);
+
   const handleCreate = () => {
+    setPrefillData(null);
     setEditingLead(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (lead: LeadDto) => {
+    setPrefillData(null);
     setEditingLead(lead);
     setDialogOpen(true);
   };
@@ -100,6 +165,7 @@ export function CrmPage() {
   const handleDialogClose = (saved: boolean) => {
     setDialogOpen(false);
     setEditingLead(null);
+    setPrefillData(null);
     if (saved) {
       void loadLeads();
       toast.success(editingLead ? "Lead actualizado" : "Lead creado");
@@ -180,7 +246,7 @@ export function CrmPage() {
             ...motionTransition,
             delay: prefersReducedMotion ? 0 : 0.16,
           }}
-          className="flex-1 overflow-x-auto"
+          className="flex-1 min-h-0 min-w-0"
         >
           {error ? (
             <Card className="border-red-200 bg-red-50">
@@ -202,6 +268,7 @@ export function CrmPage() {
         <LeadFormDialog
           open={dialogOpen}
           lead={editingLead}
+          prefillData={prefillData}
           onClose={handleDialogClose}
         />
       </DashboardLayout>

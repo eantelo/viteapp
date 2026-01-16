@@ -10,7 +10,7 @@ import {
 // Types
 // ============================================================================
 
-export type FormType = "product" | "customer" | "sale" | "category";
+export type FormType = "product" | "customer" | "sale" | "category" | "lead";
 
 export interface ProductPrefillData {
   name?: string;
@@ -47,11 +47,26 @@ export interface CategoryPrefillData {
   parentId?: string;
 }
 
+export interface LeadPrefillData {
+  id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  city?: string;
+  productInterestId?: string;
+  source?: string | number | null;
+  estimatedValue?: number;
+  notes?: string;
+  assignedToUserId?: string;
+}
+
 export type PrefillData =
   | ProductPrefillData
   | CustomerPrefillData
   | SalePrefillData
-  | CategoryPrefillData;
+  | CategoryPrefillData
+  | LeadPrefillData;
 
 export interface FormPrefillState {
   formType: FormType;
@@ -263,6 +278,27 @@ export function useCategoryPrefill() {
 
   return {
     hasData: hasPrefillData("category"),
+    getData: getAndClear,
+  };
+}
+
+/**
+ * Hook for consuming lead form prefill data
+ * Automatically clears data after first access
+ */
+export function useLeadPrefill() {
+  const { getPrefillData, clearPrefillData, hasPrefillData } = useFormPrefill();
+
+  const getAndClear = useCallback((): LeadPrefillData | null => {
+    const data = getPrefillData<LeadPrefillData>("lead");
+    if (data) {
+      setTimeout(() => clearPrefillData(), 100);
+    }
+    return data;
+  }, [getPrefillData, clearPrefillData]);
+
+  return {
+    hasData: hasPrefillData("lead"),
     getData: getAndClear,
   };
 }

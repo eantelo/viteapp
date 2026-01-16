@@ -23,10 +23,12 @@ import type { LeadCreateDto, LeadDto, LeadUpdateDto } from "@/api/leadsApi";
 import { LeadStatus, LeadSource } from "@/api/leadsApi";
 import { createLead, updateLead } from "@/api/leadsApi";
 import { getProducts, type ProductDto } from "@/api/productsApi";
+import type { LeadPrefillData } from "@/contexts/FormPrefillContext";
 
 interface LeadFormDialogProps {
   open: boolean;
   lead: LeadDto | null;
+  prefillData?: LeadPrefillData | null;
   onClose: (saved: boolean) => void;
 }
 
@@ -53,6 +55,7 @@ const sourceOptions = [
 export function LeadFormDialog({
   open,
   lead,
+  prefillData,
   onClose,
 }: LeadFormDialogProps) {
   const [name, setName] = useState("");
@@ -100,6 +103,29 @@ export function LeadFormDialog({
       );
       setEstimatedValue(lead.estimatedValue?.toString() ?? "");
       setNotes(lead.notes ?? "");
+    } else if (prefillData) {
+      setName(prefillData.name ?? "");
+      setEmail(prefillData.email ?? "");
+      setPhone(prefillData.phone ?? "");
+      setCompany(prefillData.company ?? "");
+      setCity(prefillData.city ?? "");
+      setProductInterestId(prefillData.productInterestId ?? "");
+      setStatus(LeadStatus.New);
+      if (
+        prefillData.source !== null &&
+        prefillData.source !== undefined &&
+        prefillData.source !== ""
+      ) {
+        setSource(prefillData.source.toString());
+      } else {
+        setSource("none");
+      }
+      setEstimatedValue(
+        prefillData.estimatedValue !== undefined
+          ? prefillData.estimatedValue.toString()
+          : ""
+      );
+      setNotes(prefillData.notes ?? "");
     } else {
       setName("");
       setEmail("");
@@ -113,7 +139,7 @@ export function LeadFormDialog({
       setNotes("");
     }
     setError(null);
-  }, [open, lead]);
+  }, [open, lead, prefillData]);
 
   const isFormValid = useMemo(() => {
     return name.trim().length > 0;

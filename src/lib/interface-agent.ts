@@ -24,7 +24,7 @@ export interface NavigationAction {
 
 export interface FormPrefillAction {
   type: "formPrefill";
-  formType: "product" | "customer" | "sale" | "category";
+  formType: "product" | "customer" | "sale" | "category" | "lead";
   path: string;
   data: Record<string, unknown>;
   message?: string;
@@ -103,6 +103,13 @@ export const ROUTE_ALIASES: Record<string, string> = {
   cliente: "/customers",
   "nuevo cliente": "/customers",
   "crear cliente": "/customers",
+
+  // CRM / Leads
+  crm: "/crm",
+  lead: "/crm",
+  leads: "/crm",
+  prospectos: "/crm",
+  pipeline: "/crm",
 
   // Categories
   categorias: "/categories",
@@ -261,6 +268,7 @@ export function getPageName(path: string): string {
     "/pos": "Punto de Venta",
     "/pos/restaurant": "POS Restaurante",
     "/customers": "Clientes",
+    "/crm": "CRM",
     "/categories": "Categorías",
     "/settings": "Configuración",
   };
