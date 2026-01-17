@@ -74,7 +74,7 @@ El backend expone el endpoint `/api/sales` con los siguientes métodos:
 **Funcionalidades:**
 
 - **Selección de cliente**: Dropdown con lista de clientes activos.
-- **Fecha de venta**: Input tipo `date` (por defecto: fecha actual).
+- **Fecha de venta**: Input tipo `date` (por defecto: fecha actual). Al guardar, la hora se asigna automáticamente con la hora real de la operación.
 - **Estado**: La edición de órdenes está habilitada únicamente para ventas `Pending`.
 - **Notas**: Campo de texto opcional para observaciones.
 - **Gestión de productos**:

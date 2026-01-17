@@ -72,6 +72,27 @@ export function dateStringToUTC(dateStr: string): string {
 }
 
 /**
+ * Combina una fecha YYYY-MM-DD con la hora de un Date de referencia.
+ * Útil para registrar la hora real de la operación preservando la fecha seleccionada.
+ */
+export function dateStringWithTimeToUTC(
+  dateStr: string,
+  timeSource: Date,
+): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+    timeSource.getHours(),
+    timeSource.getMinutes(),
+    timeSource.getSeconds(),
+    timeSource.getMilliseconds(),
+  );
+  return date.toISOString();
+}
+
+/**
  * Convierte una cadena de fecha YYYY-MM-DD a UTC ISO completo para el final del día.
  * Útil para filtros "hasta" en el servidor.
  */
@@ -92,7 +113,7 @@ export function getTodayRangeUTC(): { from: string; to: string } {
     today.getDate(),
     0,
     0,
-    0
+    0,
   );
   const to = new Date(
     today.getFullYear(),
@@ -100,7 +121,7 @@ export function getTodayRangeUTC(): { from: string; to: string } {
     today.getDate(),
     23,
     59,
-    59
+    59,
   );
 
   return {
@@ -116,7 +137,7 @@ export function getTodayRangeUTC(): { from: string; to: string } {
  */
 export function dateRangeToUTC(
   fromDateStr: string,
-  toDateStr: string
+  toDateStr: string,
 ): { from: string; to: string } {
   return {
     from: dateStringToUTC(fromDateStr),

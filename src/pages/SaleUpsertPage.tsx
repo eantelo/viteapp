@@ -52,7 +52,7 @@ import {
   completeSale,
   PaymentMethod,
 } from "@/api/salesApi";
-import { getTodayDateString } from "@/utils/dateUtils";
+import { dateStringWithTimeToUTC, getTodayDateString } from "@/utils/dateUtils";
 import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
@@ -135,6 +135,7 @@ export function SaleUpsertPage() {
   // Campos del formulario
   const [customerId, setCustomerId] = useState("");
   const [saleDate, setSaleDate] = useState(getTodayDateString);
+  const [saleTimeSource, setSaleTimeSource] = useState<Date | null>(null);
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<SaleItemForm[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(
@@ -177,6 +178,7 @@ export function SaleUpsertPage() {
       // Poblar el formulario con los datos de la venta
       setCustomerId(data.customerId ?? "");
       setSaleDate(data.date ? data.date.split("T")[0] : "");
+      setSaleTimeSource(data.date ? new Date(data.date) : null);
       setItems(
         data.items.map((item) => ({
           productId: item.productId,
@@ -357,9 +359,12 @@ export function SaleUpsertPage() {
         quantity: item.quantity,
       }));
 
+      const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
+      const timestamp = dateStringWithTimeToUTC(saleDate, timeSource);
+
       if (isEditing && sale) {
         const dto: SaleUpdateDto = {
-          date: new Date(saleDate).toISOString(),
+          date: timestamp,
           customerId,
           items: baseItems,
         };
@@ -367,7 +372,7 @@ export function SaleUpsertPage() {
         toast.success("Orden de venta actualizada correctamente");
       } else {
         const dto: SaleCreateDto = {
-          date: new Date(saleDate).toISOString(),
+          date: timestamp,
           customerId,
           items: baseItems,
         };
@@ -494,11 +499,13 @@ export function SaleUpsertPage() {
       }));
 
       let saleId: string;
+      const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
+      const timestamp = dateStringWithTimeToUTC(saleDate, timeSource);
 
       if (isEditing && sale) {
         // Actualizar la venta existente primero
         const dto: SaleUpdateDto = {
-          date: new Date(saleDate).toISOString(),
+          date: timestamp,
           customerId,
           items: baseItems,
         };
@@ -507,7 +514,7 @@ export function SaleUpsertPage() {
       } else {
         // Crear nueva venta
         const dto: SaleCreateDto = {
-          date: new Date(saleDate).toISOString(),
+          date: timestamp,
           customerId,
           items: baseItems,
         };
