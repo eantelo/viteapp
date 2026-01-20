@@ -224,7 +224,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
       }
       return product;
     },
-    [addProductToOrder, lookupProduct]
+    [addProductToOrder, lookupProduct],
   );
 
   const incrementItem = useCallback((productId: string) => {
@@ -244,7 +244,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
           ...item,
           quantity: nextQuantity,
         };
-      })
+      }),
     );
   }, []);
 
@@ -254,23 +254,23 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         .map((item) =>
           item.productId === productId
             ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-            : item
+            : item,
         )
-        .filter((item) => item.quantity > 0)
+        .filter((item) => item.quantity > 0),
     );
   }, []);
 
   const removeItem = useCallback((productId: string) => {
     setItems((current) =>
-      current.filter((item) => item.productId !== productId)
+      current.filter((item) => item.productId !== productId),
     );
   }, []);
 
   const updateItemPrice = useCallback((productId: string, newPrice: number) => {
     setItems((current) =>
       current.map((item) =>
-        item.productId === productId ? { ...item, price: newPrice } : item
-      )
+        item.productId === productId ? { ...item, price: newPrice } : item,
+      ),
     );
   }, []);
 
@@ -347,7 +347,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         throw error;
       }
     },
-    [loadHeldOrders]
+    [loadHeldOrders],
   );
 
   // Auto-guardado de orden actual
@@ -401,7 +401,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-    [items]
+    [items],
   );
 
   const appliedDiscount = useMemo(() => {
@@ -413,7 +413,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
   const taxableBase = useMemo(
     () => Math.max(subtotal - appliedDiscount, 0),
-    [appliedDiscount, subtotal]
+    [appliedDiscount, subtotal],
   );
 
   // If includeTax is false (e.g., in the POS flows), effective tax is 0.
@@ -421,12 +421,12 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
   const taxAmount = useMemo(
     () => Number((taxableBase * effectiveTaxRate).toFixed(2)),
-    [taxableBase, effectiveTaxRate]
+    [taxableBase, effectiveTaxRate],
   );
 
   const total = useMemo(
     () => Number((taxableBase + taxAmount).toFixed(2)),
-    [taxAmount, taxableBase]
+    [taxAmount, taxableBase],
   );
 
   const filteredCustomers = useMemo(() => {
@@ -434,19 +434,21 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
       return customers;
     }
     const term = customerSearchTerm.toLowerCase();
-    return customers.filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(term) ||
-        customer.email.toLowerCase().includes(term) ||
-        (customer.phone && customer.phone.includes(term))
-    );
+    return customers.filter((customer) => {
+      const name = (customer.name ?? "").toLowerCase();
+      const email = (customer.email ?? "").toLowerCase();
+      const phone = customer.phone ?? "";
+      return (
+        name.includes(term) || email.includes(term) || phone.includes(term)
+      );
+    });
   }, [customers, customerSearchTerm]);
 
   const submitSale = useCallback(
     async (
       paymentMethod?: PaymentMethodType,
       amountReceived?: number,
-      paymentReference?: string
+      paymentReference?: string,
     ) => {
       // Allow sales without a specific customer (generic customer)
       // if (customerId) {
@@ -501,7 +503,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         setIsSubmitting(false);
       }
     },
-    [clearOrder, customerId, items, total, onSaleCreated, loadHeldOrders]
+    [clearOrder, customerId, items, total, onSaleCreated, loadHeldOrders],
   );
 
   return {

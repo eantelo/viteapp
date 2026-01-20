@@ -401,14 +401,38 @@ export function SalesPage() {
     if (!sale.payments || sale.payments.length === 0) return "-";
 
     const methods = sale.payments.map((p) => {
-      const names: Record<number, string> = {
+      const namesByValue: Record<number, string> = {
         0: "Efectivo",
         1: "Tarjeta",
         2: "Voucher",
-        3: "Transfer.",
+        3: "Transferencia",
         4: "Otro",
       };
-      return names[p.method] || "?";
+      const namesByKey: Record<string, string> = {
+        Cash: "Efectivo",
+        Card: "Tarjeta",
+        Voucher: "Voucher",
+        Transfer: "Transferencia",
+        Other: "Otro",
+      };
+
+      if (typeof p.method === "number") {
+        return namesByValue[p.method] ?? "Desconocido";
+      }
+
+      if (typeof p.method === "string") {
+        const trimmed = p.method.trim();
+        if (trimmed in namesByKey) {
+          return namesByKey[trimmed];
+        }
+
+        const parsed = Number(trimmed);
+        if (!Number.isNaN(parsed) && namesByValue[parsed]) {
+          return namesByValue[parsed];
+        }
+      }
+
+      return "Desconocido";
     });
 
     return methods.join(", ");

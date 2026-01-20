@@ -69,6 +69,8 @@ Opciones disponibles:
 | **Estado** | Badge con estado (Completada/Cerrada/Cancelada) |
 | **Acciones** | Botones de acción por fila |
 
+**Nota:** El campo **Método Pago** acepta valores de enum serializados como número (0-4) o como string (Cash, Card, Voucher, Transfer, Other) y los muestra con etiquetas legibles.
+
 #### Búsqueda Rápida
 - Campo de búsqueda por número de orden o nombre de cliente
 - Búsqueda en tiempo real sin necesidad de recargar

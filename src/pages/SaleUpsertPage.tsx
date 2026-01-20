@@ -354,27 +354,33 @@ export function SaleUpsertPage() {
         throw new Error("Debes agregar al menos un producto");
       }
 
-      const baseItems = items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      }));
-
       const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
       const timestamp = dateStringWithTimeToUTC(saleDate, timeSource);
 
       if (isEditing && sale) {
+        // Incluir price para actualización
+        const updateItems = items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        }));
         const dto: SaleUpdateDto = {
           date: timestamp,
           customerId,
-          items: baseItems,
+          items: updateItems,
         };
         await updateSale(sale.id, dto);
         toast.success("Orden de venta actualizada correctamente");
       } else {
+        // Solo productId y quantity para creación (precio se toma del producto)
+        const createItems = items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
         const dto: SaleCreateDto = {
           date: timestamp,
           customerId,
-          items: baseItems,
+          items: createItems,
         };
         await createSale(dto);
         toast.success("Orden de venta creada correctamente");
@@ -493,30 +499,34 @@ export function SaleUpsertPage() {
 
       const normalizedReference = paymentReference.trim() || undefined;
 
-      const baseItems = items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      }));
-
       let saleId: string;
       const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
       const timestamp = dateStringWithTimeToUTC(saleDate, timeSource);
 
       if (isEditing && sale) {
-        // Actualizar la venta existente primero
+        // Actualizar la venta existente primero (incluir price)
+        const updateItems = items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        }));
         const dto: SaleUpdateDto = {
           date: timestamp,
           customerId,
-          items: baseItems,
+          items: updateItems,
         };
         await updateSale(sale.id, dto);
         saleId = sale.id;
       } else {
-        // Crear nueva venta
+        // Crear nueva venta (precio se toma del producto)
+        const createItems = items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        }));
         const dto: SaleCreateDto = {
           date: timestamp,
           customerId,
-          items: baseItems,
+          items: createItems,
         };
         const newSale = await createSale(dto);
         saleId = newSale.id;

@@ -33,7 +33,7 @@ Responsabilidades clave:
 
 - Gestionar el estado de la orden (`items`, `discount`).
 - Gestionar el estado de pago (`paymentMethod`, `amountReceived`, `paymentReference`, `change`).
-- Sincronizar clientes activos (`reloadCustomers`), con búsqueda local (`customerSearchTerm`, `filteredCustomers`).
+- Sincronizar clientes activos (`reloadCustomers`), con búsqueda local (`customerSearchTerm`, `filteredCustomers`) tolerante a campos opcionales (email/teléfono vacíos).
 - Calcular totales derivados (`subtotal`, `appliedDiscount`, `taxAmount`, `total`, `change`).
    Nota: en la configuración actual del Punto de Venta (`usePointOfSale`), los impuestos se pueden omitir estableciendo `includeTax: false`.
 - Resolver productos por código o búsqueda, limitando cantidades según stock.

@@ -62,6 +62,7 @@ export interface SaleUpdateDto {
   items: Array<{
     productId: string;
     quantity: number;
+    price: number;
   }>;
 }
 
@@ -87,7 +88,7 @@ export async function createSale(dto: SaleCreateDto): Promise<SaleDto> {
 
 export async function updateSale(
   id: string,
-  dto: SaleUpdateDto
+  dto: SaleUpdateDto,
 ): Promise<void> {
   return apiClient<void>(`/api/sales/${id}`, {
     method: "PUT",
@@ -107,7 +108,7 @@ export async function deleteSale(id: string): Promise<void> {
  */
 export async function completeSale(
   id: string,
-  payments: PaymentCreateDto[]
+  payments: PaymentCreateDto[],
 ): Promise<SaleDto> {
   return apiClient<SaleDto>(`/api/sales/${id}/complete`, {
     method: "PUT",
@@ -174,7 +175,7 @@ export interface SalesStatistics {
 }
 
 export async function getSalesHistory(
-  params: SalesHistoryParams = {}
+  params: SalesHistoryParams = {},
 ): Promise<SaleDto[]> {
   const searchParams = new URLSearchParams();
 
@@ -195,7 +196,7 @@ export async function getSalesHistory(
 
 export async function getSalesStatistics(
   dateFrom?: string,
-  dateTo?: string
+  dateTo?: string,
 ): Promise<SalesStatistics> {
   const params = new URLSearchParams();
   if (dateFrom) params.append("dateFrom", dateFrom);
@@ -301,7 +302,7 @@ export async function downloadShippingLabels(saleIds: string[]): Promise<void> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
-      errorData.message || `Error al generar etiquetas: ${response.statusText}`
+      errorData.message || `Error al generar etiquetas: ${response.statusText}`,
     );
   }
 
