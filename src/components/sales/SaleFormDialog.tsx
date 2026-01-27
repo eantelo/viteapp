@@ -186,6 +186,7 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
       const baseItems = items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
+        price: item.price,
       }));
 
       if (isEditing && sale) {

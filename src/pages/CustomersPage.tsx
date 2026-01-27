@@ -32,6 +32,8 @@ import {
   PencilSimple,
   Plus,
   Trash,
+  CaretLeft,
+  CaretRight,
 } from "@phosphor-icons/react";
 import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
@@ -75,6 +77,8 @@ export function CustomersPage() {
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
     null
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const filteredCustomers = useMemo(() => {
     if (!search.trim()) {
@@ -94,6 +98,18 @@ export function CustomersPage() {
       );
     });
   }, [customers, search]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredCustomers.slice(startIndex, endIndex);
+  }, [filteredCustomers, currentPage]);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -231,28 +247,23 @@ export function CustomersPage() {
         className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
       >
         <motion.header
-          className="flex flex-col gap-3"
+          className="flex flex-row items-center justify-between gap-4 mb-2"
           initial={motionInitial}
           animate={motionAnimate}
           transition={motionTransition}
         >
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              Directorio
-            </span>
+          <div>
             <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
               Clientes
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Gestiona clientes, estados y detalles de contacto con precisión.
+              Administra tus clientes y contactos.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handleCreate} className="gap-2">
-              <Plus size={18} weight="bold" />
-              Nuevo cliente
-            </Button>
-          </div>
+          <Button onClick={handleCreate} className="gap-2 h-fit">
+            <Plus size={18} weight="bold" />
+            Nuevo cliente
+          </Button>
         </motion.header>
 
         <motion.div
@@ -264,15 +275,6 @@ export function CustomersPage() {
           }}
         >
           <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-lg text-slate-900 dark:text-slate-100">
-                Directorio de clientes
-              </CardTitle>
-              <CardDescription className="text-slate-500 dark:text-slate-400">
-                Consulta, crea o edita clientes con información actualizada del
-                sistema.
-              </CardDescription>
-            </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
@@ -322,40 +324,15 @@ export function CustomersPage() {
                     <Table className="text-sm">
                       <TableHeader className="bg-slate-50 dark:bg-slate-800">
                         <TableRow className="dark:border-slate-700">
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Nombre
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Email
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Teléfono
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Dirección
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Ciudad
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            RFC / Tax ID
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Nota
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            GPS
-                          </TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Estado
-                          </TableHead>
-                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Acciones
-                          </TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Nombre</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Teléfono</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Ciudad</TableHead>
+                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredCustomers.map((customer) => (
+                        {paginatedCustomers.map((customer) => (
                           <TableRow
                             key={customer.id}
                             className={cn(
@@ -373,33 +350,8 @@ export function CustomersPage() {
                             <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
                               {customer.phone || "-"}
                             </TableCell>
-                            <TableCell className="max-w-xs truncate text-slate-600 dark:text-slate-400">
-                              {customer.address || "-"}
-                            </TableCell>
                             <TableCell className="text-slate-600 dark:text-slate-400">
                               {customer.city || "-"}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
-                              {customer.taxId || "-"}
-                            </TableCell>
-                            <TableCell className="max-w-xs truncate text-slate-600 dark:text-slate-400">
-                              {customer.note || "-"}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
-                              {customer.gps || "-"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "border px-2 py-0.5 text-xs",
-                                  customer.isActive
-                                    ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                    : "border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                )}
-                              >
-                                {customer.isActive ? "Activo" : "Inactivo"}
-                              </Badge>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
@@ -427,6 +379,39 @@ export function CustomersPage() {
                         ))}
                       </TableBody>
                     </Table>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 px-4 py-3 bg-slate-50/50 dark:bg-slate-800/50">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
+                          Página <span className="font-semibold text-slate-900 dark:text-slate-100">{currentPage}</span> de{" "}
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">{totalPages}</span>
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                            aria-label="Página anterior"
+                          >
+                            <CaretLeft size={16} weight="bold" />
+                          </Button>
+                          <span className="text-xs text-slate-600 dark:text-slate-400 min-w-[60px] text-center">
+                            {paginatedCustomers.length} de {filteredCustomers.length}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                            aria-label="Próxima página"
+                          >
+                            <CaretRight size={16} weight="bold" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

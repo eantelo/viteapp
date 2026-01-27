@@ -372,10 +372,11 @@ export function SaleUpsertPage() {
         await updateSale(sale.id, dto);
         toast.success("Orden de venta actualizada correctamente");
       } else {
-        // Solo productId y quantity para creación (precio se toma del producto)
+        // Incluir price para creación
         const createItems = items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          price: item.price,
         }));
         const dto: SaleCreateDto = {
           date: timestamp,
@@ -518,10 +519,11 @@ export function SaleUpsertPage() {
         await updateSale(sale.id, dto);
         saleId = sale.id;
       } else {
-        // Crear nueva venta (precio se toma del producto)
+        // Crear nueva venta (incluir price)
         const createItems = items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          price: item.price,
         }));
         const dto: SaleCreateDto = {
           date: timestamp,

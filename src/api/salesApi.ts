@@ -52,6 +52,7 @@ export interface SaleCreateDto {
   items: Array<{
     productId: string;
     quantity: number;
+    price: number;
   }>;
   payments?: PaymentCreateDto[];
 }

@@ -491,6 +491,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
+            price: item.price,
           })),
           payments,
         });
