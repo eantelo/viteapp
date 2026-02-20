@@ -13,6 +13,11 @@ La página `SaleUpsertPage` permite crear y editar órdenes de venta en una inte
 
 ## Características
 
+### Layout y Anchos (actualizado)
+- La página usa un contenedor principal con ancho máximo (`max-w-[1320px]`) para mantener una densidad visual consistente.
+- Esto evita que los controles se estiren demasiado en pantallas amplias cuando el asistente AI está cerrado.
+- El comportamiento ahora se mantiene estable tanto con el asistente abierto como cerrado.
+
 ### Información General
 - **Cliente**: Selector de clientes activos (obligatorio)
 - **Fecha**: Selector de fecha de la venta (obligatorio)

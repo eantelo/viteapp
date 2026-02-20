@@ -9,7 +9,7 @@ interface PageTransitionProps {
 
 export function PageTransition({ children, className }: PageTransitionProps) {
   const variants = {
-    initial: { opacity: 0, y: 10, scale: 0.98 },
+    initial: { opacity: 1, y: 0, scale: 1 },
     animate: { opacity: 1, y: 0, scale: 1 },
     exit: { opacity: 0, y: -10, scale: 0.98 },
   };
@@ -18,7 +18,7 @@ export function PageTransition({ children, className }: PageTransitionProps) {
     <motion.div
       className={cn("min-h-full", className)}
       variants={variants}
-      initial="initial"
+      initial={false}
       animate="animate"
       exit="exit"
       transition={{

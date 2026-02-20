@@ -14,6 +14,13 @@ En ciertos flujos de rutas protegidas y páginas sin animación de salida consis
 
 Se eliminó el wrapper global `AnimatePresence` de `src/App.tsx` y se mantuvo el sistema de transición por página (`PageTransition`), que es más predecible para este proyecto.
 
+Además, se reforzó `src/components/motion/PageTransition.tsx` para evitar que la vista inicie en estado oculto:
+
+- `initial={false}` en `motion.div` para no depender de un frame inicial con opacidad 0.
+- Variante `initial` alineada con estado visible (`opacity: 1`).
+
+Con esto, aunque ocurra una interrupción de animación, el contenido principal sigue siendo visible.
+
 ## Validación
 
 - El servidor de desarrollo levanta correctamente:
