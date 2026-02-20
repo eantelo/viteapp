@@ -369,33 +369,35 @@ export function ProductUpsertPage() {
           ]}
           className="flex flex-1 flex-col gap-4 p-4"
         >
-          <div className="flex items-center gap-4 mb-4">
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-8 w-64" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-48" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
+          <div className="w-full max-w-[1320px]">
+            <div className="flex items-center gap-4 mb-4">
+              <Skeleton className="h-10 w-10" />
+              <Skeleton className="h-8 w-64" />
             </div>
-            <div>
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-32 w-full" />
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </CardContent>
+                </Card>
+              </div>
+              <div>
+                <Card>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-32 w-full" />
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </DashboardLayout>
@@ -415,23 +417,25 @@ export function ProductUpsertPage() {
           ]}
           className="flex flex-1 flex-col gap-4 p-4"
         >
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center space-y-4">
-                <p className="text-error text-lg">{loadError}</p>
-                <div className="flex justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/products")}
-                  >
-                    <IconArrowLeft size={20} className="mr-2" />
-                    Volver a productos
-                  </Button>
-                  <Button onClick={loadProduct}>Reintentar</Button>
+          <div className="w-full max-w-[1320px]">
+            <Card>
+              <CardContent className="py-12">
+                <div className="text-center space-y-4">
+                  <p className="text-error text-lg">{loadError}</p>
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/products")}
+                    >
+                      <IconArrowLeft size={20} className="mr-2" />
+                      Volver a productos
+                    </Button>
+                    <Button onClick={loadProduct}>Reintentar</Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </DashboardLayout>
       </PageTransition>
     );
@@ -447,7 +451,7 @@ export function ProductUpsertPage() {
         ]}
         className="flex flex-1 flex-col gap-4 p-4"
       >
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="w-full max-w-[1320px]">
           {/* Header */}
           <motion.div
             className="flex items-center justify-between mb-6"

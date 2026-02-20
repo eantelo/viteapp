@@ -125,6 +125,10 @@ Se agregó el ítem "Productos" con icono `IconPackage` en el menú principal de
 
 ## Características de UI/UX
 
+### Ancho consistente en crear/editar (actualizado)
+- La pantalla `ProductUpsertPage` (`/products/new` y `/products/:id/edit`) usa un contenedor principal con `max-w-[1320px]`.
+- Esto evita que los controles se estiren en pantallas amplias y mantiene una densidad visual consistente con el asistente AI abierto o cerrado.
+
 ### Búsqueda
 - Campo de búsqueda con icono
 - Búsqueda al presionar Enter o botón "Buscar"
