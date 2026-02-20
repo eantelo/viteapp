@@ -4,6 +4,7 @@ import { PageTransition } from "@/components/motion/PageTransition";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { SalesStatisticsCards } from "@/components/sales/SalesStatisticsCards";
 import { RecentSalesActivity } from "@/components/analytics/RecentSalesActivity";
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import {
   DateRangeSelector,
   type DateRange,
@@ -99,7 +100,7 @@ export function DashboardPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <RecentSalesActivity sales={recentSales} loading={loading} />
-            {/* Placeholder for future charts like Top Products */}
+            <ChartAreaInteractive />
           </div>
         </div>
       </DashboardLayout>

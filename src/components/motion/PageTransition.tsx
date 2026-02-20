@@ -9,9 +9,9 @@ interface PageTransitionProps {
 
 export function PageTransition({ children, className }: PageTransitionProps) {
   const variants = {
-    initial: { opacity: 1, y: 0, scale: 1 },
+    initial: { opacity: 0, y: 10, scale: 0.98 },
     animate: { opacity: 1, y: 0, scale: 1 },
-    exit: { opacity: 1, y: 0, scale: 1 },
+    exit: { opacity: 0, y: -10, scale: 0.98 },
   };
 
   return (
@@ -22,7 +22,8 @@ export function PageTransition({ children, className }: PageTransitionProps) {
       animate="animate"
       exit="exit"
       transition={{
-        duration: 0,
+        duration: 0.3,
+        ease: [0.25, 0.1, 0.25, 1],
       }}
     >
       {children}
