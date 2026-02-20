@@ -246,37 +246,38 @@ export function CustomersPage() {
         ]}
         className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
       >
-        <motion.header
-          className="flex flex-row items-center justify-between gap-4 mb-2"
-          initial={motionInitial}
-          animate={motionAnimate}
-          transition={motionTransition}
-        >
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
-              Clientes
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Administra tus clientes y contactos.
-            </p>
-          </div>
-          <Button onClick={handleCreate} className="gap-2 h-fit">
-            <Plus size={18} weight="bold" />
-            Nuevo cliente
-          </Button>
-        </motion.header>
+        <div className="w-full max-w-[1320px]">
+          <motion.header
+            className="flex flex-row items-center justify-between gap-4 mb-2"
+            initial={motionInitial}
+            animate={motionAnimate}
+            transition={motionTransition}
+          >
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
+                Clientes
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Administra tus clientes y contactos.
+              </p>
+            </div>
+            <Button onClick={handleCreate} className="gap-2 h-fit">
+              <Plus size={18} weight="bold" />
+              Nuevo cliente
+            </Button>
+          </motion.header>
 
-        <motion.div
-          initial={motionInitial}
-          animate={motionAnimate}
-          transition={{
-            ...motionTransition,
-            delay: prefersReducedMotion ? 0 : 0.08,
-          }}
-        >
-          <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
-            <CardContent>
-              <div className="flex flex-col gap-4">
+          <motion.div
+            initial={motionInitial}
+            animate={motionAnimate}
+            transition={{
+              ...motionTransition,
+              delay: prefersReducedMotion ? 0 : 0.08,
+            }}
+          >
+            <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
+              <CardContent>
+                <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="flex flex-col gap-2">
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -414,10 +415,11 @@ export function CustomersPage() {
                     )}
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
         <CustomerFormDialog
           open={dialogOpen}

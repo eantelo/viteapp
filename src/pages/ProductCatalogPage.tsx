@@ -756,81 +756,82 @@ export function ProductCatalogPage() {
         ]}
         className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
       >
-        {/* Page Heading */}
-        <motion.header
-          className="flex flex-col gap-2 pb-2 md:pb-3"
-          initial={motionInitial}
-          animate={motionAnimate}
-          transition={motionTransition}
-        >
-          <div className="flex flex-col gap-1">
-            <h1 className="text-gray-900 dark:text-white text-xl md:text-2xl font-bold leading-tight">
-              Catálogo de Productos
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-normal leading-snug">
-              Administra tus productos, actualiza detalles y controla el
-              inventario.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 md:size-default"
-              onClick={handleExportCsv}
-              disabled={isExportDisabled}
-              aria-busy={exporting}
-              title={
-                isExportDisabled && !exporting
-                  ? "No hay productos para exportar con los filtros actuales."
-                  : undefined
-              }
-            >
-              {exporting ? (
-                <>
-                  <span
-                    className="inline-flex h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
-                    aria-hidden="true"
-                  />
-                  <span>Exportando...</span>
-                </>
-              ) : (
-                <>
-                  <IconDownload size={18} />
-                  <span>Exportar</span>
-                  <span className="hidden sm:inline">CSV</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 md:size-default"
-            >
-              <IconUpload size={18} />
-              <span className="hidden sm:inline">Importar</span>
-            </Button>
-            <Button
-              size="sm"
-              className="flex items-center gap-2 md:size-default"
-              onClick={handleCreateProduct}
-            >
-              <IconPlus size={18} />
-              <span>Crear</span>
-              <span className="hidden sm:inline">Producto</span>
-            </Button>
-          </div>
-        </motion.header>
+        <div className="w-full max-w-[1320px]">
+          {/* Page Heading */}
+          <motion.header
+            className="flex flex-col gap-2 pb-2 md:pb-3"
+            initial={motionInitial}
+            animate={motionAnimate}
+            transition={motionTransition}
+          >
+            <div className="flex flex-col gap-1">
+              <h1 className="text-gray-900 dark:text-white text-xl md:text-2xl font-bold leading-tight">
+                Catálogo de Productos
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-normal leading-snug">
+                Administra tus productos, actualiza detalles y controla el
+                inventario.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 md:size-default"
+                onClick={handleExportCsv}
+                disabled={isExportDisabled}
+                aria-busy={exporting}
+                title={
+                  isExportDisabled && !exporting
+                    ? "No hay productos para exportar con los filtros actuales."
+                    : undefined
+                }
+              >
+                {exporting ? (
+                  <>
+                    <span
+                      className="inline-flex h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
+                      aria-hidden="true"
+                    />
+                    <span>Exportando...</span>
+                  </>
+                ) : (
+                  <>
+                    <IconDownload size={18} />
+                    <span>Exportar</span>
+                    <span className="hidden sm:inline">CSV</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 md:size-default"
+              >
+                <IconUpload size={18} />
+                <span className="hidden sm:inline">Importar</span>
+              </Button>
+              <Button
+                size="sm"
+                className="flex items-center gap-2 md:size-default"
+                onClick={handleCreateProduct}
+              >
+                <IconPlus size={18} />
+                <span>Crear</span>
+                <span className="hidden sm:inline">Producto</span>
+              </Button>
+            </div>
+          </motion.header>
 
-        <motion.div
-          className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2"
-          initial={motionInitial}
-          animate={motionAnimate}
-          transition={{
-            ...motionTransition,
-            delay: prefersReducedMotion ? 0 : 0.08,
-          }}
-        >
+          <motion.div
+            className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2"
+            initial={motionInitial}
+            animate={motionAnimate}
+            transition={{
+              ...motionTransition,
+              delay: prefersReducedMotion ? 0 : 0.08,
+            }}
+          >
           {/* Mobile Filter Button */}
           <div className="lg:hidden">
             <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
@@ -1223,7 +1224,8 @@ export function ProductCatalogPage() {
               )}
             </div>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* Diálogos */}
         <DeleteProductDialog

@@ -6,6 +6,12 @@ La página de **Product Catalog** (`/catalog`) es una vista alternativa del mód
 
 ## Características principales
 
+### Ancho consistente del contenido (actualizado)
+
+- El contenido principal de `ProductCatalogPage` se limita con un contenedor `max-w-[1320px]`.
+- Esto mantiene la densidad visual y evita que controles/tablas se estiren de más en pantallas anchas.
+- El comportamiento es consistente con y sin el asistente AI acoplado.
+
 ### Layout y diseño
 
 - **Sidebar de filtros**: Panel lateral fijo con opciones de búsqueda y filtros categorizados

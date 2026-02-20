@@ -92,6 +92,9 @@ El token JWT se inyecta automaticamente mediante `apiClient`, por lo que no se e
 
 ## Caracteristicas de UI/UX
 
+- Contenedor principal con `max-w-[1320px]` para mantener proporciones compactas en pantallas amplias.
+- La vista conserva densidad visual consistente tanto con el asistente AI abierto como cerrado.
+
 - Borde superior con breadcrumb `Panel principal / Clientes`.
 - Header compacto con etiqueta de contexto y accion principal.
 - Busqueda inmediata (filtrado en memoria) por nombre, email, telefono, ciudad, RFC, nota o GPS.
