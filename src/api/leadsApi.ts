@@ -42,7 +42,7 @@ export enum LeadSource {
 }
 
 export interface LeadCreateDto {
-  name: string;
+  name?: string | null;
   email?: string | null;
   phone?: string | null;
   company?: string | null;
@@ -54,7 +54,18 @@ export interface LeadCreateDto {
   assignedToUserId?: string | null;
 }
 
-export interface LeadUpdateDto extends LeadCreateDto {}
+export interface LeadUpdateDto {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  city?: string | null;
+  productInterestId?: string | null;
+  source?: LeadSource | null;
+  estimatedValue?: number | null;
+  notes?: string | null;
+  assignedToUserId?: string | null;
+}
 
 export interface LeadStatusUpdateDto {
   status: LeadStatus;
@@ -154,7 +165,7 @@ export async function createLead(dto: LeadCreateDto): Promise<LeadDto> {
 
 export async function updateLead(
   id: string,
-  dto: LeadUpdateDto
+  dto: LeadUpdateDto,
 ): Promise<void> {
   return apiClient<void>(`/api/leads/${id}`, {
     method: "PUT",
@@ -170,7 +181,7 @@ export async function deleteLead(id: string): Promise<void> {
 
 export async function updateLeadStatus(
   id: string,
-  dto: LeadStatusUpdateDto
+  dto: LeadStatusUpdateDto,
 ): Promise<LeadDto> {
   const lead = await apiClient<LeadDto>(`/api/leads/${id}/status`, {
     method: "PATCH",

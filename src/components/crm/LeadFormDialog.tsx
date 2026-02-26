@@ -143,8 +143,8 @@ export function LeadFormDialog({
   }, [open, lead, prefillData]);
 
   const isFormValid = useMemo(() => {
-    return name.trim().length > 0;
-  }, [name]);
+    return isEditing ? name.trim().length > 0 : true;
+  }, [isEditing, name]);
 
   const normalizeOptional = (value: string) => {
     const trimmed = value.trim();
@@ -191,28 +191,37 @@ export function LeadFormDialog({
 
     try {
       const trimmedName = name.trim();
-      if (!trimmedName) {
+      if (isEditing && !trimmedName) {
         throw new Error("El nombre es obligatorio.");
       }
 
-      const baseDto = {
-        name: trimmedName,
-        email: normalizeOptional(email) ?? null,
-        phone: normalizeOptional(phone),
-        company: normalizeOptional(company),
-        city: normalizeOptional(city),
-        productInterestId: productInterestId || null,
-        source:
-          source !== "none" ? (parseInt(source, 10) as LeadSource) : null,
-        estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
-        notes: normalizeOptional(notes),
-      };
-
       if (isEditing && lead) {
-        const dto: LeadUpdateDto = baseDto;
+        const dto: LeadUpdateDto = {
+          name: trimmedName,
+          email: normalizeOptional(email) ?? null,
+          phone: normalizeOptional(phone),
+          company: normalizeOptional(company),
+          city: normalizeOptional(city),
+          productInterestId: productInterestId || null,
+          source:
+            source !== "none" ? (parseInt(source, 10) as LeadSource) : null,
+          estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
+          notes: normalizeOptional(notes),
+        };
         await updateLead(lead.id, dto);
       } else {
-        const dto: LeadCreateDto = baseDto;
+        const dto: LeadCreateDto = {
+          name: normalizeOptional(name) ?? null,
+          email: normalizeOptional(email) ?? null,
+          phone: normalizeOptional(phone),
+          company: normalizeOptional(company),
+          city: normalizeOptional(city),
+          productInterestId: productInterestId || null,
+          source:
+            source !== "none" ? (parseInt(source, 10) as LeadSource) : null,
+          estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
+          notes: normalizeOptional(notes),
+        };
         await createLead(dto);
       }
 
@@ -255,16 +264,14 @@ export function LeadFormDialog({
 
             {/* Nombre */}
             <div className="grid gap-2">
-              <Label htmlFor="lead-name">
-                Nombre <span className="text-destructive">*</span>
-              </Label>
+              <Label htmlFor="lead-name">Nombre {isEditing ? <span className="text-destructive">*</span> : null}</Label>
               <Input
                 id="lead-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Juan García"
+                placeholder="Ej: Juan García (opcional)"
                 maxLength={200}
-                required
+                required={isEditing}
               />
             </div>
 

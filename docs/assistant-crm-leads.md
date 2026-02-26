@@ -12,6 +12,11 @@ El asistente puede abrir el CRM y pre-cargar datos para crear un lead. El flujo 
 - `formType: "lead"`
 - Campos: `name`, `email`, `phone`, `company`, `city`, `productInterestId`, `source`, `estimatedValue`, `notes`
 
+## Validación de nombre (actualización febrero 2026)
+- En **creación de lead**, el campo `name` es opcional en UI.
+- En **edición de lead existente**, `name` se mantiene obligatorio para evitar guardar cambios con nombre vacío.
+- Si se crea sin nombre, el backend genera uno automáticamente (email, teléfono, empresa o `"Prospecto sin nombre"`).
+
 ## Navegación rápida
 Se habilitaron alias para navegar a CRM desde el asistente:
 - `crm`, `lead`, `leads`, `prospectos`, `pipeline` → `/crm`
