@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DotsThreeVertical, Trash, PencilSimple } from "@phosphor-icons/react";
+import { CircleNotch, DotsThreeVertical, PaperPlaneTilt, Trash, PencilSimple } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { LeadDto } from "@/api/leadsApi";
@@ -12,6 +12,8 @@ interface LeadCardProps {
   isDragging?: boolean;
   onEdit: (lead: LeadDto) => void;
   onDelete: (lead: LeadDto) => void;
+  onSendToTrello: (lead: LeadDto) => void;
+  isSendingToTrello?: boolean;
 }
 
 export function LeadCard({
@@ -19,6 +21,8 @@ export function LeadCard({
   isDragging,
   onEdit,
   onDelete,
+  onSendToTrello,
+  isSendingToTrello = false,
 }: LeadCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: lead.id });
@@ -36,6 +40,11 @@ export function LeadCard({
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit(lead);
+  };
+
+  const handleSendToTrelloClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSendToTrello(lead);
   };
 
   return (
@@ -81,6 +90,19 @@ export function LeadCard({
               )}
             </div>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={handleSendToTrelloClick}
+                disabled={isSendingToTrello}
+                className="rounded p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50 dark:hover:text-blue-300"
+                title={isSendingToTrello ? "Enviando a Trello..." : "Enviar tarjeta a Trello"}
+                aria-label={isSendingToTrello ? "Enviando tarjeta a Trello" : "Enviar tarjeta a Trello"}
+              >
+                {isSendingToTrello ? (
+                  <CircleNotch size={14} weight="bold" className="animate-spin" />
+                ) : (
+                  <PaperPlaneTilt size={14} weight="bold" />
+                )}
+              </button>
               <button
                 onClick={handleEditClick}
                 className="rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200"

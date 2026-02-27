@@ -10,7 +10,7 @@ import { useLeadPrefill, type LeadPrefillData } from "@/contexts/FormPrefillCont
 import { motion, useReducedMotion } from "framer-motion";
 import { MagnifyingGlass, Plus } from "@phosphor-icons/react";
 import type { LeadDto } from "@/api/leadsApi";
-import { deleteLead, getLeads } from "@/api/leadsApi";
+import { deleteLead, getLeads, sendLeadToTrello } from "@/api/leadsApi";
 import { toast } from "sonner";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadFormDialog } from "@/components/crm/LeadFormDialog";
@@ -44,6 +44,9 @@ export function CrmPage() {
   const [editingLead, setEditingLead] = useState<LeadDto | null>(null);
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
     null
+  );
+  const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
+    () => new Set()
   );
 
   const filteredLeads = leads.filter((lead) => {
@@ -162,6 +165,45 @@ export function CrmPage() {
     setLeads(updatedLeads);
   }, []);
 
+  const handleSendToTrello = async (lead: LeadDto) => {
+    if (
+      !confirm(
+        `¿Enviar el lead "${lead.name}" como tarjeta a Trello?`
+      )
+    ) {
+      return;
+    }
+
+    if (sendingToTrelloIds.has(lead.id)) {
+      return;
+    }
+
+    setSendingToTrelloIds((prev) => {
+      const next = new Set(prev);
+      next.add(lead.id);
+      return next;
+    });
+
+    try {
+      await sendLeadToTrello(lead.id);
+      toast.success("Tarjeta enviada a Trello", {
+        description: `Lead: ${lead.name}`,
+      });
+    } catch (sendError) {
+      toast.error(
+        sendError instanceof Error
+          ? sendError.message
+          : "Error al enviar la tarjeta a Trello"
+      );
+    } finally {
+      setSendingToTrelloIds((prev) => {
+        const next = new Set(prev);
+        next.delete(lead.id);
+        return next;
+      });
+    }
+  };
+
   const handleDialogClose = (saved: boolean) => {
     setDialogOpen(false);
     setEditingLead(null);
@@ -261,6 +303,8 @@ export function CrmPage() {
               onLeadsChange={handleLeadsChange}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onSendToTrello={handleSendToTrello}
+              sendingToTrelloIds={sendingToTrelloIds}
             />
           )}
         </motion.div>

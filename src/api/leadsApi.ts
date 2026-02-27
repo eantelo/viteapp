@@ -189,3 +189,9 @@ export async function updateLeadStatus(
   });
   return normalizeLead(lead);
 }
+
+export async function sendLeadToTrello(id: string): Promise<void> {
+  return apiClient<void>(`/api/leads/${id}/send-to-trello`, {
+    method: "POST",
+  });
+}

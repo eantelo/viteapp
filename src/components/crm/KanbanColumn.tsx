@@ -16,6 +16,8 @@ interface KanbanColumnProps {
   isOver: boolean;
   onEdit: (lead: LeadDto) => void;
   onDelete: (lead: LeadDto) => void;
+  onSendToTrello: (lead: LeadDto) => void;
+  sendingToTrelloIds: Set<string>;
 }
 
 export function KanbanColumn({
@@ -24,6 +26,8 @@ export function KanbanColumn({
   isOver,
   onEdit,
   onDelete,
+  onSendToTrello,
+  sendingToTrelloIds,
 }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({
     id: `status-${status}`,
@@ -89,6 +93,8 @@ export function KanbanColumn({
                   lead={lead}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  onSendToTrello={onSendToTrello}
+                  isSendingToTrello={sendingToTrelloIds.has(lead.id)}
                 />
               ))
             )}

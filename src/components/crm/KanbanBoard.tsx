@@ -24,6 +24,8 @@ interface KanbanBoardProps {
   onLeadsChange: (updatedLeads: LeadDto[]) => void;
   onEdit: (lead: LeadDto) => void;
   onDelete: (lead: LeadDto) => void;
+  onSendToTrello: (lead: LeadDto) => void;
+  sendingToTrelloIds: Set<string>;
 }
 
 const STATUSES: LeadStatus[] = [0, 1, 2, 3, 4, 5, 6]; // All enum values
@@ -44,6 +46,8 @@ export function KanbanBoard({
   onLeadsChange,
   onEdit,
   onDelete,
+  onSendToTrello,
+  sendingToTrelloIds,
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
@@ -203,6 +207,8 @@ export function KanbanBoard({
             isOver={overStatus === status}
             onEdit={onEdit}
             onDelete={onDelete}
+            onSendToTrello={onSendToTrello}
+            sendingToTrelloIds={sendingToTrelloIds}
           />
         ))}
       </motion.div>
@@ -215,6 +221,8 @@ export function KanbanBoard({
               isDragging={true}
               onEdit={() => {}}
               onDelete={() => {}}
+              onSendToTrello={() => {}}
+              isSendingToTrello={false}
             />
           </div>
         )}
