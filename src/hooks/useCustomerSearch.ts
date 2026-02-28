@@ -39,8 +39,8 @@ export function useCustomerSearch() {
       const filtered = customers.filter(
         (customer) =>
           customer.name.toLowerCase().includes(normalized) ||
-          customer.email.toLowerCase().includes(normalized) ||
-          (customer.phone && customer.phone.includes(normalized))
+          (customer.email ?? "").toLowerCase().includes(normalized) ||
+          (customer.phone && customer.phone.includes(normalized)),
       );
 
       return {
@@ -48,7 +48,7 @@ export function useCustomerSearch() {
         isSearching: false,
       };
     },
-    [customers]
+    [customers],
   );
 
   const reload = useCallback(async () => {

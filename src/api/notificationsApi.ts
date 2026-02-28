@@ -1,24 +1,30 @@
 import { apiClient } from "./apiClient";
 
 // Notification types matching backend enum
-export enum NotificationType {
-  SaleCreated = 1,
-  SaleCancelled = 2,
-  LowStock = 10,
-  OutOfStock = 11,
-  ProductCreated = 20,
-  ProductUpdated = 21,
-  CustomerCreated = 30,
-  HeldOrderExpiring = 40,
-  SystemAlert = 100,
-}
+export const NotificationType = {
+  SaleCreated: 1,
+  SaleCancelled: 2,
+  LowStock: 10,
+  OutOfStock: 11,
+  ProductCreated: 20,
+  ProductUpdated: 21,
+  CustomerCreated: 30,
+  HeldOrderExpiring: 40,
+  SystemAlert: 100,
+} as const;
 
-export enum NotificationPriority {
-  Low = 0,
-  Normal = 1,
-  High = 2,
-  Critical = 3,
-}
+export type NotificationType =
+  (typeof NotificationType)[keyof typeof NotificationType];
+
+export const NotificationPriority = {
+  Low: 0,
+  Normal: 1,
+  High: 2,
+  Critical: 3,
+} as const;
+
+export type NotificationPriority =
+  (typeof NotificationPriority)[keyof typeof NotificationPriority];
 
 export interface NotificationDto {
   id: string;

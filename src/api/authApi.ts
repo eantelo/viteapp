@@ -4,7 +4,10 @@ export interface AuthResponse {
   token: string;
   refreshToken: string;
   email: string;
+  firstName: string;
+  lastName: string;
   role: string;
+  permissions: string[];
   tenantId: string;
   tenantName: string;
   userId: string;

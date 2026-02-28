@@ -35,6 +35,7 @@ interface AuthContextValue {
   setAuth: (payload: AuthResponse | null) => void;
   refreshSession: () => Promise<AuthResponse | void>;
   logout: () => Promise<void>;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -162,6 +163,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuth,
       refreshSession,
       logout,
+      hasPermission: (permission: string) => {
+        if (!permission) {
+          return true;
+        }
+
+        const permissions = auth?.permissions ?? [];
+        return permissions.some(
+          (p) => p.toLowerCase() === permission.toLowerCase()
+        );
+      },
       lastRefreshAt: refreshState.lastRefreshAt,
     }),
     [

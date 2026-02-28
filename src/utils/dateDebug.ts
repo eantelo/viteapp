@@ -13,14 +13,14 @@ const oldWay = new Date().toISOString().split("T")[0];
 console.log('Uso: new Date().toISOString().split("T")[0]');
 console.log("Resultado:", oldWay);
 console.log(
-  "Problema: En zonas horarias positivas (UTC+6), puede estar un día atrás"
+  "Problema: En zonas horarias positivas (UTC+6), puede estar un día atrás",
 );
 console.groupEnd();
 
 // Método NUEVO (✅ CORRECTO)
 console.group("✅ Método Nuevo (Correcto)");
 
-function formatDateToISO(date) {
+function formatDateToISO(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -45,13 +45,13 @@ console.groupEnd();
 // Conversión correcta para enviar al servidor
 console.group("🔄 Conversión para Enviar al Servidor");
 
-function dateStringToUTC(dateStr) {
+function dateStringToUTC(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
   const date = new Date(year, month - 1, day, 0, 0, 0);
   return date.toISOString();
 }
 
-function dateStringToUTCEndOfDay(dateStr) {
+function dateStringToUTCEndOfDay(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
   const date = new Date(year, month - 1, day, 23, 59, 59);
   return date.toISOString();
@@ -66,5 +66,5 @@ console.groupEnd();
 
 console.log(
   "%c✅ Fix Aplicado Correctamente",
-  "color: green; font-weight: bold; font-size: 14px"
+  "color: green; font-weight: bold; font-size: 14px",
 );

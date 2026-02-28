@@ -5,7 +5,8 @@ export const StockTransactionType = {
   Purchase: 1,
   Sale: 2,
   Adjustment: 3,
-  Return: 4
+  Return: 4,
+  Transfer: 5,
 } as const;
 
 export type StockTransactionType = typeof StockTransactionType[keyof typeof StockTransactionType];
@@ -16,6 +17,8 @@ export interface StockTransactionDto {
   productName: string;
   transactionType: StockTransactionType;
   quantity: number;
+  warehouseId?: string;
+  warehouseName?: string;
   reference?: string;
   notes?: string;
   createdAt: string;
@@ -25,6 +28,8 @@ export interface StockTransactionDto {
 export interface StockHistoryDto {
   productId: string;
   productName: string;
+  warehouseId?: string;
+  warehouseName?: string;
   currentStock: number;
   transactions: StockTransactionDto[];
 }
@@ -32,17 +37,27 @@ export interface StockHistoryDto {
 export interface StockAdjustmentDto {
   productId: string;
   quantity: number;
+  warehouseId?: string;
   notes?: string;
 }
 
-export async function getCurrentStock(productId: string): Promise<number> {
-  return apiClient<number>(`/api/stock/${productId}`);
+export async function getCurrentStock(productId: string, warehouseId?: string): Promise<number> {
+  const query = warehouseId
+    ? `?warehouseId=${encodeURIComponent(warehouseId)}`
+    : "";
+  return apiClient<number>(`/api/stock/${productId}${query}`);
 }
 
-export async function getStockHistory(productId: string, fromDate?: string, toDate?: string): Promise<StockHistoryDto> {
+export async function getStockHistory(
+  productId: string,
+  fromDate?: string,
+  toDate?: string,
+  warehouseId?: string
+): Promise<StockHistoryDto> {
   const params = new URLSearchParams();
   if (fromDate) params.append('fromDate', fromDate);
   if (toDate) params.append('toDate', toDate);
+  if (warehouseId) params.append('warehouseId', warehouseId);
   
   const query = params.toString();
   return apiClient<StockHistoryDto>(`/api/stock/${productId}/history${query ? `?${query}` : ''}`);

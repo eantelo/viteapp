@@ -39,8 +39,6 @@ import {
   IconRefresh,
   IconPlus,
   IconPencil,
-  IconCheck,
-  IconX,
   IconLock,
   IconCash,
   IconPackage,
@@ -65,7 +63,6 @@ import { exportToExcel, exportToPDF } from "@/utils/salesExport";
 import {
   getTodayDateString,
   getYesterdayDateString,
-  getToday,
   getMonthStartDateString,
   formatDateToISO,
   dateRangeToUTC,
@@ -421,7 +418,7 @@ export function SalesPage() {
       }
 
       if (typeof p.method === "string") {
-        const trimmed = p.method.trim();
+        const trimmed = String(p.method).trim();
         if (trimmed in namesByKey) {
           return namesByKey[trimmed];
         }

@@ -162,6 +162,7 @@ export function PointOfSalePage() {
               price: item.price,
               cost: 0,
               stock: item.quantity,
+              reservedStock: 0,
               isActive: true,
             };
             // Agregar la cantidad especificada

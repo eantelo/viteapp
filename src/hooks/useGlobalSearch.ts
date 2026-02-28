@@ -119,8 +119,8 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
             .filter(
               (c) =>
                 c.name.toLowerCase().includes(searchLower) ||
-                c.email.toLowerCase().includes(searchLower) ||
-                (c.phone && c.phone.includes(trimmed))
+                (c.email ?? "").toLowerCase().includes(searchLower) ||
+                (c.phone && c.phone.includes(trimmed)),
             )
             .slice(0, MAX_RESULTS_PER_GROUP);
         }
@@ -143,7 +143,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         setIsLoading(false);
       }
     },
-    [clearResults]
+    [clearResults],
   );
 
   // Debounced query setter
@@ -161,7 +161,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
         performSearch(newQuery);
       }, DEBOUNCE_MS);
     },
-    [performSearch]
+    [performSearch],
   );
 
   // Add to history
@@ -181,7 +181,7 @@ export function useGlobalSearch(): UseGlobalSearchReturn {
       };
       const newHistory: SearchHistoryItem[] = [newItem, ...filtered].slice(
         0,
-        MAX_HISTORY_ITEMS
+        MAX_HISTORY_ITEMS,
       );
 
       saveHistory(newHistory);

@@ -16,8 +16,12 @@ import { SaleUpsertPage } from "@/pages/SaleUpsertPage";
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
 import { CrmPage } from "@/pages/CrmPage";
+import { UsersPage } from "@/pages/UsersPage";
 import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
 import { SystemPage } from "@/pages/SystemPage";
+import { WarehousesPage } from "@/pages/WarehousesPage";
+import { WarehouseDetailPage } from "@/pages/WarehouseDetailPage";
+import { WarehouseTransfersPage } from "@/pages/WarehouseTransfersPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -50,7 +54,14 @@ function App() {
           />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/users" element={<UsersPage />} />
           <Route path="/crm" element={<CrmPage />} />
+          <Route path="/warehouses" element={<WarehousesPage />} />
+          <Route path="/warehouses/:id" element={<WarehouseDetailPage />} />
+          <Route
+            path="/warehouse-transfers"
+            element={<WarehouseTransfersPage />}
+          />
           <Route path="/settings" element={<TenantSettingsPage />} />
           <Route path="/system" element={<SystemPage />} />
         </Route>

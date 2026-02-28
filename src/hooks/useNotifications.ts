@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import type {
-  NotificationDto,
-  NotificationSummaryDto,
-} from "@/api/notificationsApi";
+import type { NotificationDto } from "@/api/notificationsApi";
 import {
   getNotifications,
   getNotificationSummary,
@@ -43,7 +40,7 @@ interface UseNotificationsResult {
 }
 
 export function useNotifications(
-  options: UseNotificationsOptions = {}
+  options: UseNotificationsOptions = {},
 ): UseNotificationsResult {
   const {
     enablePolling = true,
@@ -133,8 +130,8 @@ export function useNotifications(
         prev.map((n) =>
           n.id === id
             ? { ...n, isRead: true, readAt: new Date().toISOString() }
-            : n
-        )
+            : n,
+        ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
@@ -151,7 +148,7 @@ export function useNotifications(
           ...n,
           isRead: true,
           readAt: new Date().toISOString(),
-        }))
+        })),
       );
       setUnreadCount(0);
     } catch (err) {

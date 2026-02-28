@@ -12,6 +12,9 @@ import {
   IconCashRegister,
   IconCoffee,
   IconTags,
+  IconUsers,
+  IconBuildingWarehouse,
+  IconArrowsTransferUp,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -73,6 +76,21 @@ const data = {
       icon: IconLayoutKanban,
     },
     {
+      title: "Usuarios",
+      url: "/users",
+      icon: IconUsers,
+    },
+    {
+      title: "Almacenes",
+      url: "/warehouses",
+      icon: IconBuildingWarehouse,
+    },
+    {
+      title: "Traslados",
+      url: "/warehouse-transfers",
+      icon: IconArrowsTransferUp,
+    },
+    {
       title: "POS Restaurante",
       url: "/pos/restaurant",
       icon: IconCoffee,
@@ -98,9 +116,21 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { auth } = useAuth();
+  const { auth, hasPermission } = useAuth();
   const location = useLocation();
   const tenantName = auth?.tenantName || "Mi Empresa";
+
+  const filteredNavItems = data.navMain.filter((item) => {
+    if (item.url === "/users") {
+      return hasPermission("Users.View");
+    }
+
+    if (item.url === "/settings") {
+      return hasPermission("Settings.View");
+    }
+
+    return true;
+  });
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -120,7 +150,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={filteredNavItems} />
         <SidebarGroup>
           <SidebarGroupLabel>Reportes</SidebarGroupLabel>
           <SidebarMenu>

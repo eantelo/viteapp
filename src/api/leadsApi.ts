@@ -21,25 +21,29 @@ export interface LeadDto {
   updatedAt?: string | null;
 }
 
-export enum LeadStatus {
-  New = 0,
-  Contacted = 1,
-  Qualified = 2,
-  Proposal = 3,
-  Negotiation = 4,
-  Won = 5,
-  Lost = 6,
-}
+export const LeadStatus = {
+  New: 0,
+  Contacted: 1,
+  Qualified: 2,
+  Proposal: 3,
+  Negotiation: 4,
+  Won: 5,
+  Lost: 6,
+} as const;
 
-export enum LeadSource {
-  Website = 0,
-  Referral = 1,
-  SocialMedia = 2,
-  Advertisement = 3,
-  ColdCall = 4,
-  Event = 5,
-  Other = 6,
-}
+export type LeadStatus = (typeof LeadStatus)[keyof typeof LeadStatus];
+
+export const LeadSource = {
+  Website: 0,
+  Referral: 1,
+  SocialMedia: 2,
+  Advertisement: 3,
+  ColdCall: 4,
+  Event: 5,
+  Other: 6,
+} as const;
+
+export type LeadSource = (typeof LeadSource)[keyof typeof LeadSource];
 
 export interface LeadCreateDto {
   name?: string | null;

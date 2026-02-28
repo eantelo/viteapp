@@ -21,6 +21,7 @@ interface StockHistoryDialogProps {
   open: boolean;
   productId: string;
   productName: string;
+  warehouseId?: string;
   onClose: () => void;
 }
 
@@ -28,6 +29,7 @@ export function StockHistoryDialog({
   open,
   productId,
   productName,
+  warehouseId,
   onClose,
 }: StockHistoryDialogProps) {
   const [history, setHistory] = useState<StockHistoryDto | null>(null);
@@ -38,13 +40,18 @@ export function StockHistoryDialog({
     if (open && productId) {
       loadHistory();
     }
-  }, [open, productId]);
+  }, [open, productId, warehouseId]);
 
   const loadHistory = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getStockHistory(productId);
+      const data = await getStockHistory(
+        productId,
+        undefined,
+        undefined,
+        warehouseId
+      );
       setHistory(data);
     } catch (err) {
       console.error("Error loading history:", err);
@@ -61,9 +68,14 @@ export function StockHistoryDialog({
       case StockTransactionType.Sale: return "Venta";
       case StockTransactionType.Adjustment: return "Ajuste";
       case StockTransactionType.Return: return "Devolución";
+      case StockTransactionType.Transfer: return "Traslado";
       default: return "Desconocido";
     }
   };
+
+  const showWarehouseColumn = Boolean(
+    history?.transactions.some((transaction) => Boolean(transaction.warehouseName))
+  );
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -93,6 +105,7 @@ export function StockHistoryDialog({
                   <TableRow>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Tipo</TableHead>
+                    {showWarehouseColumn ? <TableHead>Almacén</TableHead> : null}
                     <TableHead className="text-right">Cantidad</TableHead>
                     <TableHead>Referencia</TableHead>
                     <TableHead>Notas</TableHead>
@@ -101,7 +114,10 @@ export function StockHistoryDialog({
                 <TableBody>
                   {history.transactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4 text-slate-500">
+                      <TableCell
+                        colSpan={showWarehouseColumn ? 6 : 5}
+                        className="text-center py-4 text-slate-500"
+                      >
                         No hay movimientos registrados.
                       </TableCell>
                     </TableRow>
@@ -112,6 +128,11 @@ export function StockHistoryDialog({
                           {format(new Date(tx.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
                         </TableCell>
                         <TableCell>{getTransactionTypeName(tx.transactionType)}</TableCell>
+                        {showWarehouseColumn ? (
+                          <TableCell className="text-sm text-slate-600">
+                            {tx.warehouseName || "-"}
+                          </TableCell>
+                        ) : null}
                         <TableCell className={`text-right font-medium ${tx.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
                           {tx.quantity > 0 ? "+" : ""}{tx.quantity}
                         </TableCell>

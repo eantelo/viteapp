@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,8 @@ interface StockAdjustmentDialogProps {
   productId: string;
   productName: string;
   currentStock: number;
+  warehouses?: { id: string; name: string }[];
+  selectedWarehouseId?: string;
   onClose: (adjusted: boolean) => void;
 }
 
@@ -33,13 +35,33 @@ export function StockAdjustmentDialog({
   productId,
   productName,
   currentStock,
+  warehouses,
+  selectedWarehouseId,
   onClose,
 }: StockAdjustmentDialogProps) {
   const [type, setType] = useState<"add" | "remove">("add");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
+  const [warehouseId, setWarehouseId] = useState<string>(selectedWarehouseId ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const shouldShowWarehouseSelector = Boolean(warehouses && warehouses.length > 0);
+
+  useEffect(() => {
+    if (!open || !shouldShowWarehouseSelector) {
+      return;
+    }
+
+    if (selectedWarehouseId) {
+      setWarehouseId(selectedWarehouseId);
+      return;
+    }
+
+    if (!warehouseId && warehouses && warehouses.length > 0) {
+      setWarehouseId(warehouses[0].id);
+    }
+  }, [open, selectedWarehouseId, shouldShowWarehouseSelector, warehouseId, warehouses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +73,11 @@ export function StockAdjustmentDialog({
       return;
     }
 
+    if (shouldShowWarehouseSelector && !warehouseId) {
+      setError("Selecciona un almacén para el ajuste");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -59,6 +86,7 @@ export function StockAdjustmentDialog({
       await adjustStock({
         productId,
         quantity: adjustmentQuantity,
+        warehouseId: warehouseId || undefined,
         notes: notes.trim() || undefined,
       });
       onClose(true);
@@ -116,6 +144,23 @@ export function StockAdjustmentDialog({
                 />
               </div>
             </div>
+            {shouldShowWarehouseSelector ? (
+              <div className="grid gap-2">
+                <Label>Almacén</Label>
+                <Select value={warehouseId} onValueChange={setWarehouseId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un almacén" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses?.map((warehouse) => (
+                      <SelectItem key={warehouse.id} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
             <div className="grid gap-2">
               <Label htmlFor="notes">Notas / Motivo</Label>
               <Textarea
