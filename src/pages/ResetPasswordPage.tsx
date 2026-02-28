@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/Spinner";
-import { Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Lock, Eye, EyeSlash, ArrowLeft } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function ResetPasswordPage() {
@@ -96,7 +96,7 @@ export function ResetPasswordPage() {
               to="/login"
               className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft weight="bold" className="h-4 w-4" />
               Volver al inicio de sesión
             </Link>
           </div>
@@ -112,7 +112,7 @@ export function ResetPasswordPage() {
               <div className="grid gap-2">
                 <Label htmlFor="newPassword">Nueva contraseña</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="newPassword"
                     name="newPassword"
@@ -127,7 +127,7 @@ export function ResetPasswordPage() {
                     }}
                     className={cn(
                       "pl-9 pr-9",
-                      passwordError && "border-red-500 focus-visible:ring-red-500"
+                      passwordError && "border-destructive focus-visible:ring-destructive"
                     )}
                   />
                   <button
@@ -136,21 +136,21 @@ export function ResetPasswordPage() {
                     className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeSlash weight="bold" className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye weight="bold" className="h-4 w-4" />
                     )}
                   </button>
                 </div>
                 {passwordError && (
-                  <p className="text-sm text-red-500">{passwordError}</p>
+                  <p className="text-sm text-destructive">{passwordError}</p>
                 )}
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -165,7 +165,7 @@ export function ResetPasswordPage() {
                     }}
                     className={cn(
                       "pl-9 pr-9",
-                      confirmPasswordError && "border-red-500 focus-visible:ring-red-500"
+                      confirmPasswordError && "border-destructive focus-visible:ring-destructive"
                     )}
                   />
                   <button
@@ -174,14 +174,14 @@ export function ResetPasswordPage() {
                     className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeSlash weight="bold" className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye weight="bold" className="h-4 w-4" />
                     )}
                   </button>
                 </div>
                 {confirmPasswordError && (
-                  <p className="text-sm text-red-500">{confirmPasswordError}</p>
+                  <p className="text-sm text-destructive">{confirmPasswordError}</p>
                 )}
               </div>
 

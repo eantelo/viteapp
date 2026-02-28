@@ -16,42 +16,31 @@ import { Separator } from "@/components/ui/separator";
 import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDialog";
 import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  IconArrowLeft,
-  IconPencil,
-  IconHistory,
-  IconArrowsDiff,
-  IconTrash,
-  IconPackage,
-  IconBarcode,
-  IconTag,
-  IconCategory,
-  IconBox,
-  IconAlertTriangle,
-} from "@tabler/icons-react";
+  ArrowLeft,
+  PencilSimple,
+  ClockCounterClockwise,
+  ArrowsLeftRight,
+  Trash,
+  Package,
+  Barcode,
+  Tag,
+  FolderOpen,
+  Cube,
+  Warning,
+} from "@phosphor-icons/react";
 import type { ProductDto } from "@/api/productsApi";
 import { getProductById, deleteProduct } from "@/api/productsApi";
 import {
   onProductUpdated,
   type ProductUpdatedEventDetail,
 } from "@/lib/product-events";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const prefersReducedMotion = useReducedMotion();
-
-  const motionInitial = prefersReducedMotion
-    ? { opacity: 1, y: 0 }
-    : { opacity: 0, y: 16 };
-  const motionAnimate = { opacity: 1, y: 0 };
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const motionTransition = {
-    duration: prefersReducedMotion ? 0 : 0.45,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
 
   // Estado del producto
   const [product, setProduct] = useState<ProductDto | null>(null);
@@ -175,7 +164,7 @@ export function ProductDetailPage() {
             { label: "Productos", href: "/products" },
             { label: "Cargando..." },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <div className="flex items-center gap-4 mb-4">
             <Skeleton className="h-10 w-10" />
@@ -221,7 +210,7 @@ export function ProductDetailPage() {
             { label: "Productos", href: "/products" },
             { label: "Error" },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <Card>
             <CardContent className="py-12">
@@ -232,7 +221,7 @@ export function ProductDetailPage() {
                     variant="outline"
                     onClick={() => navigate("/products")}
                   >
-                    <IconArrowLeft size={20} className="mr-2" />
+                    <ArrowLeft size={20} weight="bold" className="mr-2" />
                     Volver a productos
                   </Button>
                   <Button onClick={loadProduct}>Reintentar</Button>
@@ -260,22 +249,18 @@ export function ProductDetailPage() {
           { label: "Productos", href: "/products" },
           { label: product.name },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className={PAGE_LAYOUT_CLASS}
       >
         {/* Header con acciones */}
-        <motion.div
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-          initial={motionInitial}
-          animate={motionAnimate}
-          transition={motionTransition}
-        >
+        <div
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/products")}
             >
-              <IconArrowLeft size={20} />
+              <ArrowLeft size={20} weight="bold" />
             </Button>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
@@ -289,7 +274,7 @@ export function ProductDetailPage() {
                   {product.isActive ? "Activo" : "Inactivo"}
                 </Badge>
               </div>
-              <p className="text-slate-500 mt-1 text-sm">
+              <p className="text-muted-foreground mt-1 text-sm">
                 SKU: {product.sku}
                 {product.barcode && ` • Código: ${product.barcode}`}
               </p>
@@ -298,7 +283,7 @@ export function ProductDetailPage() {
 
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleEdit}>
-              <IconPencil size={20} className="mr-2" />
+              <PencilSimple size={20} weight="bold" className="mr-2" />
               Editar
             </Button>
             <Button
@@ -306,25 +291,18 @@ export function ProductDetailPage() {
               className="text-error hover:text-error/90"
               onClick={handleDelete}
             >
-              <IconTrash size={20} className="mr-2" />
+              <Trash size={20} weight="bold" className="mr-2" />
               Eliminar
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Banner de advertencia para productos inactivos */}
         {!product.isActive && (
-          <motion.div
-            className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={{
-              ...motionTransition,
-              delay: prefersReducedMotion ? 0 : 0.04,
-            }}
-          >
+          <div
+            className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3">
             <div className="bg-destructive/20 p-2 rounded-full">
-              <IconAlertTriangle className="text-destructive" size={24} />
+              <Warning className="text-destructive" size={24} weight="bold" />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-destructive">
@@ -341,23 +319,16 @@ export function ProductDetailPage() {
               onClick={handleEdit}
               className="border-destructive/30 text-destructive hover:bg-destructive/10"
             >
-              <IconPencil size={16} className="mr-2" />
+              <PencilSimple size={16} weight="bold" className="mr-2" />
               Activar producto
             </Button>
-          </motion.div>
+          </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Información principal */}
-          <motion.div
-            className="lg:col-span-2 space-y-4"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={{
-              ...motionTransition,
-              delay: prefersReducedMotion ? 0 : 0.08,
-            }}
-          >
+          <div
+            className="lg:col-span-2 space-y-4">
             {/* Detalles del producto */}
             <Card>
               <CardHeader>
@@ -372,7 +343,7 @@ export function ProductDetailPage() {
                   {product.description && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <IconPackage size={16} />
+                        <Package size={16} weight="bold" />
                         Descripción
                       </h4>
                       <p className="text-base">{product.description}</p>
@@ -385,14 +356,14 @@ export function ProductDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <IconTag size={16} />
+                        <Tag size={16} weight="bold" />
                         SKU
                       </h4>
                       <p className="font-mono text-lg">{product.sku}</p>
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <IconBarcode size={16} />
+                        <Barcode size={16} weight="bold" />
                         Código de Barras
                       </h4>
                       <p className="font-mono text-lg">
@@ -407,14 +378,14 @@ export function ProductDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <IconBox size={16} />
+                        <Cube size={16} weight="bold" />
                         Marca
                       </h4>
                       <p className="text-lg">{product.brand || "—"}</p>
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                        <IconCategory size={16} />
+                        <FolderOpen size={16} weight="bold" />
                         Categoría
                       </h4>
                       <p className="text-lg">{product.category || "—"}</p>
@@ -467,18 +438,11 @@ export function ProductDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Panel lateral - Stock e información adicional */}
-          <motion.div
-            className="space-y-4"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={{
-              ...motionTransition,
-              delay: prefersReducedMotion ? 0 : 0.16,
-            }}
-          >
+          <div
+            className="space-y-4">
             {/* Tarjeta de Stock */}
             <Card>
               <CardHeader>
@@ -498,7 +462,7 @@ export function ProductDetailPage() {
                   >
                     {product.stock}
                   </p>
-                  <p className="text-slate-500 mt-1">unidades en stock</p>
+                  <p className="text-muted-foreground mt-1">unidades en stock</p>
 
                   <div className="mt-2 text-sm text-muted-foreground">
                     Reservado en ventas pendientes: {" "}
@@ -522,7 +486,7 @@ export function ProductDetailPage() {
                     className="w-full"
                     onClick={() => setStockAdjustmentOpen(true)}
                   >
-                    <IconArrowsDiff size={18} className="mr-2" />
+                    <ArrowsLeftRight size={18} weight="bold" className="mr-2" />
                     Ajustar Stock
                   </Button>
                   <Button
@@ -530,7 +494,7 @@ export function ProductDetailPage() {
                     className="w-full"
                     onClick={() => setStockHistoryOpen(true)}
                   >
-                    <IconHistory size={18} className="mr-2" />
+                    <ClockCounterClockwise size={18} weight="bold" className="mr-2" />
                     Ver Historial
                   </Button>
                 </div>
@@ -559,7 +523,7 @@ export function ProductDetailPage() {
                 </Button>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
 
         {/* Diálogos de Stock */}

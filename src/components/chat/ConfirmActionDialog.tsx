@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "@phosphor-icons/react";
 import type { PendingConfirmation } from "@/hooks/useInterfaceAgent";
 
 interface ConfirmActionDialogProps {
@@ -59,7 +59,7 @@ export function ConfirmActionDialog({
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <Warning className="h-5 w-5 text-destructive" weight="bold" />
             </div>
             <AlertDialogTitle className="text-lg">
               Confirmar acción
@@ -74,7 +74,7 @@ export function ConfirmActionDialog({
           </AlertDialogDescription>
           {action.warningMessage && (
             <div className="mt-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertTriangle className="mr-2 inline-block h-4 w-4" />
+              <Warning className="mr-2 inline-block h-4 w-4" weight="bold" />
               {action.warningMessage}
             </div>
           )}

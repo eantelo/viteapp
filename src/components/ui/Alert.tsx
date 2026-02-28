@@ -1,4 +1,4 @@
-import { Info, ShieldCheck, OctagonAlert } from "lucide-react";
+import { Info, ShieldCheck, WarningOctagon } from "@phosphor-icons/react";
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ const variantStyles: Record<AlertVariant, string> = {
 const variantIcons: Record<AlertVariant, typeof Info> = {
   info: Info,
   success: ShieldCheck,
-  error: OctagonAlert,
+  error: WarningOctagon,
 };
 
 export function Alert({
@@ -42,7 +42,7 @@ export function Alert({
       )}
       {...rest}
     >
-      <Icon className="mt-0.5 h-5 w-5 shrink-0" />
+      <Icon className="mt-0.5 h-5 w-5 shrink-0" weight="duotone" />
       <div className="space-y-1">
         {title && <p className="font-semibold">{title}</p>}
         <p>{message}</p>

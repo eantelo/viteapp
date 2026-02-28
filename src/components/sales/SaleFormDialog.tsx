@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconPlus } from "@tabler/icons-react";
+import { Plus } from "@phosphor-icons/react";
 import type { SaleDto, SaleCreateDto, SaleUpdateDto } from "@/api/salesApi";
 import { createSale, updateSale } from "@/api/salesApi";
 import type { CustomerDto } from "@/api/customersApi";
@@ -316,7 +316,7 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
                   onClick={handleAddProduct}
                   disabled={!selectedProduct}
                 >
-                  <IconPlus size={16} className="mr-2" />
+                  <Plus size={16} className="mr-2" weight="bold" />
                   Agregar
                 </Button>
               </div>

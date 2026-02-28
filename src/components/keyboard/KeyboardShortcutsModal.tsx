@@ -8,7 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { KeyboardShortcutKey } from "@/hooks/useKeyboardShortcuts";
-import { IconKeyboard } from "@tabler/icons-react";
+import { Keyboard } from "@phosphor-icons/react";
 
 interface ShortcutInfo {
   key: KeyboardShortcutKey;
@@ -32,7 +32,7 @@ export function KeyboardShortcutsModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <IconKeyboard className="size-5" />
+            <Keyboard className="size-5" weight="duotone" />
             <DialogTitle>Atajos de teclado</DialogTitle>
           </div>
           <DialogDescription>

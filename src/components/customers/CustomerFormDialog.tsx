@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
+import { WarningCircle, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -272,7 +272,7 @@ export function CustomerFormDialog({
           <div className="grid gap-4 py-4">
             {error && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-                <IconAlertCircle className="size-4 shrink-0" />
+                <WarningCircle className="size-4 shrink-0" weight="duotone" />
                 {error}
               </div>
             )}
@@ -294,7 +294,7 @@ export function CustomerFormDialog({
                   className={cn("pr-9", getFieldClasses(validations.name))}
                 />
                 {validations.name.isTouched && validations.name.isValid && (
-                  <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" weight="duotone" />
                 )}
               </div>
               {validations.name.error && (
@@ -321,7 +321,7 @@ export function CustomerFormDialog({
                   className={cn("pr-9", getFieldClasses(validations.email))}
                 />
                 {validations.email.isTouched && validations.email.isValid && (
-                  <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" weight="duotone" />
                 )}
               </div>
               {validations.email.error && (
@@ -348,7 +348,7 @@ export function CustomerFormDialog({
                 {validations.phone.isTouched &&
                   validations.phone.isValid &&
                   phone.trim() && (
-                    <IconCheck className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" />
+                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-green-500" weight="duotone" />
                   )}
               </div>
               {validations.phone.error && (

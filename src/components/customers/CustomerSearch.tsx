@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { IconSearch, IconLoader2, IconAlertCircle } from "@tabler/icons-react";
+import { MagnifyingGlass, SpinnerGap, WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,7 +78,7 @@ export const CustomerSearch = ({
 
       <div className="relative mt-2">
         <div className="relative">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" weight="duotone" />
           <Input
             ref={inputRef}
             id="customer-search"
@@ -91,7 +91,7 @@ export const CustomerSearch = ({
             autoComplete="off"
           />
           {isLoading && (
-            <IconLoader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground animate-spin" />
+            <SpinnerGap className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground animate-spin" weight="bold" />
           )}
         </div>
 
@@ -104,12 +104,12 @@ export const CustomerSearch = ({
             <div className="max-h-72 overflow-y-auto">
               {error ? (
                 <div className="flex items-center gap-2 p-3 text-sm text-destructive">
-                  <IconAlertCircle className="size-4 flex-shrink-0" />
+                  <WarningCircle className="size-4 flex-shrink-0" weight="duotone" />
                   <span>{error}</span>
                 </div>
               ) : isLoading ? (
                 <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-                  <IconLoader2 className="size-4 animate-spin" />
+                  <SpinnerGap className="size-4 animate-spin" weight="bold" />
                   Buscando clientes...
                 </div>
               ) : hasResults ? (

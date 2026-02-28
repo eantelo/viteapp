@@ -11,12 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  MessageCircle,
-  Send,
-  Loader2,
-  GripVertical,
-  SquarePen,
-} from "lucide-react";
+  ChatCircle,
+  PaperPlaneTilt,
+  SpinnerGap,
+  DotsSixVertical,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import { chatService } from "@/services/chat-service";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -322,13 +322,13 @@ export function ChatWidget() {
             isResizing && "opacity-100"
           )}
         >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <DotsSixVertical className="h-4 w-4 text-muted-foreground" weight="bold" />
         </div>
       </div>
       <Card className="h-full rounded-none border-l border-t-0 border-r-0 border-b-0 border-primary/20 overflow-hidden flex flex-col bg-background">
         <CardHeader className="p-4 border-b bg-primary text-primary-foreground flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
+            <ChatCircle className="h-5 w-5" weight="bold" />
             <CardTitle className="text-base font-semibold">
               Asistente Virtual
             </CardTitle>
@@ -341,7 +341,7 @@ export function ChatWidget() {
             title="Nueva conversación"
             disabled={isLoading}
           >
-            <SquarePen className="h-4 w-4" />
+            <PencilSimple className="h-4 w-4" weight="bold" />
           </Button>
         </CardHeader>
         <CardContent className="flex-1 p-0 overflow-hidden bg-muted/30 dark:bg-muted/10">
@@ -522,9 +522,9 @@ export function ChatWidget() {
               className="h-9 w-9 shrink-0"
             >
               {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <SpinnerGap className="h-4 w-4 animate-spin" weight="bold" />
               ) : (
-                <Send className="h-4 w-4" />
+                <PaperPlaneTilt className="h-4 w-4" weight="bold" />
               )}
             </Button>
           </div>

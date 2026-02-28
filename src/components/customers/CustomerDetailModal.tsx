@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import {
-  IconCalendar,
-  IconMoneybag,
-  IconGift,
-  IconAlertTriangle,
-  IconX,
-} from "@tabler/icons-react";
+  Calendar,
+  CurrencyDollar,
+  Gift,
+  Warning,
+  X,
+} from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -102,7 +102,7 @@ export function CustomerDetailModal({
               {customer.lastPurchaseDate ? (
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <IconCalendar className="size-4 text-muted-foreground" />
+                    <Calendar className="size-4 text-muted-foreground" weight="duotone" />
                     <span className="text-xs text-muted-foreground font-medium">
                       Última compra
                     </span>
@@ -141,7 +141,7 @@ export function CustomerDetailModal({
               {customer.totalPurchases !== undefined && (
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <IconMoneybag className="size-4 text-muted-foreground" />
+                    <CurrencyDollar className="size-4 text-muted-foreground" weight="duotone" />
                     <span className="text-xs text-muted-foreground font-medium">
                       Total de compras
                     </span>
@@ -166,7 +166,7 @@ export function CustomerDetailModal({
               customer.loyaltyPoints > 0 && (
                 <div className="rounded-lg border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-900/20 p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <IconGift className="size-4 text-amber-600 dark:text-amber-400" />
+                    <Gift className="size-4 text-amber-600 dark:text-amber-400" weight="duotone" />
                     <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                       Puntos de fidelidad
                     </span>
@@ -184,7 +184,7 @@ export function CustomerDetailModal({
             {customer.pendingDebt !== undefined && customer.pendingDebt > 0 && (
               <div className="rounded-lg border border-destructive bg-destructive/10 p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <IconAlertTriangle className="size-4 text-destructive" />
+                  <Warning className="size-4 text-destructive" weight="duotone" />
                   <span className="text-xs text-destructive font-medium">
                     Deuda pendiente
                   </span>
@@ -222,7 +222,7 @@ export function CustomerDetailModal({
 
         <div className="flex gap-2 justify-end">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            <IconX className="size-4 mr-2" />
+            <X className="size-4 mr-2" weight="bold" />
             Cerrar
           </Button>
           {onEdit && <Button onClick={onEdit}>Editar información</Button>}

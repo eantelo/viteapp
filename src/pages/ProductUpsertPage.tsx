@@ -20,15 +20,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useProductPrefill } from "@/contexts/FormPrefillContext";
-import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  IconArrowLeft,
-  IconDeviceFloppy,
-  IconSparkles,
-  IconPackage,
-  IconLoader2,
-} from "@tabler/icons-react";
+  ArrowLeft,
+  FloppyDisk,
+  Sparkle,
+  Package,
+  SpinnerGap,
+  CircleNotch,
+} from "@phosphor-icons/react";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import type { ProductCreateDto, ProductUpdateDto } from "@/api/productsApi";
 import {
   getProductById,
@@ -43,23 +44,12 @@ import {
 export function ProductUpsertPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const prefersReducedMotion = useReducedMotion();
   const isEditing = Boolean(id);
 
   // Prefill data from interface agent
   const { hasData: hasPrefillData, getData: getPrefillData } =
     useProductPrefill();
   const prefillAppliedRef = useRef(false);
-
-  const motionInitial = prefersReducedMotion
-    ? { opacity: 1, y: 0 }
-    : { opacity: 0, y: 16 };
-  const motionAnimate = { opacity: 1, y: 0 };
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const motionTransition = {
-    duration: prefersReducedMotion ? 0 : 0.45,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
 
   // Estado de carga inicial
   const [loading, setLoading] = useState(isEditing);
@@ -367,7 +357,7 @@ export function ProductUpsertPage() {
             { label: "Productos", href: "/products" },
             { label: "Cargando..." },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <div className="w-full max-w-[1320px]">
             <div className="flex items-center gap-4 mb-4">
@@ -415,7 +405,7 @@ export function ProductUpsertPage() {
             { label: "Productos", href: "/products" },
             { label: "Error" },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <div className="w-full max-w-[1320px]">
             <Card>
@@ -427,7 +417,7 @@ export function ProductUpsertPage() {
                       variant="outline"
                       onClick={() => navigate("/products")}
                     >
-                      <IconArrowLeft size={20} className="mr-2" />
+                      <ArrowLeft size={20} weight="bold" className="mr-2" />
                       Volver a productos
                     </Button>
                     <Button onClick={loadProduct}>Reintentar</Button>
@@ -449,15 +439,12 @@ export function ProductUpsertPage() {
           { label: "Productos", href: "/products" },
           { label: isEditing ? "Editar Producto" : "Nuevo Producto" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className={PAGE_LAYOUT_CLASS}
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[1320px]">
           {/* Header */}
-          <motion.div
+          <div
             className="flex items-center justify-between mb-6"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={motionTransition}
           >
             <div className="flex items-center gap-4">
               <Button
@@ -466,13 +453,13 @@ export function ProductUpsertPage() {
                 size="sm"
                 onClick={handleCancel}
               >
-                <IconArrowLeft size={20} />
+                <ArrowLeft size={20} weight="bold" />
               </Button>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold">
                   {isEditing ? "Editar Producto" : "Nuevo Producto"}
                 </h1>
-                <p className="text-slate-500 mt-1">
+                <p className="text-muted-foreground mt-1">
                   {isEditing
                     ? "Modifica los datos del producto"
                     : "Completa la información del nuevo producto"}
@@ -492,30 +479,24 @@ export function ProductUpsertPage() {
               <Button type="submit" disabled={saving}>
                 {saving ? (
                   <>
-                    <IconLoader2 size={20} className="mr-2 animate-spin" />
+                    <SpinnerGap size={20} className="mr-2 animate-spin" />
                     Guardando...
                   </>
                 ) : (
                   <>
-                    <IconDeviceFloppy size={20} className="mr-2" />
+                    <FloppyDisk size={20} weight="bold" className="mr-2" />
                     {isEditing ? "Guardar Cambios" : "Crear Producto"}
                   </>
                 )}
               </Button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Contenido principal */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Columna izquierda - Formulario */}
-            <motion.div
+            <div
               className="lg:col-span-2 space-y-4"
-              initial={motionInitial}
-              animate={motionAnimate}
-              transition={{
-                ...motionTransition,
-                delay: prefersReducedMotion ? 0 : 0.08,
-              }}
             >
               {/* Error del formulario */}
               {formError && (
@@ -727,24 +708,18 @@ export function ProductUpsertPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
 
             {/* Columna derecha - Sugerencias y Preview */}
-            <motion.div
+            <div
               className="space-y-4"
-              initial={motionInitial}
-              animate={motionAnimate}
-              transition={{
-                ...motionTransition,
-                delay: prefersReducedMotion ? 0 : 0.16,
-              }}
             >
               {/* Sugerencias de IA (solo para nuevos productos) */}
               {!isEditing && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <IconSparkles size={18} className="text-primary" />
+                      <Sparkle size={18} weight="bold" className="text-primary" />
                       Sugerencias IA
                     </CardTitle>
                   </CardHeader>
@@ -758,7 +733,7 @@ export function ProductUpsertPage() {
 
                     {aiStatus === "loading" && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <IconLoader2 size={16} className="animate-spin" />
+                        <CircleNotch size={16} weight="bold" className="animate-spin" />
                         Analizando el nombre...
                       </div>
                     )}
@@ -861,7 +836,7 @@ export function ProductUpsertPage() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <IconPackage size={18} />
+                    <Package size={18} weight="duotone" />
                     Vista Previa
                   </CardTitle>
                 </CardHeader>
@@ -870,7 +845,7 @@ export function ProductUpsertPage() {
                     {/* Icono o imagen placeholder */}
                     <div className="flex justify-center">
                       <div className="w-24 h-24 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <IconPackage size={40} className="text-slate-400" />
+                        <Package size={40} weight="duotone" className="text-muted-foreground/50" />
                       </div>
                     </div>
 
@@ -924,7 +899,7 @@ export function ProductUpsertPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </div>
         </form>
       </DashboardLayout>

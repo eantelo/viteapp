@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -35,7 +35,7 @@ export function AuthLayout({
         <div className="flex justify-center">
           <div className="flex items-center gap-2 text-lg font-bold">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="h-4 w-4" />
+              <Sparkle className="h-4 w-4" weight="duotone" />
             </div>
             SalesNet
           </div>

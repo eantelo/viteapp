@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
-  IconCash,
-  IconCreditCard,
-  IconReceipt,
-  IconBuildingBank,
-  IconDots,
-} from "@tabler/icons-react";
+  Money,
+  CreditCard,
+  Receipt,
+  Bank,
+  DotsThree,
+} from "@phosphor-icons/react";
 import {
   Dialog,
   DialogContent,
@@ -125,31 +125,31 @@ export function PaymentDialog({
               <SelectContent>
                 <SelectItem value={PaymentMethod.Cash.toString()}>
                   <div className="flex items-center gap-2">
-                    <IconCash className="size-4" />
+                    <Money className="size-4" weight="bold" />
                     Efectivo
                   </div>
                 </SelectItem>
                 <SelectItem value={PaymentMethod.Card.toString()}>
                   <div className="flex items-center gap-2">
-                    <IconCreditCard className="size-4" />
+                    <CreditCard className="size-4" weight="bold" />
                     Tarjeta
                   </div>
                 </SelectItem>
                 <SelectItem value={PaymentMethod.Voucher.toString()}>
                   <div className="flex items-center gap-2">
-                    <IconReceipt className="size-4" />
+                    <Receipt className="size-4" weight="bold" />
                     Vale
                   </div>
                 </SelectItem>
                 <SelectItem value={PaymentMethod.Transfer.toString()}>
                   <div className="flex items-center gap-2">
-                    <IconBuildingBank className="size-4" />
+                    <Bank className="size-4" weight="bold" />
                     Transferencia
                   </div>
                 </SelectItem>
                 <SelectItem value={PaymentMethod.Other.toString()}>
                   <div className="flex items-center gap-2">
-                    <IconDots className="size-4" />
+                    <DotsThree className="size-4" weight="bold" />
                     Otro
                   </div>
                 </SelectItem>

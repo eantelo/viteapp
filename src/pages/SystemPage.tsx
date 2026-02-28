@@ -17,8 +17,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
-import { Laptop, Shield, Key, Server, Database, Globe } from "lucide-react";
+import { Laptop, Shield, Key, Desktop, Database, Globe } from "@phosphor-icons/react";
 import { getSystemInfo, type SystemInfoDto } from "@/api/systemApi";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 type StatCard = {
   label: string;
@@ -97,19 +98,19 @@ export function SystemPage() {
       label: "Correo principal",
       value: auth?.email ?? "Usuario sin correo",
       helper: "Claim email emitido por Sales.Api",
-      icon: <Shield className="h-4 w-4 text-muted-foreground" />,
+      icon: <Shield className="h-4 w-4 text-muted-foreground" weight="duotone" />,
     },
     {
       label: "Rol asignado",
       value: <Badge variant="outline">{auth?.role ?? "Sin rol"}</Badge>,
       helper: "Controla la UI disponible para el usuario",
-      icon: <Key className="h-4 w-4 text-muted-foreground" />,
+      icon: <Key className="h-4 w-4 text-muted-foreground" weight="duotone" />,
     },
     {
       label: "Tenant actual",
       value: auth?.tenantId ?? "Sin tenant",
       helper: "Claim tenant utilizado para multitenancy",
-      icon: <Laptop className="h-4 w-4 text-muted-foreground" />,
+      icon: <Laptop className="h-4 w-4 text-muted-foreground" weight="duotone" />,
     },
     {
       label: "Última renovación",
@@ -148,7 +149,7 @@ export function SystemPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Sistema" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4 pt-0"
+        className={PAGE_LAYOUT_CLASS}
       >
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {sessionStats.map((stat, index) => (
@@ -314,7 +315,7 @@ export function SystemPage() {
           <Card className="bg-card shadow-sm">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Server className="h-5 w-5 text-primary" />
+                <Desktop className="h-5 w-5 text-primary" weight="duotone" />
                 <CardTitle>Configuración del Sistema</CardTitle>
               </div>
               <CardDescription>
@@ -332,7 +333,7 @@ export function SystemPage() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-xl border border-border bg-muted/50 p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Globe className="h-4 w-4 text-primary" />
+                      <Globe className="h-4 w-4 text-primary" weight="duotone" />
                       <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                         URL de la API
                       </dt>
@@ -343,7 +344,7 @@ export function SystemPage() {
                   </div>
                   <div className="rounded-xl border border-border bg-muted/50 p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <Database className="h-4 w-4 text-primary" />
+                      <Database className="h-4 w-4 text-primary" weight="duotone" />
                       <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                         Cadena de conexión BD
                       </dt>

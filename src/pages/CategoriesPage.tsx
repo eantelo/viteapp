@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { getCategories, deleteCategory } from "@/api/categoriesApi";
 import type { CategoryDto } from "@/api/categoriesApi";
 import { CategoryFormDialog } from "@/components/categories/CategoryFormDialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
+import { PageHeader, SearchInput } from "@/components/shared";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -25,8 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Search, AlertCircle } from "lucide-react";
+import { Plus, PencilSimple, Trash, WarningCircle, Tag, SpinnerGap } from "@phosphor-icons/react";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function CategoriesPage() {
   useDocumentTitle("Categorías");
@@ -124,15 +124,6 @@ export function CategoriesPage() {
     loadCategories();
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-    },
-  };
-
   return (
     <PageTransition>
       <DashboardLayout
@@ -140,120 +131,65 @@ export function CategoriesPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Categorías" },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className={PAGE_LAYOUT_CLASS}
       >
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Categorías</h1>
-            <p className="text-gray-600 mt-1">
-              Gestiona las categorías de productos
-            </p>
-          </div>
-          <Button onClick={handleCreateClick} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nueva Categoría
-          </Button>
-        </motion.div>
+        <PageHeader
+          title="Categorías"
+          description="Gestiona las categorías de productos"
+          icon={Tag}
+          actions={
+            <Button onClick={handleCreateClick} className="gap-2">
+              <Plus size={18} weight="bold" />
+              Nueva Categoría
+            </Button>
+          }
+        />
 
-        {/* Search bar */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          transition={{ delay: 0.1 }}
-          className="relative"
-        >
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por nombre o descripción..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </motion.div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nombre o descripción..."
+          resultCount={filteredCategories.length}
+          totalCount={categories.length}
+        />
 
         {/* Error message */}
         {error && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            transition={{ delay: 0.15 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3"
-          >
-            <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+          <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <WarningCircle size={20} weight="bold" className="shrink-0 text-destructive" />
             <div>
-              <h3 className="font-semibold text-red-800">Error</h3>
-              <p className="text-red-700 text-sm">{error}</p>
+              <h3 className="font-semibold text-foreground">Error</h3>
+              <p className="text-sm text-muted-foreground">{error}</p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Loading state */}
         {loading ? (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            transition={{ delay: 0.2 }}
-            className="flex items-center justify-center py-12"
-          >
+          <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <svg
-                className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <p className="text-gray-600">Cargando categorías...</p>
+              <SpinnerGap size={32} weight="bold" className="animate-spin text-primary mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Cargando categorías...</p>
             </div>
-          </motion.div>
+          </div>
         ) : filteredCategories.length === 0 ? (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            transition={{ delay: 0.2 }}
-            className="text-center py-12"
-          >
-            <p className="text-gray-600 mb-4">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-16 text-center">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Tag size={24} weight="duotone" />
+            </span>
+            <p className="text-sm text-muted-foreground">
               {search
                 ? "No se encontraron categorías que coincidan con tu búsqueda."
                 : "No hay categorías disponibles."}
             </p>
             {!search && (
-              <Button onClick={handleCreateClick} variant="outline">
+              <Button onClick={handleCreateClick} variant="outline" size="sm" className="mt-2">
                 Crear la primera categoría
               </Button>
             )}
-          </motion.div>
+          </div>
         ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            transition={{ delay: 0.2 }}
-            className="border rounded-lg overflow-hidden"
-          >
+          <div className="rounded-lg border border-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -269,19 +205,19 @@ export function CategoriesPage() {
               </TableHeader>
               <TableBody>
                 {filteredCategories.map((category) => (
-                  <TableRow key={category.id} className="hover:bg-gray-50">
+                  <TableRow key={category.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
                       {category.name}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-gray-600 max-w-xs truncate">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground max-w-xs truncate">
                       {category.description || "-"}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-center">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                           category.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-muted text-muted-foreground"
                         }`}
                       >
                         {category.isActive ? "Activo" : "Inactivo"}
@@ -295,7 +231,7 @@ export function CategoriesPage() {
                           onClick={() => handleEditClick(category)}
                           className="gap-1"
                         >
-                          <Edit className="h-4 w-4" />
+                          <PencilSimple size={16} weight="bold" />
                           <span className="hidden sm:inline">Editar</span>
                         </Button>
                         <Button
@@ -304,7 +240,7 @@ export function CategoriesPage() {
                           onClick={() => handleDeleteClick(category)}
                           className="gap-1"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash size={16} weight="bold" />
                           <span className="hidden sm:inline">Eliminar</span>
                         </Button>
                       </div>
@@ -313,7 +249,7 @@ export function CategoriesPage() {
                 ))}
               </TableBody>
             </Table>
-          </motion.div>
+          </div>
         )}
 
         {/* Category form dialog */}
@@ -334,7 +270,7 @@ export function CategoriesPage() {
               <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
               <AlertDialogDescription>
                 {deleteError ? (
-                  <div className="text-red-600 mt-2">{deleteError}</div>
+                  <div className="text-destructive mt-2">{deleteError}</div>
                 ) : (
                   <>
                     ¿Estás seguro de que deseas eliminar la categoría "
@@ -350,30 +286,11 @@ export function CategoriesPage() {
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
                 disabled={deletingCategory}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {deletingCategory ? (
                   <>
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
+                    <SpinnerGap size={16} weight="bold" className="animate-spin mr-2" />
                     Eliminando...
                   </>
                 ) : (

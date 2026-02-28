@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import {
-  IconSearch,
-  IconUserPlus,
-  IconX,
-  IconUser,
-  IconMail,
-  IconPhone,
-  IconMapPin,
-  IconCheck,
-  IconLoader2,
-  IconChevronDown,
-} from "@tabler/icons-react";
+  MagnifyingGlass,
+  UserPlus,
+  X,
+  User,
+  Envelope,
+  Phone,
+  MapPin,
+  Check,
+  SpinnerGap,
+  CaretDown,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -186,14 +186,15 @@ export function CustomerSelector({
                 className="p-0.5 rounded hover:bg-muted"
                 aria-label="Quitar cliente"
               >
-                <IconX className="size-4 text-muted-foreground" />
+                <X className="size-4 text-muted-foreground" weight="bold" />
               </button>
             )}
-            <IconChevronDown
+            <CaretDown
               className={cn(
                 "size-4 text-muted-foreground transition-transform",
                 isOpen && "rotate-180"
               )}
+              weight="bold"
             />
           </div>
         </button>
@@ -207,7 +208,7 @@ export function CustomerSelector({
             {/* Barra de búsqueda */}
             <div className="p-2 border-b">
               <div className="relative">
-                <IconSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                <MagnifyingGlass className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" weight="bold" />
                 <Input
                   ref={searchInputRef}
                   type="text"
@@ -246,7 +247,7 @@ export function CustomerSelector({
                             {customer.name}
                           </p>
                           {customer.id === selectedCustomerId && (
-                            <IconCheck className="size-4 text-primary shrink-0" />
+                            <Check className="size-4 text-primary shrink-0" weight="bold" />
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">
@@ -288,7 +289,7 @@ export function CustomerSelector({
                 onClick={handleCreateNew}
                 className="w-full justify-start gap-2"
               >
-                <IconUserPlus className="size-4" />
+                <UserPlus className="size-4" weight="bold" />
                 Crear nuevo cliente
               </Button>
             </div>
@@ -338,30 +339,30 @@ function CustomerPreviewCard({ customer, onClear }: CustomerPreviewCardProps) {
             <p className="font-semibold text-sm">{customer.name}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <IconMail className="size-3" />
+                <Envelope className="size-3" weight="duotone" />
                 {customer.email ?? "Sin email"}
               </span>
               {customer.phone && (
                 <span className="flex items-center gap-1">
-                  <IconPhone className="size-3" />
+                  <Phone className="size-3" weight="duotone" />
                   {customer.phone}
                 </span>
               )}
               {customer.address && (
                 <span className="flex items-center gap-1">
-                  <IconMapPin className="size-3" />
+                  <MapPin className="size-3" weight="duotone" />
                   {customer.address}
                 </span>
               )}
               {customer.city && (
                 <span className="flex items-center gap-1">
-                  <IconMapPin className="size-3" />
+                  <MapPin className="size-3" weight="duotone" />
                   {customer.city}
                 </span>
               )}
               {customer.gps && (
                 <span className="flex items-center gap-1">
-                  <IconMapPin className="size-3" />
+                  <MapPin className="size-3" weight="duotone" />
                   {customer.gps}
                 </span>
               )}
@@ -402,7 +403,7 @@ function CustomerPreviewCard({ customer, onClear }: CustomerPreviewCardProps) {
           onClick={onClear}
           aria-label="Cambiar cliente"
         >
-          <IconX className="size-4" />
+          <X className="size-4" weight="bold" />
         </Button>
       </div>
     </div>
@@ -485,7 +486,7 @@ function QuickCustomerCreateDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <IconUserPlus className="size-5 text-primary" />
+              <UserPlus className="size-5 text-primary" weight="duotone" />
               Nuevo Cliente
             </DialogTitle>
             <DialogDescription>
@@ -506,7 +507,7 @@ function QuickCustomerCreateDialog({
                 Nombre <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                <IconUser className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" weight="bold" />
                 <Input
                   id="quick-customer-name"
                   value={name}
@@ -524,7 +525,7 @@ function QuickCustomerCreateDialog({
                 Email
               </Label>
               <div className="relative">
-                <IconMail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Envelope className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" weight="bold" />
                 <Input
                   id="quick-customer-email"
                   type="email"
@@ -540,7 +541,7 @@ function QuickCustomerCreateDialog({
             <div className="grid gap-2">
               <Label htmlFor="quick-customer-phone">Teléfono (opcional)</Label>
               <div className="relative">
-                <IconPhone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" weight="bold" />
                 <Input
                   id="quick-customer-phone"
                   type="tel"
@@ -598,12 +599,12 @@ function QuickCustomerCreateDialog({
             <Button type="submit" disabled={!isValid || loading}>
               {loading ? (
                 <>
-                  <IconLoader2 className="size-4 mr-2 animate-spin" />
+                  <SpinnerGap className="size-4 mr-2 animate-spin" weight="bold" />
                   Creando...
                 </>
               ) : (
                 <>
-                  <IconCheck className="size-4 mr-2" />
+                  <Check className="size-4 mr-2" weight="bold" />
                   Crear y seleccionar
                 </>
               )}

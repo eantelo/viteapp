@@ -37,7 +37,7 @@ function DashboardLayoutContent({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset
-        className={cn("flex flex-col bg-slate-50 dark:bg-muted/10")}
+        className={cn("flex flex-col bg-background")}
       >
         {/* Header spans full width, not affected by chat panel */}
         <Header breadcrumbs={breadcrumbs} />

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/utils";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeSlash, Lock, Envelope } from "@phosphor-icons/react";
 
 type LoginFormProps = {
   email: string;
@@ -60,7 +60,7 @@ export function LoginForm({
           <div className="grid gap-2">
             <Label htmlFor={emailId}>Correo electrónico</Label>
             <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Envelope weight="duotone" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id={emailId}
                   name="email"
@@ -86,7 +86,7 @@ export function LoginForm({
                 </Link>
             </div>
             <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock weight="duotone" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id={passwordId}
                   name="password"
@@ -104,9 +104,9 @@ export function LoginForm({
                     className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                 >
                     {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeSlash weight="bold" className="h-4 w-4" />
                     ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye weight="bold" className="h-4 w-4" />
                     )}
                 </button>
             </div>

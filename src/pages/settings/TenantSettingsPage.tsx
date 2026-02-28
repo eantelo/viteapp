@@ -4,13 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { getTenantSettings, updateTenantSettings } from "@/api/tenantSettingsApi";
 import type { TenantSettings } from "@/types/TenantSettings";
-import { Loader2, Upload } from "lucide-react";
+import { SpinnerGap, UploadSimple } from "@phosphor-icons/react";
 
 export function TenantSettingsPage() {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
@@ -28,9 +27,7 @@ export function TenantSettingsPage() {
       const data = await getTenantSettings();
       setSettings(data);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to load tenant settings",
       });
     } finally {
@@ -43,14 +40,11 @@ export function TenantSettingsPage() {
     try {
       setSaving(true);
       await updateTenantSettings(settings);
-      toast({
-        title: "Success",
+      toast.success("Success", {
         description: "Settings updated successfully",
       });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to update settings",
       });
     } finally {
@@ -64,8 +58,7 @@ export function TenantSettingsPage() {
 
     // TODO: Implement file upload to server
     // For now, just show a placeholder
-    toast({
-      title: "Upload",
+    toast.success("Upload", {
       description: "Logo upload functionality to be implemented",
     });
   };
@@ -80,7 +73,7 @@ export function TenantSettingsPage() {
         className="flex flex-1 flex-col gap-4 p-4"
       >
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <SpinnerGap weight="bold" className="h-8 w-8 animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -123,7 +116,7 @@ export function TenantSettingsPage() {
                   <div className="flex-1">
                     <Label htmlFor="logo" className="cursor-pointer">
                       <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent">
-                        <Upload className="h-4 w-4" />
+                        <UploadSimple weight="bold" className="h-4 w-4" />
                         <span>Subir Logo</span>
                       </div>
                       <Input
@@ -269,7 +262,7 @@ export function TenantSettingsPage() {
             {/* Save Button */}
             <div className="flex justify-end">
               <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {saving && <SpinnerGap weight="bold" className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar Configuración
               </Button>
             </div>

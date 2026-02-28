@@ -1,14 +1,14 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
-  IconUser,
-  IconMailbox,
-  IconPhone,
-  IconCalendar,
-  IconMoneybag,
-  IconGift,
-  IconAlertTriangle,
-  IconDots,
-} from "@tabler/icons-react";
+  User,
+  Envelope,
+  Phone,
+  Calendar,
+  CurrencyDollar,
+  Gift,
+  Warning,
+  DotsThree,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -50,24 +50,24 @@ const AccessibleActionDropdown = ({
   const actions = [
     onViewHistory && {
       label: "Ver historial completo",
-      icon: IconCalendar,
+      icon: Calendar,
       onClick: onViewHistory,
     },
     onEdit && {
       label: "Editar información",
-      icon: IconUser,
+      icon: User,
       onClick: onEdit,
     },
     hasPendingDebt &&
       onViewDebt && {
         label: "Ver deuda pendiente",
-        icon: IconAlertTriangle,
+        icon: Warning,
         onClick: onViewDebt,
         isDanger: true,
       },
     onRemove && {
       label: "Deseleccionar",
-      icon: IconUser,
+      icon: User,
       onClick: onRemove,
       isDanger: true,
     },
@@ -151,7 +151,7 @@ const AccessibleActionDropdown = ({
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        <IconDots className="size-4" />
+        <DotsThree className="size-4" weight="bold" />
       </Button>
 
       {isOpen && (
@@ -182,7 +182,7 @@ const AccessibleActionDropdown = ({
                 role="menuitem"
                 tabIndex={selectedIndex === index ? 0 : -1}
               >
-                <IconComponent className="size-4 shrink-0" />
+                <IconComponent className="size-4 shrink-0" weight="bold" />
                 <span>{action.label}</span>
               </button>
             );
@@ -219,7 +219,7 @@ export const CustomerCard = ({
           className
         )}
       >
-        <IconUser className="size-8 mx-auto text-muted-foreground mb-2" />
+        <User className="size-8 mx-auto text-muted-foreground mb-2" weight="duotone" />
         <p className="text-sm font-medium text-muted-foreground">
           {isGeneric
             ? "Cliente genérico/Sin cliente"
@@ -277,7 +277,7 @@ export const CustomerCard = ({
           <div className="space-y-2">
             {customer.phone && (
               <div className="flex items-center gap-2 text-sm">
-                <IconPhone className="size-4 text-muted-foreground shrink-0" />
+                <Phone className="size-4 text-muted-foreground shrink-0" weight="duotone" />
                 <span className="text-muted-foreground truncate">
                   {customer.phone}
                 </span>
@@ -285,7 +285,7 @@ export const CustomerCard = ({
             )}
             {customer.address && (
               <div className="flex items-center gap-2 text-sm">
-                <IconMailbox className="size-4 text-muted-foreground shrink-0" />
+                <Envelope className="size-4 text-muted-foreground shrink-0" weight="duotone" />
                 <span className="text-muted-foreground truncate">
                   {customer.address}
                 </span>
@@ -302,7 +302,7 @@ export const CustomerCard = ({
           {customer.lastPurchaseDate && (
             <div className="rounded-lg bg-slate-50 dark:bg-slate-900/30 p-3">
               <div className="flex items-center gap-2 mb-1">
-                <IconCalendar className="size-3.5 text-muted-foreground" />
+                <Calendar className="size-3.5 text-muted-foreground" weight="duotone" />
                 <span className="text-xs text-muted-foreground font-medium">
                   Última compra
                 </span>
@@ -330,7 +330,7 @@ export const CustomerCard = ({
             customer.totalPurchases > 0 && (
               <div className="rounded-lg bg-slate-50 dark:bg-slate-900/30 p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <IconMoneybag className="size-3.5 text-muted-foreground" />
+                  <CurrencyDollar className="size-3.5 text-muted-foreground" weight="duotone" />
                   <span className="text-xs text-muted-foreground font-medium">
                     Total de compras
                   </span>
@@ -352,7 +352,7 @@ export const CustomerCard = ({
             customer.loyaltyPoints > 0 && (
               <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <IconGift className="size-3.5 text-amber-600 dark:text-amber-400" />
+                  <Gift className="size-3.5 text-amber-600 dark:text-amber-400" weight="duotone" />
                   <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
                     Puntos
                   </span>
@@ -367,7 +367,7 @@ export const CustomerCard = ({
           {hasPendingDebt && (
             <div className="rounded-lg bg-destructive/10 p-3">
               <div className="flex items-center gap-2 mb-1">
-                <IconAlertTriangle className="size-3.5 text-destructive" />
+                <Warning className="size-3.5 text-destructive" weight="duotone" />
                 <span className="text-xs text-destructive font-medium">
                   Deuda
                 </span>

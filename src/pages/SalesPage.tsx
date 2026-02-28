@@ -28,21 +28,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  IconHistory,
-  IconSearch,
-  IconEye,
-  IconPrinter,
-  IconTrash,
-  IconRepeat,
-  IconFileTypePdf,
-  IconFileSpreadsheet,
-  IconRefresh,
-  IconPlus,
-  IconPencil,
-  IconLock,
-  IconCash,
-  IconPackage,
-} from "@tabler/icons-react";
+  MagnifyingGlass,
+  Eye,
+  Printer,
+  Trash,
+  ArrowsClockwise,
+  FilePdf,
+  FileXls,
+  ArrowCounterClockwise,
+  Plus,
+  PencilSimple,
+  Lock,
+  Money,
+  Package,
+  Receipt,
+  SpinnerGap,
+} from "@phosphor-icons/react";
 import type { SaleDto } from "@/api/salesApi";
 import {
   getSalesHistory,
@@ -69,6 +70,8 @@ import {
 } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { PageHeader } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function SalesPage() {
   useDocumentTitle("Gestión de Ventas");
@@ -458,7 +461,6 @@ export function SalesPage() {
       Closed: {
         variant: "secondary",
         label: "Cerrada",
-        className: "bg-slate-600 text-white",
       },
       Cancelled: { variant: "destructive", label: "Cancelada" },
       Refunded: {
@@ -487,62 +489,54 @@ export function SalesPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Ventas" },
         ]}
-        className="flex flex-1 flex-col gap-6 px-6 py-5"
+        className={PAGE_LAYOUT_CLASS}
       >
         {/* Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200/70 bg-white/80 text-primary shadow-none dark:border-slate-800/70 dark:bg-slate-950/40">
-              <IconHistory className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                Gestión de Ventas
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Gestión completa de órdenes de venta
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedSaleIds.length > 0 && (
+        <PageHeader
+          icon={Receipt}
+          title="Gestión de Ventas"
+          description="Gestión completa de órdenes de venta"
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedSaleIds.length > 0 && (
+                <Button
+                  variant="default"
+                  onClick={handleGenerateShippingLabels}
+                  className="gap-2 text-sm"
+                >
+                  <Package size={20} weight="bold" />
+                  <span>Generar Etiquetas ({selectedSaleIds.length})</span>
+                </Button>
+              )}
               <Button
-                variant="default"
-                onClick={handleGenerateShippingLabels}
+                variant="outline"
+                onClick={handleExportExcel}
                 className="gap-2 text-sm"
+                disabled={filteredSales.length === 0}
               >
-                <IconPackage size={20} />
-                <span>Generar Etiquetas ({selectedSaleIds.length})</span>
+                <FileXls size={20} weight="bold" />
+                <span className="hidden sm:inline">Excel</span>
               </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={handleExportExcel}
-              className="gap-2 text-sm"
-              disabled={filteredSales.length === 0}
-            >
-              <IconFileSpreadsheet size={20} />
-              <span className="hidden sm:inline">Excel</span>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportPDF}
-              className="gap-2 text-sm"
-              disabled={filteredSales.length === 0}
-            >
-              <IconFileTypePdf size={20} />
-              <span className="hidden sm:inline">PDF</span>
-            </Button>
-            <Button onClick={loadData} className="gap-2 text-sm" variant="outline">
-              <IconRefresh size={20} />
-              <span className="hidden sm:inline">Actualizar</span>
-            </Button>
-            <Button onClick={handleCreate} className="gap-2 text-sm">
-              <IconPlus size={20} />
-              <span>Nueva Orden</span>
-            </Button>
-          </div>
-        </div>
+              <Button
+                variant="outline"
+                onClick={handleExportPDF}
+                className="gap-2 text-sm"
+                disabled={filteredSales.length === 0}
+              >
+                <FilePdf size={20} weight="bold" />
+                <span className="hidden sm:inline">PDF</span>
+              </Button>
+              <Button onClick={loadData} className="gap-2 text-sm" variant="outline">
+                <ArrowCounterClockwise size={20} weight="bold" />
+                <span className="hidden sm:inline">Actualizar</span>
+              </Button>
+              <Button onClick={handleCreate} className="gap-2 text-sm">
+                <Plus size={20} weight="bold" />
+                <span>Nueva Orden</span>
+              </Button>
+            </div>
+          }
+        />
 
         {/* Estadísticas */}
         <SalesStatisticsCards statistics={statistics} loading={statsLoading} />
@@ -550,22 +544,22 @@ export function SalesPage() {
         {/* Filtros y resultados */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
           {/* Panel de filtros */}
-          <Card className="h-fit border-slate-200/70 bg-white/70 shadow-none dark:border-slate-800/70 dark:bg-slate-950/40">
+          <Card className="h-fit border-border bg-card shadow-none">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-50">
+              <CardTitle className="text-base font-semibold">
                 Filtros
               </CardTitle>
-              <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
+              <CardDescription className="text-sm text-muted-foreground">
                 Personaliza tu búsqueda de ventas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {/* Rango de fechas */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Período
                 </Label>
-                <div className="rounded-lg border border-slate-200/70 bg-slate-50/70 p-2 dark:border-slate-800/70 dark:bg-slate-900/40">
+                <div className="rounded-lg border border-border bg-muted/30 p-2">
                   <DatePresetButtons
                     selected={datePreset}
                     onSelect={handleDatePresetChange}
@@ -574,7 +568,7 @@ export function SalesPage() {
                 {datePreset === "custom" && (
                   <div className="space-y-2 mt-3">
                     <div>
-                      <Label htmlFor="date-from" className="text-xs text-slate-500 dark:text-slate-400">
+                      <Label htmlFor="date-from" className="text-xs text-muted-foreground">
                         Desde
                       </Label>
                       <Input
@@ -582,11 +576,11 @@ export function SalesPage() {
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="mt-1 bg-white/80 dark:bg-slate-950/40"
+                        className="mt-1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="date-to" className="text-xs text-slate-500 dark:text-slate-400">
+                      <Label htmlFor="date-to" className="text-xs text-muted-foreground">
                         Hasta
                       </Label>
                       <Input
@@ -594,7 +588,7 @@ export function SalesPage() {
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="mt-1 bg-white/80 dark:bg-slate-950/40"
+                        className="mt-1"
                       />
                     </div>
                   </div>
@@ -605,12 +599,12 @@ export function SalesPage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="status-filter"
-                  className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   Estado
                 </Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="status-filter" className="bg-white/80 dark:bg-slate-950/40">
+                  <SelectTrigger id="status-filter">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -628,7 +622,7 @@ export function SalesPage() {
               <div className="space-y-2">
                 <Label
                   htmlFor="payment-method"
-                  className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300"
+                  className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   Método de Pago
                 </Label>
@@ -640,7 +634,7 @@ export function SalesPage() {
                     )
                   }
                 >
-                  <SelectTrigger id="payment-method" className="bg-white/80 dark:bg-slate-950/40">
+                  <SelectTrigger id="payment-method">
                     <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
@@ -656,12 +650,12 @@ export function SalesPage() {
 
               {/* Rango de monto */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Rango de Monto
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="min-amount" className="text-xs text-slate-500 dark:text-slate-400">
+                    <Label htmlFor="min-amount" className="text-xs text-muted-foreground">
                       Mínimo
                     </Label>
                     <Input
@@ -671,11 +665,11 @@ export function SalesPage() {
                       placeholder="0.00"
                       value={minAmount}
                       onChange={(e) => setMinAmount(e.target.value)}
-                      className="mt-1 bg-white/80 dark:bg-slate-950/40"
+                      className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="max-amount" className="text-xs text-slate-500 dark:text-slate-400">
+                    <Label htmlFor="max-amount" className="text-xs text-muted-foreground">
                       Máximo
                     </Label>
                     <Input
@@ -685,7 +679,7 @@ export function SalesPage() {
                       placeholder="0.00"
                       value={maxAmount}
                       onChange={(e) => setMaxAmount(e.target.value)}
-                      className="mt-1 bg-white/80 dark:bg-slate-950/40"
+                      className="mt-1"
                     />
                   </div>
                 </div>
@@ -708,12 +702,12 @@ export function SalesPage() {
           </Card>
 
           {/* Tabla de ventas */}
-          <Card className="border-slate-200/70 bg-white/70 shadow-none dark:border-slate-800/70 dark:bg-slate-950/40">
+          <Card className="border-border bg-card shadow-none">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-base font-semibold text-slate-900 dark:text-slate-50">
+              <CardTitle className="text-base font-semibold">
                 Ventas Encontradas
               </CardTitle>
-              <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
+              <CardDescription className="text-sm text-muted-foreground">
                 {filteredSales.length}{" "}
                 {filteredSales.length === 1 ? "venta" : "ventas"}
               </CardDescription>
@@ -722,12 +716,12 @@ export function SalesPage() {
               {/* Búsqueda rápida */}
               <div className="mb-4">
                 <div className="relative">
-                  <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Buscar por #Orden o Cliente..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 bg-white/80 dark:bg-slate-950/40"
+                    className="pl-10"
                   />
                 </div>
               </div>
@@ -735,20 +729,20 @@ export function SalesPage() {
               {/* Tabla */}
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <SpinnerGap size={40} weight="bold" className="animate-spin text-primary" />
                 </div>
               ) : error ? (
-                <div className="text-center py-12 text-error">{error}</div>
+                <div className="text-center py-12 text-destructive">{error}</div>
               ) : filteredSales.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                <div className="text-center py-12 text-muted-foreground">
                   No se encontraron ventas con los filtros aplicados
                 </div>
               ) : (
-                <div className="rounded-lg border border-slate-200/70 bg-white/70 overflow-hidden dark:border-slate-800/70 dark:bg-slate-950/30">
+                <div className="rounded-lg border border-border overflow-hidden">
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader className="bg-slate-50/70 dark:bg-slate-900/40">
-                        <TableRow className="border-slate-200/60 dark:border-slate-800/60">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
                           <TableHead className="w-12">
                             <input
                               type="checkbox"
@@ -761,28 +755,28 @@ export function SalesPage() {
                               aria-label="Seleccionar todas las ventas"
                             />
                           </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Orden #
                           </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Fecha/Hora
                           </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Cliente
                           </TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Total
                           </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Método Pago
                           </TableHead>
-                          <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Productos
                           </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Estado
                           </TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Acciones
                           </TableHead>
                         </TableRow>
@@ -791,7 +785,7 @@ export function SalesPage() {
                         {filteredSales.map((sale) => (
                           <TableRow
                             key={sale.id}
-                            className="border-slate-200/60 dark:border-slate-800/60 hover:bg-slate-50/60 dark:hover:bg-slate-900/40"
+                            className="hover:bg-muted/50"
                           >
                             <TableCell>
                               <input
@@ -802,22 +796,22 @@ export function SalesPage() {
                                 aria-label={`Seleccionar venta #${sale.saleNumber}`}
                               />
                             </TableCell>
-                            <TableCell className="font-mono text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                            <TableCell className="font-mono text-sm font-semibold tabular-nums">
                               #{sale.saleNumber}
                             </TableCell>
-                            <TableCell className="whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                               {formatDateTime(sale.date)}
                             </TableCell>
-                            <TableCell className="text-sm text-slate-700 dark:text-slate-200">
+                            <TableCell className="text-sm">
                               {sale.customerName || "Sin cliente"}
                             </TableCell>
-                            <TableCell className="text-right text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                            <TableCell className="text-right text-sm font-semibold tabular-nums">
                               {formatCurrency(sale.total)}
                             </TableCell>
-                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">
+                            <TableCell className="text-sm text-muted-foreground">
                               {getPaymentMethodsLabel(sale)}
                             </TableCell>
-                            <TableCell className="text-center text-sm font-mono tabular-nums text-slate-700 dark:text-slate-200">
+                            <TableCell className="text-center text-sm font-mono tabular-nums">
                               {sale.items.reduce(
                                 (sum, item) => sum + item.quantity,
                                 0
@@ -831,9 +825,8 @@ export function SalesPage() {
                                   size="sm"
                                   onClick={() => handleViewDetail(sale)}
                                   title="Ver detalle"
-                                  className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-50"
                                 >
-                                  <IconEye size={18} />
+                                  <Eye size={18} weight="bold" />
                                 </Button>
 
                                 {/* Acciones según estado */}
@@ -846,7 +839,7 @@ export function SalesPage() {
                                       title="Editar venta"
                                       className="text-blue-600 hover:text-blue-700"
                                     >
-                                      <IconPencil size={18} />
+                                      <PencilSimple size={18} weight="bold" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -855,7 +848,7 @@ export function SalesPage() {
                                       title="Borrar orden"
                                       className="text-error hover:text-error"
                                     >
-                                      <IconTrash size={18} />
+                                      <Trash size={18} weight="bold" />
                                     </Button>
                                   </>
                                 )}
@@ -868,7 +861,7 @@ export function SalesPage() {
                                       onClick={() => handlePrint(sale)}
                                       title="Reimprimir factura"
                                     >
-                                      <IconPrinter size={18} />
+                                      <Printer size={18} weight="bold" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -877,16 +870,15 @@ export function SalesPage() {
                                       title="Repetir venta"
                                       className="text-green-600 hover:text-green-700"
                                     >
-                                      <IconRepeat size={18} />
+                                      <ArrowsClockwise size={18} weight="bold" />
                                     </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleClose(sale)}
                                       title="Cerrar contablemente"
-                                      className="text-slate-600 hover:text-slate-700"
                                     >
-                                      <IconLock size={18} />
+                                      <Lock size={18} weight="bold" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -895,7 +887,7 @@ export function SalesPage() {
                                       title="Reembolsar venta"
                                       className="text-purple-600 hover:text-purple-700"
                                     >
-                                      <IconCash size={18} />
+                                      <Money size={18} weight="bold" />
                                     </Button>
                                   </>
                                 )}
@@ -908,7 +900,7 @@ export function SalesPage() {
                                       onClick={() => handlePrint(sale)}
                                       title="Reimprimir factura"
                                     >
-                                      <IconPrinter size={18} />
+                                      <Printer size={18} weight="bold" />
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -917,7 +909,7 @@ export function SalesPage() {
                                       title="Repetir venta"
                                       className="text-green-600 hover:text-green-700"
                                     >
-                                      <IconRepeat size={18} />
+                                      <ArrowsClockwise size={18} weight="bold" />
                                     </Button>
                                   </>
                                 )}
@@ -931,7 +923,7 @@ export function SalesPage() {
                                     title="Repetir venta"
                                     className="text-green-600 hover:text-green-700"
                                   >
-                                    <IconRepeat size={18} />
+                                    <ArrowsClockwise size={18} weight="bold" />
                                   </Button>
                                 )}
                               </div>

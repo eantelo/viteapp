@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  IconDots,
-  IconFolder,
-  IconShare3,
-  IconTrash,
-  type Icon,
-} from "@tabler/icons-react";
+  DotsThree,
+  Folder,
+  ShareNetwork,
+  Trash,
+  type IconProps,
+} from "@phosphor-icons/react";
+import type { ComponentType } from "react";
 
 import {
   DropdownMenu,
@@ -31,7 +32,7 @@ export function NavDocuments({
   items: {
     name: string;
     url: string;
-    icon: Icon;
+    icon: ComponentType<IconProps>;
   }[];
 }) {
   const { isMobile } = useSidebar();
@@ -54,7 +55,7 @@ export function NavDocuments({
                   showOnHover
                   className="data-[state=open]:bg-accent rounded-sm"
                 >
-                  <IconDots />
+                  <DotsThree />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
@@ -64,11 +65,11 @@ export function NavDocuments({
                 align={isMobile ? "end" : "start"}
               >
                 <DropdownMenuItem className="sidebar-text">
-                  <IconFolder />
+                  <Folder />
                   <span>Open</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="sidebar-text">
-                  <IconShare3 />
+                  <ShareNetwork />
                   <span>Share</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -76,7 +77,7 @@ export function NavDocuments({
                   variant="destructive"
                   className="sidebar-text"
                 >
-                  <IconTrash />
+                  <Trash />
                   <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -85,7 +86,7 @@ export function NavDocuments({
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70 sidebar-text">
-            <IconDots className="text-sidebar-foreground/70" />
+            <DotsThree className="text-sidebar-foreground/70" />
             <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

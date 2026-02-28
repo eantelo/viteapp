@@ -2,16 +2,16 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Bell,
-  Bot,
+  Robot,
   Check,
-  ChevronDown,
-  HelpCircle,
+  CaretDown,
+  Question,
   Laptop,
-  Search,
-  Settings,
-  Trash2,
+  MagnifyingGlass,
+  Gear,
+  Trash,
   User,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { useGlobalSearchShortcut } from "@/hooks/useGlobalSearchShortcut";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { useAuth } from "@/context/AuthContext";
@@ -134,7 +134,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
           onClick={handleSearchClick}
           className="relative w-full flex items-center gap-2 h-9 px-3 text-sm text-muted-foreground bg-muted/50 border border-input rounded-md hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
-          <Search className="h-4 w-4" />
+          <MagnifyingGlass className="h-4 w-4" weight="bold" />
           <span className="flex-1 text-left">Buscar...</span>
           <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
             <span className="text-xs">⌘</span>K
@@ -152,10 +152,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
         {/* Assistant Toggle */}
         <div className="hidden sm:flex items-center gap-2 px-2">
-          <Bot
+          <Robot
             className={`h-4 w-4 ${
               isChatVisibleAndDocked ? "text-primary" : "text-muted-foreground"
             }`}
+            weight="bold"
           />
           <Switch
             checked={isEnabled}
@@ -168,7 +169,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-4 w-4 text-muted-foreground" />
+              <Bell className="h-4 w-4 text-muted-foreground" weight="bold" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                   {unreadCount > 99 ? "99+" : unreadCount}
@@ -190,7 +191,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                       markAllAsRead();
                     }}
                   >
-                    <Check className="h-3 w-3 mr-1" />
+                    <Check className="h-3 w-3 mr-1" weight="bold" />
                     Marcar todas
                   </Button>
                 )}
@@ -205,7 +206,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                  <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" weight="duotone" />
                   <p className="text-sm text-muted-foreground">
                     No hay notificaciones
                   </p>
@@ -254,7 +255,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                           remove(notification.id);
                         }}
                       >
-                        <Trash2 className="h-3 w-3 text-muted-foreground" />
+                        <Trash className="h-3 w-3 text-muted-foreground" weight="bold" />
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground pl-4 line-clamp-2">
@@ -273,7 +274,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
         {/* Help */}
         <Button variant="ghost" size="icon" className="h-9 w-9">
-          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          <Question className="h-4 w-4 text-muted-foreground" weight="bold" />
         </Button>
 
         {/* User Menu */}
@@ -297,7 +298,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                   {auth?.role || "Sin rol"}
                 </span>
               </div>
-              <ChevronDown className="h-3 w-3 text-muted-foreground hidden lg:block" />
+              <CaretDown className="h-3 w-3 text-muted-foreground hidden lg:block" weight="bold" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -319,18 +320,18 @@ export function Header({ breadcrumbs }: HeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
+                <User className="mr-2 h-4 w-4" weight="bold" />
                 <span>Perfil</span>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center">
-                  <Settings className="mr-2 h-4 w-4" />
+                  <Gear className="mr-2 h-4 w-4" weight="bold" />
                   <span>Configuración</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/system" className="flex items-center">
-                  <Laptop className="mr-2 h-4 w-4" />
+                  <Laptop className="mr-2 h-4 w-4" weight="bold" />
                   <span>Sistema</span>
                 </Link>
               </DropdownMenuItem>

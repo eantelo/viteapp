@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { getProducts, type ProductDto } from "@/api/productsApi";
 import { getWarehouses, type WarehouseDto } from "@/api/warehousesApi";
 import {
   cancelWarehouseTransfer,
@@ -43,16 +45,18 @@ import {
   type WarehouseTransferDto,
 } from "@/api/warehouseTransfersApi";
 import {
-  IconChecks,
-  IconPackageExport,
-  IconPlus,
-  IconTruck,
-  IconX,
-} from "@tabler/icons-react";
+  Checks,
+  Export,
+  Plus,
+  Truck,
+  X,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface TransferItemForm {
   productId: string;
+  productLabel: string;
   quantity: string;
 }
 
@@ -67,7 +71,7 @@ const initialCreateForm = {
   sourceWarehouseId: "",
   destinationWarehouseId: "",
   notes: "",
-  items: [{ productId: "", quantity: "" }] as TransferItemForm[],
+  items: [{ productId: "", productLabel: "", quantity: "" }] as TransferItemForm[],
 };
 
 export function WarehouseTransfersPage() {
@@ -75,8 +79,16 @@ export function WarehouseTransfersPage() {
 
   const [transfers, setTransfers] = useState<WarehouseTransferDto[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseDto[]>([]);
+  const [products, setProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "0" | "1" | "2" | "3">("all");
+  const [sourceWarehouseFilter, setSourceWarehouseFilter] = useState("all");
+  const [destinationWarehouseFilter, setDestinationWarehouseFilter] = useState("all");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -89,9 +101,88 @@ export function WarehouseTransfersPage() {
   const [completeNotes, setCompleteNotes] = useState("");
   const [completeItems, setCompleteItems] = useState<CompleteItemForm[]>([]);
 
+  const productOptionEntries = useMemo(() => {
+    return products
+      .filter((product) => product.isActive)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((product) => ({
+        id: product.id,
+        label: `${product.sku} · ${product.name}`,
+      }));
+  }, [products]);
+
+  const productOptionLabels = useMemo(
+    () => productOptionEntries.map((entry) => entry.label),
+    [productOptionEntries]
+  );
+
+  const productIdByLabel = useMemo(
+    () => new Map(productOptionEntries.map((entry) => [entry.label, entry.id])),
+    [productOptionEntries]
+  );
+
+  const productLabelById = useMemo(
+    () => new Map(productOptionEntries.map((entry) => [entry.id, entry.label])),
+    [productOptionEntries]
+  );
+
+  const filteredTransfers = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return transfers.filter((transfer) => {
+      if (
+        normalizedSearch &&
+        !(
+          transfer.transferNumber.toLowerCase().includes(normalizedSearch) ||
+          transfer.sourceWarehouseName.toLowerCase().includes(normalizedSearch) ||
+          transfer.destinationWarehouseName.toLowerCase().includes(normalizedSearch)
+        )
+      ) {
+        return false;
+      }
+
+      if (statusFilter !== "all" && transfer.status !== Number(statusFilter)) {
+        return false;
+      }
+
+      if (
+        sourceWarehouseFilter !== "all" &&
+        transfer.sourceWarehouseId !== sourceWarehouseFilter
+      ) {
+        return false;
+      }
+
+      if (
+        destinationWarehouseFilter !== "all" &&
+        transfer.destinationWarehouseId !== destinationWarehouseFilter
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    transfers,
+    searchTerm,
+    statusFilter,
+    sourceWarehouseFilter,
+    destinationWarehouseFilter,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / pageSize));
+
+  const paginatedTransfers = useMemo(() => {
+    const start = pageIndex * pageSize;
+    return filteredTransfers.slice(start, start + pageSize);
+  }, [filteredTransfers, pageIndex, pageSize]);
+
   useEffect(() => {
     void loadData();
   }, []);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [searchTerm, statusFilter, sourceWarehouseFilter, destinationWarehouseFilter, pageSize]);
 
   const pendingCount = useMemo(
     () => transfers.filter((transfer) => transfer.status === TransferStatus.Pending).length,
@@ -107,12 +198,14 @@ export function WarehouseTransfersPage() {
     try {
       setLoading(true);
       setError(null);
-      const [transfersResponse, warehousesResponse] = await Promise.all([
+      const [transfersResponse, warehousesResponse, productsResponse] = await Promise.all([
         getWarehouseTransfers(),
         getWarehouses(),
+        getProducts(),
       ]);
       setTransfers(transfersResponse);
       setWarehouses(warehousesResponse);
+      setProducts(productsResponse);
     } catch (loadError) {
       const message =
         loadError instanceof Error
@@ -159,7 +252,7 @@ export function WarehouseTransfersPage() {
   const addCreateItemRow = () => {
     setCreateForm((current) => ({
       ...current,
-      items: [...current.items, { productId: "", quantity: "" }],
+      items: [...current.items, { productId: "", productLabel: "", quantity: "" }],
     }));
   };
 
@@ -176,6 +269,19 @@ export function WarehouseTransfersPage() {
     });
   };
 
+  const handleSelectProductLabel = (index: number, label: string) => {
+    const selectedId = productIdByLabel.get(label) ?? "";
+    setCreateForm((current) => {
+      const nextItems = [...current.items];
+      nextItems[index] = {
+        ...nextItems[index],
+        productLabel: label,
+        productId: selectedId,
+      };
+      return { ...current, items: nextItems };
+    });
+  };
+
   const handleCreateTransfer = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -186,6 +292,15 @@ export function WarehouseTransfersPage() {
 
     if (createForm.sourceWarehouseId === createForm.destinationWarehouseId) {
       toast.error("El almacén origen y destino deben ser distintos.");
+      return;
+    }
+
+    const hasInvalidProductSelection = createForm.items.some(
+      (item) => item.productLabel.trim().length > 0 && !item.productId
+    );
+
+    if (hasInvalidProductSelection) {
+      toast.error("Selecciona un producto válido desde la lista (SKU · Nombre).");
       return;
     }
 
@@ -350,38 +465,99 @@ export function WarehouseTransfersPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Traslados" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
         <div className="w-full max-w-[1320px] space-y-4">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+              <h1 className="text-2xl font-semibold text-foreground">
                 Traslados de inventario
               </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Mueve stock entre almacenes y gestiona su estado.
               </p>
             </div>
             <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
-              <IconPlus size={18} />
+              <Plus size={18} weight="bold" />
               Nuevo traslado
             </Button>
           </header>
 
+          <div className="rounded-xl border bg-card p-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+              <div className="grid gap-1">
+                <Label htmlFor="transfer-search">Buscar</Label>
+                <Input
+                  id="transfer-search"
+                  placeholder="Folio, origen o destino"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label>Estado</Label>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as "all" | "0" | "1" | "2" | "3") }>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="0">Pendiente</SelectItem>
+                    <SelectItem value="1">En tránsito</SelectItem>
+                    <SelectItem value="2">Completado</SelectItem>
+                    <SelectItem value="3">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1">
+                <Label>Origen</Label>
+                <Select value={sourceWarehouseFilter} onValueChange={setSourceWarehouseFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem key={`source-filter-${warehouse.id}`} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1">
+                <Label>Destino</Label>
+                <Select value={destinationWarehouseFilter} onValueChange={setDestinationWarehouseFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem key={`destination-filter-${warehouse.id}`} value={warehouse.id}>
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-xl border bg-card p-4">
-              <p className="text-sm text-slate-500">Pendientes</p>
+              <p className="text-sm text-muted-foreground">Pendientes</p>
               <p className="text-3xl font-semibold">{pendingCount}</p>
             </div>
             <div className="rounded-xl border bg-card p-4">
-              <p className="text-sm text-slate-500">En tránsito</p>
+              <p className="text-sm text-muted-foreground">En tránsito</p>
               <p className="text-3xl font-semibold">{inTransitCount}</p>
             </div>
           </div>
 
           <div className="rounded-xl border bg-card">
             {loading ? (
-              <div className="py-10 text-center text-sm text-slate-500">
+              <div className="py-10 text-center text-sm text-muted-foreground">
                 Cargando traslados...
               </div>
             ) : error ? (
@@ -399,14 +575,14 @@ export function WarehouseTransfersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transfers.length === 0 ? (
+                  {paginatedTransfers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-slate-500">
-                        No hay traslados registrados.
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                        No hay traslados para los filtros seleccionados.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    transfers.map((transfer) => (
+                    paginatedTransfers.map((transfer) => (
                       <TableRow key={transfer.id}>
                         <TableCell className="font-medium">
                           {transfer.transferNumber}
@@ -414,7 +590,7 @@ export function WarehouseTransfersPage() {
                         <TableCell>
                           <div className="text-sm">
                             <p>{transfer.sourceWarehouseName}</p>
-                            <p className="text-slate-500">→ {transfer.destinationWarehouseName}</p>
+                            <p className="text-muted-foreground">→ {transfer.destinationWarehouseName}</p>
                           </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(transfer.status)}</TableCell>
@@ -434,7 +610,7 @@ export function WarehouseTransfersPage() {
                                   className="gap-1"
                                   onClick={() => handleShipTransfer(transfer.id)}
                                 >
-                                  <IconTruck size={14} />
+                                  <Truck size={14} weight="bold" />
                                   Enviar
                                 </Button>
                                 <Button
@@ -443,7 +619,7 @@ export function WarehouseTransfersPage() {
                                   className="gap-1 text-error hover:text-error"
                                   onClick={() => handleCancelTransfer(transfer.id)}
                                 >
-                                  <IconX size={14} />
+                                  <X size={14} weight="bold" />
                                   Cancelar
                                 </Button>
                               </>
@@ -457,7 +633,7 @@ export function WarehouseTransfersPage() {
                                   className="gap-1"
                                   onClick={() => openCompleteDialog(transfer)}
                                 >
-                                  <IconChecks size={14} />
+                                  <Checks size={14} weight="bold" />
                                   Completar
                                 </Button>
                                 <Button
@@ -466,7 +642,7 @@ export function WarehouseTransfersPage() {
                                   className="gap-1 text-error hover:text-error"
                                   onClick={() => handleCancelTransfer(transfer.id)}
                                 >
-                                  <IconX size={14} />
+                                  <X size={14} weight="bold" />
                                   Cancelar
                                 </Button>
                               </>
@@ -474,7 +650,7 @@ export function WarehouseTransfersPage() {
 
                             {transfer.status === TransferStatus.Completed ||
                             transfer.status === TransferStatus.Cancelled ? (
-                              <span className="text-xs text-slate-500">Sin acciones</span>
+                              <span className="text-xs text-muted-foreground">Sin acciones</span>
                             ) : null}
                           </div>
                         </TableCell>
@@ -484,6 +660,43 @@ export function WarehouseTransfersPage() {
                 </TableBody>
               </Table>
             )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Mostrando {filteredTransfers.length === 0 ? 0 : pageIndex * pageSize + 1} - {Math.min((pageIndex + 1) * pageSize, filteredTransfers.length)} de {filteredTransfers.length} traslados
+            </p>
+            <div className="flex items-center gap-2">
+              <Select value={`${pageSize}`} onValueChange={(value) => setPageSize(Number(value))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 / página</SelectItem>
+                  <SelectItem value="20">20 / página</SelectItem>
+                  <SelectItem value="50">50 / página</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageIndex((prev) => Math.max(0, prev - 1))}
+                disabled={pageIndex === 0}
+              >
+                Anterior
+              </Button>
+              <span className="min-w-[90px] text-center text-sm text-muted-foreground">
+                Página {Math.min(pageIndex + 1, totalPages)} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageIndex((prev) => Math.min(totalPages - 1, prev + 1))}
+                disabled={pageIndex >= totalPages - 1}
+              >
+                Siguiente
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -581,12 +794,12 @@ export function WarehouseTransfersPage() {
                   <div className="space-y-2">
                     {createForm.items.map((item, index) => (
                       <div key={`transfer-item-${index}`} className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_160px_auto]">
-                        <Input
-                          value={item.productId}
-                          onChange={(event) =>
-                            updateCreateItem(index, "productId", event.target.value)
-                          }
-                          placeholder="Product ID"
+                        <Combobox
+                          value={item.productLabel}
+                          onValueChange={(value) => handleSelectProductLabel(index, value)}
+                          options={productOptionLabels}
+                          placeholder="Buscar por SKU o nombre"
+                          emptyText="Sin coincidencias de producto"
                         />
                         <Input
                           type="number"
@@ -606,6 +819,11 @@ export function WarehouseTransfersPage() {
                         >
                           Quitar
                         </Button>
+                        {item.productId ? (
+                          <p className="md:col-span-3 text-xs text-slate-500">
+                            Seleccionado: {productLabelById.get(item.productId) ?? item.productId}
+                          </p>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -622,7 +840,7 @@ export function WarehouseTransfersPage() {
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={creating} className="gap-2">
-                  <IconPackageExport size={16} />
+                  <Export size={16} weight="bold" />
                   {creating ? "Creando..." : "Crear traslado"}
                 </Button>
               </DialogFooter>
@@ -661,13 +879,13 @@ export function WarehouseTransfersPage() {
                     >
                       <div>
                         <p className="text-sm font-medium">{item.productName}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground">
                           Solicitado: {item.quantity}
                         </p>
                       </div>
                       <Label
                         htmlFor={`received-${item.transferItemId}`}
-                        className="text-xs text-slate-500"
+                        className="text-xs text-muted-foreground"
                       >
                         Recibido
                       </Label>

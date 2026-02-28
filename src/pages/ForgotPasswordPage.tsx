@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/Spinner";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Envelope, ArrowLeft } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export function ForgotPasswordPage() {
@@ -64,7 +64,7 @@ export function ForgotPasswordPage() {
               to="/login"
               className="inline-flex items-center gap-2 font-semibold text-primary hover:underline"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft weight="bold" className="h-4 w-4" />
               Volver al inicio de sesión
             </Link>
           </div>
@@ -83,7 +83,7 @@ export function ForgotPasswordPage() {
               <div className="grid gap-2">
                 <Label htmlFor="email">Correo electrónico</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Envelope weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     name="email"
@@ -98,12 +98,12 @@ export function ForgotPasswordPage() {
                     }}
                     className={cn(
                       "pl-9",
-                      emailError && "border-red-500 focus-visible:ring-red-500"
+                      emailError && "border-destructive focus-visible:ring-destructive"
                     )}
                   />
                 </div>
                 {emailError && (
-                  <p className="text-sm text-red-500">{emailError}</p>
+                  <p className="text-sm text-destructive">{emailError}</p>
                 )}
               </div>
 

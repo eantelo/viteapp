@@ -16,11 +16,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  IconPlus,
-  IconMinus,
-  IconTrash,
-  IconPencil,
-} from "@tabler/icons-react";
+  Plus,
+  Minus,
+  Trash,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import type { ProductDto } from "@/api/productsApi";
 
 interface SaleItemForm {
@@ -165,7 +165,7 @@ export function OrderProductTable({
                         className="h-11 w-11 p-0 flex items-center justify-center rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         title="Disminuir cantidad"
                       >
-                        <IconMinus size={20} />
+                        <Minus size={20} weight="bold" />
                       </Button>
 
                       {editingQuantityIndex === index ? (
@@ -204,7 +204,7 @@ export function OrderProductTable({
                         className="h-11 w-11 p-0 flex items-center justify-center rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                         title="Aumentar cantidad"
                       >
-                        <IconPlus size={20} />
+                        <Plus size={20} weight="bold" />
                       </Button>
                     </div>
                   </TableCell>
@@ -237,7 +237,7 @@ export function OrderProductTable({
                               className="h-10 w-10 p-0 hover:text-primary"
                               title="Editar producto"
                             >
-                              <IconPencil size={18} />
+                              <PencilSimple size={18} weight="bold" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="left">
@@ -256,7 +256,7 @@ export function OrderProductTable({
                             className="h-10 w-10 p-0 hover:text-error"
                             title="Eliminar producto"
                           >
-                            <IconTrash size={18} />
+                            <Trash size={18} weight="bold" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="left">

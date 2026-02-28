@@ -20,15 +20,15 @@ import {
   Users,
   ShoppingCart,
   Plus,
-  LayoutDashboard,
-  History,
+  SquaresFour,
+  ClockCounterClockwise,
   Clock,
-  Tags,
+  Tag,
   X,
-  Loader2,
-  Search,
+  SpinnerGap,
+  MagnifyingGlass,
   MapPin,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 // Quick actions definition
@@ -52,7 +52,7 @@ const QUICK_ACTIONS = [
     id: "view-history",
     label: "Ver Historial de Ventas",
     description: "Lista de ventas recientes",
-    icon: History,
+    icon: ClockCounterClockwise,
     path: "/sales",
   },
 ] as const;
@@ -62,7 +62,7 @@ const NAVIGATION_ITEMS = [
   {
     id: "nav-dashboard",
     label: "Dashboard",
-    icon: LayoutDashboard,
+    icon: SquaresFour,
     path: "/dashboard",
   },
   {
@@ -86,7 +86,7 @@ const NAVIGATION_ITEMS = [
   {
     id: "nav-categories",
     label: "Categorías",
-    icon: Tags,
+    icon: Tag,
     path: "/categories",
   },
 ] as const;
@@ -214,7 +214,7 @@ export function GlobalSearchDialog({
         {/* Loading state */}
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <SpinnerGap weight="bold" className="h-4 w-4 animate-spin" />
             <span>Buscando...</span>
           </div>
         )}
@@ -246,7 +246,7 @@ export function GlobalSearchDialog({
                     onSelect={() => handleSelectResult("product", product.id)}
                     className="flex items-center gap-3"
                   >
-                    <Package className="h-4 w-4 text-blue-500" />
+                    <Package weight="duotone" className="h-4 w-4 text-blue-500" />
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="truncate font-medium">
                         {product.name}
@@ -271,7 +271,7 @@ export function GlobalSearchDialog({
                     onSelect={() => handleSelectResult("customer", customer.id)}
                     className="flex items-center gap-3"
                   >
-                    <Users className="h-4 w-4 text-green-500" />
+                    <Users weight="duotone" className="h-4 w-4 text-green-500" />
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="truncate font-medium">
                         {customer.name}
@@ -296,7 +296,7 @@ export function GlobalSearchDialog({
                     onSelect={() => handleSelectResult("sale", sale.id)}
                     className="flex items-center gap-3"
                   >
-                    <ShoppingCart className="h-4 w-4 text-purple-500" />
+                    <ShoppingCart weight="duotone" className="h-4 w-4 text-purple-500" />
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="truncate font-medium">
                         Venta #{sale.saleNumber}
@@ -327,7 +327,7 @@ export function GlobalSearchDialog({
                       onSelect={() => handleHistorySelect(item)}
                       className="flex items-center gap-3 group"
                     >
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Clock weight="duotone" className="h-4 w-4 text-muted-foreground" />
                       <span className="flex-1">{item.query}</span>
                       <button
                         onClick={(e) => {
@@ -337,7 +337,7 @@ export function GlobalSearchDialog({
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded transition-opacity"
                         aria-label="Eliminar del historial"
                       >
-                        <X className="h-3 w-3" />
+                        <X weight="bold" className="h-3 w-3" />
                       </button>
                     </CommandItem>
                   ))}
@@ -361,7 +361,7 @@ export function GlobalSearchDialog({
                       "bg-primary/10 text-primary"
                     )}
                   >
-                    <action.icon className="h-4 w-4" />
+                    <action.icon weight="bold" className="h-4 w-4" />
                   </div>
                   <div className="flex flex-col flex-1">
                     <span className="font-medium">{action.label}</span>
@@ -387,9 +387,9 @@ export function GlobalSearchDialog({
                   onSelect={() => handleQuickAction(item.path)}
                   className="flex items-center gap-3"
                 >
-                  <item.icon className="h-4 w-4 text-muted-foreground" />
+                  <item.icon weight="duotone" className="h-4 w-4 text-muted-foreground" />
                   <span>{item.label}</span>
-                  <MapPin className="h-3 w-3 ml-auto text-muted-foreground/50" />
+                  <MapPin weight="duotone" className="h-3 w-3 ml-auto text-muted-foreground/50" />
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -400,7 +400,7 @@ export function GlobalSearchDialog({
       {/* Footer hint */}
       <div className="flex items-center justify-between border-t px-3 py-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
-          <Search className="h-3 w-3" />
+          <MagnifyingGlass weight="duotone" className="h-3 w-3" />
           <span>Escribe para buscar</span>
         </div>
         <div className="flex items-center gap-2">

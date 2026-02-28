@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { SetupWizardData } from "../SetupWizard";
-import { Globe } from "lucide-react";
+import { Globe } from "@phosphor-icons/react";
 
 interface RegionalSettingsStepProps {
   data: SetupWizardData;
@@ -60,7 +60,7 @@ export function RegionalSettingsStep({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 text-primary">
-        <Globe className="h-8 w-8" />
+        <Globe className="h-8 w-8" weight="duotone" />
         <div>
           <h3 className="text-lg font-semibold">Configuración Regional</h3>
           <p className="text-sm text-muted-foreground">

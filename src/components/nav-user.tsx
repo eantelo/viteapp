@@ -1,10 +1,10 @@
 import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconUserCircle,
-} from "@tabler/icons-react";
+  CreditCard,
+  DotsThreeVertical,
+  SignOut,
+  Bell,
+  UserCircle,
+} from "@phosphor-icons/react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -55,7 +55,7 @@ export function NavUser({
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <DotsThreeVertical className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -83,21 +83,21 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem className="sidebar-text">
-                <IconUserCircle />
+                <UserCircle />
                 <span>Account</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="sidebar-text">
-                <IconCreditCard />
+                <CreditCard />
                 <span>Billing</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="sidebar-text">
-                <IconNotification />
+                <Bell />
                 <span>Notifications</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="sidebar-text">
-              <IconLogout />
+              <SignOut />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

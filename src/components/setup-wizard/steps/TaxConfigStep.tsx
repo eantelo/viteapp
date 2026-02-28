@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SetupWizardData } from "../SetupWizard";
-import { Receipt } from "lucide-react";
+import { Receipt } from "@phosphor-icons/react";
 
 interface TaxConfigStepProps {
   data: SetupWizardData;
@@ -12,7 +12,7 @@ export function TaxConfigStep({ data, onChange }: TaxConfigStepProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 text-primary">
-        <Receipt className="h-8 w-8" />
+        <Receipt className="h-8 w-8" weight="duotone" />
         <div>
           <h3 className="text-lg font-semibold">Configuración de Impuestos</h3>
           <p className="text-sm text-muted-foreground">

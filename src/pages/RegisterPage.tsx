@@ -18,7 +18,7 @@ import {
   validatePassword,
   validateTenantCode,
 } from "@/lib/validation";
-import { Building2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Buildings, Envelope, Lock, Eye, EyeSlash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type RegisterField = "tenantCode" | "email" | "password";
@@ -129,7 +129,7 @@ export function RegisterPage() {
                     <div className="grid gap-2">
                         <Label htmlFor={tenantInputId}>Código del tenant</Label>
                         <div className="relative">
-                            <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Buildings weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                                 id={tenantInputId}
                                 name="tenantCode"
@@ -139,14 +139,14 @@ export function RegisterPage() {
                                     handleChange("tenantCode", event.target.value)
                                 }
                                 required
-                                className={cn("pl-9", fieldErrors.tenantCode && "border-red-500 focus-visible:ring-red-500")}
+                                className={cn("pl-9", fieldErrors.tenantCode && "border-destructive focus-visible:ring-destructive")}
                             />
                         </div>
                         <p className="text-xs text-muted-foreground">
                             Identificador único para tu organización
                         </p>
                         {fieldErrors.tenantCode && (
-                            <p className="text-sm text-red-500">
+                            <p className="text-sm text-destructive">
                                 {fieldErrors.tenantCode}
                             </p>
                         )}
@@ -155,7 +155,7 @@ export function RegisterPage() {
                     <div className="grid gap-2">
                         <Label htmlFor={emailInputId}>Correo corporativo</Label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Envelope weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                                 id={emailInputId}
                                 name="email"
@@ -165,11 +165,11 @@ export function RegisterPage() {
                                 value={formState.email}
                                 onChange={(event) => handleChange("email", event.target.value)}
                                 required
-                                className={cn("pl-9", fieldErrors.email && "border-red-500 focus-visible:ring-red-500")}
+                                className={cn("pl-9", fieldErrors.email && "border-destructive focus-visible:ring-destructive")}
                             />
                         </div>
                         {fieldErrors.email && (
-                            <p className="text-sm text-red-500">
+                            <p className="text-sm text-destructive">
                                 {fieldErrors.email}
                             </p>
                         )}
@@ -178,7 +178,7 @@ export function RegisterPage() {
                     <div className="grid gap-2">
                         <Label htmlFor={passwordInputId}>Contraseña</Label>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Lock weight="bold" className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                                 id={passwordInputId}
                                 name="password"
@@ -188,7 +188,7 @@ export function RegisterPage() {
                                 value={formState.password}
                                 onChange={(event) => handleChange("password", event.target.value)}
                                 required
-                                className={cn("pl-9 pr-9", fieldErrors.password && "border-red-500 focus-visible:ring-red-500")}
+                                className={cn("pl-9 pr-9", fieldErrors.password && "border-destructive focus-visible:ring-destructive")}
                             />
                             <button
                                 type="button"
@@ -196,14 +196,14 @@ export function RegisterPage() {
                                 className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                             >
                                 {showPassword ? (
-                                    <EyeOff className="h-4 w-4" />
+                                    <EyeSlash weight="bold" className="h-4 w-4" />
                                 ) : (
-                                    <Eye className="h-4 w-4" />
+                                    <Eye weight="bold" className="h-4 w-4" />
                                 )}
                             </button>
                         </div>
                         {fieldErrors.password && (
-                            <p className="text-sm text-red-500">
+                            <p className="text-sm text-destructive">
                                 {fieldErrors.password}
                             </p>
                         )}

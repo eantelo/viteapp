@@ -10,8 +10,10 @@ import { ProductDetailPage } from "@/pages/ProductDetailPage";
 import { ProductUpsertPage } from "@/pages/ProductUpsertPage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
 import { CustomersPage } from "@/pages/CustomersPage";
+import { SuppliersPage } from "@/pages/SuppliersPage";
 import { SalesPage } from "@/pages/SalesPage";
 import { SaleUpsertPage } from "@/pages/SaleUpsertPage";
+import { PurchasesPage } from "@/pages/PurchasesPage";
 
 import { PointOfSalePage } from "@/pages/PointOfSalePage";
 import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
@@ -54,6 +56,8 @@ function App() {
           />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/suppliers" element={<SuppliersPage />} />
+          <Route path="/purchases" element={<PurchasesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/crm" element={<CrmPage />} />
           <Route path="/warehouses" element={<WarehousesPage />} />

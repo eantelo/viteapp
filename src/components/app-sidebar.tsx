@@ -1,21 +1,23 @@
 import * as React from "react";
 import { useLocation } from "react-router-dom";
 import {
-  IconChartBar,
-  IconDashboard,
-  IconLayoutKanban,
-  IconPackage,
-  IconReport,
-  IconAddressBook,
-  IconReceipt,
-  IconInnerShadowTop,
-  IconCashRegister,
-  IconCoffee,
-  IconTags,
-  IconUsers,
-  IconBuildingWarehouse,
-  IconArrowsTransferUp,
-} from "@tabler/icons-react";
+  ChartBar,
+  SquaresFour,
+  Kanban,
+  Package,
+  FileText,
+  AddressBook,
+  Receipt,
+  CircleNotch,
+  CashRegister,
+  Coffee,
+  Tag,
+  Users,
+  Warehouse,
+  ArrowsLeftRight,
+  Factory,
+  ShoppingCart,
+} from "@phosphor-icons/react";
 
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -43,74 +45,84 @@ const data = {
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: IconDashboard,
+      icon: SquaresFour,
     },
     {
       title: "Ventas",
       url: "/sales",
-      icon: IconReceipt,
+      icon: Receipt,
     },
     {
       title: "Punto de Venta",
       url: "/pos",
-      icon: IconCashRegister,
+      icon: CashRegister,
     },
     {
       title: "Productos",
       url: "/products",
-      icon: IconPackage,
+      icon: Package,
     },
     {
       title: "Categorías",
       url: "/categories",
-      icon: IconTags,
+      icon: Tag,
     },
     {
       title: "Clientes",
       url: "/customers",
-      icon: IconAddressBook,
+      icon: AddressBook,
+    },
+    {
+      title: "Proveedores",
+      url: "/suppliers",
+      icon: Factory,
+    },
+    {
+      title: "Compras",
+      url: "/purchases",
+      icon: ShoppingCart,
     },
     {
       title: "CRM",
       url: "/crm",
-      icon: IconLayoutKanban,
+      icon: Kanban,
     },
     {
       title: "Usuarios",
       url: "/users",
-      icon: IconUsers,
+      icon: Users,
     },
     {
       title: "Almacenes",
       url: "/warehouses",
-      icon: IconBuildingWarehouse,
+      icon: Warehouse,
     },
     {
       title: "Traslados",
       url: "/warehouse-transfers",
-      icon: IconArrowsTransferUp,
+      icon: ArrowsLeftRight,
     },
     {
       title: "POS Restaurante",
       url: "/pos/restaurant",
-      icon: IconCoffee,
+      icon: Coffee,
     },
   ],
   navReports: [
     {
       title: "Ventas Mensuales",
       url: "/reports/sales-monthly",
-      icon: IconChartBar,
+      icon: ChartBar,
     },
     {
       title: "Inventario",
       url: "/reports/inventario",
-      icon: IconReport,
+      icon: FileText,
     },
     {
       title: "Clientes",
       url: "/reports/clientes",
-      icon: IconReport,
+      icon: FileText,
     },
   ],
 };
@@ -142,7 +154,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
               <a href="#">
-                <IconInnerShadowTop className="size-5!" />
+                  <CircleNotch className="size-5!" weight="duotone" />
                 <span className="sidebar-text-lg font-semibold">{tenantName}</span>
               </a>
             </SidebarMenuButton>

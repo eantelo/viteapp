@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  IconBarcode,
-  IconPackage,
-  IconChevronDown,
-  IconLoader2,
-} from "@tabler/icons-react";
+  Barcode,
+  Package,
+  CaretDown,
+  SpinnerGap,
+} from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -186,7 +186,7 @@ export function ProductAutoComplete({
       {/* Search Input */}
       <div className="flex flex-col gap-2 md:flex-row">
         <div className="relative flex-1">
-          <IconBarcode className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+          <Barcode className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" weight="bold" />
           <Input
             ref={inputRef}
             type="text"
@@ -203,7 +203,7 @@ export function ProductAutoComplete({
           {/* Loading indicator in input */}
           {isLoading && (
             <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-              <IconLoader2 className="size-5 animate-spin text-primary" />
+              <SpinnerGap className="size-5 animate-spin text-primary" weight="bold" />
             </div>
           )}
         </div>
@@ -223,7 +223,7 @@ export function ProductAutoComplete({
       {/* Search Status Indicator */}
       {isLoading && hasSearchTerm && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <IconLoader2 className="size-4 animate-spin" />
+          <SpinnerGap className="size-4 animate-spin" weight="bold" />
           <span>Buscando...</span>
         </div>
       )}
@@ -246,7 +246,7 @@ export function ProductAutoComplete({
             </div>
           ) : showEmptyState ? (
             <div className="py-4 text-center">
-              <IconPackage className="mx-auto mb-2 size-8 text-muted-foreground opacity-50" />
+              <Package className="mx-auto mb-2 size-8 text-muted-foreground opacity-50" weight="duotone" />
               <p className="text-sm text-muted-foreground font-medium">
                 {error || "Sin coincidencias"}
               </p>
@@ -319,7 +319,7 @@ export function ProductAutoComplete({
 
                     {/* Stock Status or Icon */}
                     {selectedIndex === index && (
-                      <IconChevronDown className="size-5 text-primary shrink-0" />
+                      <CaretDown className="size-5 text-primary shrink-0" weight="bold" />
                     )}
                     {selectedIndex !== index && product.stock > 0 && (
                       <div className="text-xs font-medium text-green-600 dark:text-green-400 shrink-0">

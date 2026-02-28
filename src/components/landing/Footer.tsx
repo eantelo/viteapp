@@ -1,4 +1,4 @@
-import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { FacebookLogo, TwitterLogo, InstagramLogo, LinkedinLogo } from "@phosphor-icons/react";
 
 export function Footer() {
   return (
@@ -53,16 +53,16 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Facebook className="w-5 h-5" />
+              <FacebookLogo className="w-5 h-5" weight="duotone" />
             </a>
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Twitter className="w-5 h-5" />
+              <TwitterLogo className="w-5 h-5" weight="duotone" />
             </a>
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Instagram className="w-5 h-5" />
+              <InstagramLogo className="w-5 h-5" weight="duotone" />
             </a>
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <Linkedin className="w-5 h-5" />
+              <LinkedinLogo className="w-5 h-5" weight="duotone" />
             </a>
           </div>
         </div>

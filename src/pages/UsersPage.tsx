@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -18,12 +16,15 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
-  MagnifyingGlass,
   PencilSimple,
   Plus,
   Power,
   Key,
+  Users,
+  SpinnerGap,
 } from "@phosphor-icons/react";
+import { PageHeader, SearchInput } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import {
   getUsers,
   resetUserPassword,
@@ -154,59 +155,50 @@ export function UsersPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Usuarios" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
-        <div className="w-full max-w-[1320px]">
-          <header className="flex items-center justify-between gap-4 mb-2">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
-                Usuarios
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Administración de usuarios, roles y estado de acceso.
-              </p>
-            </div>
-            {canManage ? (
-              <Button onClick={handleCreate} className="gap-2 h-fit">
-                <Plus size={18} weight="bold" />
-                Nuevo usuario
-              </Button>
-            ) : null}
-          </header>
+        <div className="w-full max-w-[1320px] space-y-4">
+          <PageHeader
+            icon={Users}
+            title="Usuarios"
+            description="Administración de usuarios, roles y estado de acceso."
+            actions={
+              canManage ? (
+                <Button onClick={handleCreate} className="gap-2">
+                  <Plus size={18} weight="bold" />
+                  Nuevo usuario
+                </Button>
+              ) : null
+            }
+          />
 
-          <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
-                    <MagnifyingGlass size={16} weight="bold" />
-                  </span>
-                  <Input
-                    placeholder="Buscar por nombre, email o rol"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    className="pl-12"
-                    aria-label="Buscar usuarios"
-                  />
-                </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por nombre, email o rol"
+            resultCount={filteredUsers.length}
+            totalCount={users.length}
+          />
 
+          <div className="rounded-lg border border-border bg-card">
+            <div className="grid gap-4 p-4">
                 {loading ? (
                   <div className="flex items-center justify-center py-10">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-primary" />
+                    <SpinnerGap size={32} weight="bold" className="animate-spin text-primary" />
                   </div>
                 ) : error ? (
-                  <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-6 text-center text-sm text-red-600 dark:text-red-400">
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">
                     {error}
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
                     No hay usuarios para mostrar.
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="rounded-lg border border-border">
                     <Table>
-                      <TableHeader className="bg-slate-50 dark:bg-slate-800">
-                        <TableRow className="dark:border-slate-700">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
                           <TableHead>Nombre</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Rol</TableHead>
@@ -216,7 +208,7 @@ export function UsersPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user) => (
-                          <TableRow key={user.id} className="dark:border-slate-700">
+                          <TableRow key={user.id}>
                             <TableCell className="font-medium">{user.fullName}</TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell>
@@ -260,7 +252,7 @@ export function UsersPage() {
                                     </Button>
                                   </>
                                 ) : (
-                                  <span className="text-xs text-slate-500">Sin permisos</span>
+                                  <span className="text-xs text-muted-foreground">Sin permisos</span>
                                 )}
                               </div>
                             </TableCell>
@@ -270,9 +262,8 @@ export function UsersPage() {
                     </Table>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         <UserFormDialog

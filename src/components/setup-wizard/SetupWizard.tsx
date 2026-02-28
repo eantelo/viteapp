@@ -9,14 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { updateTenantSettings } from "@/api/tenantSettingsApi";
 import { useAuth } from "@/context/AuthContext";
 import type { TenantSettings } from "@/types/TenantSettings";
 import { BusinessInfoStep } from "./steps/BusinessInfoStep";
 import { RegionalSettingsStep } from "./steps/RegionalSettingsStep";
 import { TaxConfigStep } from "./steps/TaxConfigStep";
-import { Building2, Globe, Receipt, Check, Loader2 } from "lucide-react";
+import { Buildings, Globe, Receipt, Check, SpinnerGap } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export interface SetupWizardData {
@@ -28,7 +28,7 @@ export interface SetupWizardData {
 }
 
 const STEPS = [
-  { id: 1, title: "Negocio", icon: Building2 },
+  { id: 1, title: "Negocio", icon: Buildings },
   { id: 2, title: "Regional", icon: Globe },
   { id: 3, title: "Impuestos", icon: Receipt },
 ] as const;
@@ -40,7 +40,6 @@ interface SetupWizardProps {
 
 export function SetupWizard({ open, onComplete }: SetupWizardProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { auth, setAuth } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,17 +87,14 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
         setAuth({ ...auth, isSetupComplete: true });
       }
 
-      toast({
-        title: "¡Configuración completada!",
+      toast.success("¡Configuración completada!", {
         description: "Tu negocio está listo para comenzar.",
       });
 
       onComplete();
       navigate("/dashboard");
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
+      toast.error("Error", {
         description: "No se pudo guardar la configuración. Intenta de nuevo.",
       });
     } finally {
@@ -175,9 +171,9 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
                     )}
                   >
                     {isCompleted ? (
-                      <Check className="h-5 w-5" />
+                      <Check className="h-5 w-5" weight="bold" />
                     ) : (
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-5 w-5" weight="duotone" />
                     )}
                   </div>
                   <span className="text-xs font-medium">{step.title}</span>
@@ -208,7 +204,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
           ) : (
             <Button onClick={handleComplete} disabled={isSubmitting}>
               {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <SpinnerGap className="mr-2 h-4 w-4 animate-spin" weight="bold" />
               )}
               Finalizar configuración
             </Button>

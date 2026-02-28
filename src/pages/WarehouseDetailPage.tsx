@@ -26,12 +26,14 @@ import {
   type WarehouseStockSummaryDto,
 } from "@/api/warehousesApi";
 import {
-  IconArrowLeft,
-  IconBuildingWarehouse,
-  IconPackage,
-  IconPackages,
-  IconMapPin,
-} from "@tabler/icons-react";
+  ArrowLeft,
+  Warehouse,
+  Package,
+  StackSimple,
+  MapPin,
+  SpinnerGap,
+} from "@phosphor-icons/react";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function WarehouseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -87,19 +89,19 @@ export function WarehouseDetailPage() {
           { label: "Almacenes", href: "/warehouses" },
           { label: warehouse?.name ?? "Detalle" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
         <div className="w-full max-w-[1320px] space-y-4">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => navigate("/warehouses")}>
-                <IconArrowLeft size={18} />
+                <ArrowLeft size={18} weight="bold" />
               </Button>
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                <h1 className="text-2xl font-semibold text-foreground">
                   {warehouse?.name ?? "Detalle de almacén"}
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-muted-foreground">
                   Inventario y datos generales del almacén.
                 </p>
               </div>
@@ -107,7 +109,8 @@ export function WarehouseDetailPage() {
           </header>
 
           {loading ? (
-            <div className="rounded-xl border bg-card p-10 text-center text-sm text-slate-500">
+            <div className="rounded-xl border bg-card p-10 text-center text-sm text-muted-foreground">
+              <SpinnerGap size={24} className="mx-auto mb-2 animate-spin text-primary" />
               Cargando información del almacén...
             </div>
           ) : error ? (
@@ -121,7 +124,7 @@ export function WarehouseDetailPage() {
                   <CardHeader className="pb-2">
                     <CardDescription>Productos distintos</CardDescription>
                     <CardTitle className="flex items-center gap-2 text-3xl">
-                      <IconPackages size={24} className="text-primary" />
+                      <StackSimple size={24} className="text-primary" />
                       {summary.distinctProducts}
                     </CardTitle>
                   </CardHeader>
@@ -131,7 +134,7 @@ export function WarehouseDetailPage() {
                   <CardHeader className="pb-2">
                     <CardDescription>Unidades totales</CardDescription>
                     <CardTitle className="flex items-center gap-2 text-3xl">
-                      <IconPackage size={24} className="text-primary" />
+                      <Package size={24} className="text-primary" />
                       {summary.totalUnits}
                     </CardTitle>
                   </CardHeader>
@@ -141,7 +144,7 @@ export function WarehouseDetailPage() {
                   <CardHeader className="pb-2">
                     <CardDescription>Stock bajo (≤ 10)</CardDescription>
                     <CardTitle className="flex items-center gap-2 text-3xl">
-                      <IconBuildingWarehouse size={24} className="text-primary" />
+                      <Warehouse size={24} className="text-primary" />
                       {lowStockProducts}
                     </CardTitle>
                   </CardHeader>
@@ -154,25 +157,25 @@ export function WarehouseDetailPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
                   <div>
-                    <p className="text-slate-500">Código</p>
+                    <p className="text-muted-foreground">Código</p>
                     <p className="font-medium">{warehouse.code ?? "-"}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Ciudad</p>
+                    <p className="text-muted-foreground">Ciudad</p>
                     <p className="font-medium">{warehouse.city ?? "-"}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Teléfono</p>
+                    <p className="text-muted-foreground">Teléfono</p>
                     <p className="font-medium">{warehouse.phone ?? "-"}</p>
                   </div>
                   <div>
-                    <p className="text-slate-500">Contacto</p>
+                    <p className="text-muted-foreground">Contacto</p>
                     <p className="font-medium">{warehouse.contactPerson ?? "-"}</p>
                   </div>
                   <div className="sm:col-span-2 lg:col-span-2">
-                    <p className="text-slate-500">Dirección</p>
+                    <p className="text-muted-foreground">Dirección</p>
                     <p className="flex items-start gap-1 font-medium">
-                      <IconMapPin size={16} className="mt-0.5 text-slate-500" />
+                      <MapPin size={16} weight="bold" className="mt-0.5 text-muted-foreground" />
                       <span>{warehouse.address ?? "-"}</span>
                     </p>
                   </div>
@@ -199,7 +202,7 @@ export function WarehouseDetailPage() {
                       <TableBody>
                         {summary.products.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={3} className="py-6 text-center text-slate-500">
+                            <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
                               Este almacén todavía no tiene stock registrado.
                             </TableCell>
                           </TableRow>

@@ -27,13 +27,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  IconPlus,
-  IconMinus,
-  IconTrash,
-  IconAlertTriangle,
-  IconCheck,
-  IconX,
-} from "@tabler/icons-react";
+  Plus,
+  Minus,
+  Trash,
+  Warning,
+  Check,
+  X,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ProductDto } from "@/api/productsApi";
@@ -281,9 +281,10 @@ export function OrderProductTableEnhanced({
                                       "text-amber-600 border-amber-300"
                                   )}
                                 >
-                                  <IconAlertTriangle
+                                  <Warning
                                     size={10}
                                     className="mr-0.5"
+                                    weight="bold"
                                   />
                                   {stockWarning.message}
                                 </Badge>
@@ -308,7 +309,7 @@ export function OrderProductTableEnhanced({
                                 disabled={item.quantity <= 1}
                                 className="h-9 w-9 p-0 rounded-l-lg rounded-r-none border-r-0"
                               >
-                                <IconMinus size={16} />
+                                <Minus size={16} weight="bold" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
@@ -369,7 +370,7 @@ export function OrderProductTableEnhanced({
                                 }
                                 className="h-9 w-9 p-0 rounded-r-lg rounded-l-none border-l-0"
                               >
-                                <IconPlus size={16} />
+                                <Plus size={16} weight="bold" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
@@ -400,7 +401,7 @@ export function OrderProductTableEnhanced({
                               className="h-8 w-8 p-0"
                               onClick={confirmEdit}
                             >
-                              <IconCheck size={14} />
+                              <Check size={14} weight="bold" />
                             </Button>
                             <Button
                               type="button"
@@ -409,7 +410,7 @@ export function OrderProductTableEnhanced({
                               className="h-8 w-8 p-0"
                               onClick={cancelEdit}
                             >
-                              <IconX size={14} />
+                              <X size={14} weight="bold" />
                             </Button>
                           </div>
                         ) : (
@@ -450,7 +451,7 @@ export function OrderProductTableEnhanced({
                               onClick={() => handleRemoveClick(index)}
                               className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             >
-                              <IconTrash size={16} />
+                              <Trash size={16} weight="bold" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="left">
@@ -517,7 +518,7 @@ export function OrderProductTableEnhanced({
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              <IconTrash size={16} className="mr-2" />
+              <Trash size={16} className="mr-2" weight="bold" />
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SetupWizardData } from "../SetupWizard";
-import { Building2 } from "lucide-react";
+import { Buildings } from "@phosphor-icons/react";
 
 interface BusinessInfoStepProps {
   data: SetupWizardData;
@@ -12,7 +12,7 @@ export function BusinessInfoStep({ data, onChange }: BusinessInfoStepProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 text-primary">
-        <Building2 className="h-8 w-8" />
+        <Buildings className="h-8 w-8" weight="duotone" />
         <div>
           <h3 className="text-lg font-semibold">Información del Negocio</h3>
           <p className="text-sm text-muted-foreground">

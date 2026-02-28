@@ -3,8 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,24 +17,25 @@ import {
   useCustomerPrefill,
   type CustomerPrefillData,
 } from "@/contexts/FormPrefillContext";
-import { motion, useReducedMotion } from "framer-motion";
 import {
-  MagnifyingGlass,
   PencilSimple,
   Plus,
   Trash,
   CaretLeft,
   CaretRight,
+  AddressBook,
+  SpinnerGap,
 } from "@phosphor-icons/react";
 import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PageHeader, SearchInput } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function CustomersPage() {
   useDocumentTitle("Clientes");
   const [searchParams, setSearchParams] = useSearchParams();
-  const prefersReducedMotion = useReducedMotion();
 
   // Prefill data from interface agent
   const { hasData: hasPrefillData, getData: getPrefillData } =
@@ -45,16 +44,6 @@ export function CustomersPage() {
   const [prefillData, setPrefillData] = useState<CustomerPrefillData | null>(
     null
   );
-
-  const motionInitial = prefersReducedMotion
-    ? { opacity: 1, y: 0 }
-    : { opacity: 0, y: 16 };
-  const motionAnimate = { opacity: 1, y: 0 };
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const motionTransition = {
-    duration: prefersReducedMotion ? 0 : 0.45,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
 
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,10 +206,6 @@ export function CustomersPage() {
     }
   };
 
-  const handleSearchInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(event.target.value);
-  };
-
   const handleSearchKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
@@ -237,92 +222,56 @@ export function CustomersPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Clientes" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
-        <div className="w-full max-w-[1320px]">
-          <motion.header
-            className="flex flex-row items-center justify-between gap-4 mb-2"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={motionTransition}
-          >
-            <div>
-              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
-                Clientes
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Administra tus clientes y contactos.
-              </p>
-            </div>
-            <Button onClick={handleCreate} className="gap-2 h-fit">
-              <Plus size={18} weight="bold" />
-              Nuevo cliente
-            </Button>
-          </motion.header>
+        <div className="w-full max-w-[1320px] space-y-4">
+          <PageHeader
+            icon={AddressBook}
+            title="Clientes"
+            description="Administra tus clientes y contactos."
+            actions={
+              <Button onClick={handleCreate} className="gap-2">
+                <Plus size={18} weight="bold" />
+                Nuevo cliente
+              </Button>
+            }
+          />
 
-          <motion.div
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={{
-              ...motionTransition,
-              delay: prefersReducedMotion ? 0 : 0.08,
-            }}
-          >
-            <Card className="border-slate-200/80 dark:border-slate-700/80 dark:bg-slate-900 shadow-none">
-              <CardContent>
-                <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="flex flex-col gap-2">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      Buscar clientes
-                    </span>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
-                        <MagnifyingGlass size={16} weight="bold" />
-                      </span>
-                      <Input
-                        placeholder="Nombre, email, teléfono, ciudad, RFC, nota o GPS"
-                        value={search}
-                        onChange={handleSearchInput}
-                        onKeyDown={handleSearchKeyDown}
-                        className="pl-12 bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-600"
-                        aria-label="Buscar clientes"
-                      />
-                    </div>
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                      {filteredCustomers.length}
-                    </span>
-                    resultados
-                    <span className="text-slate-300 dark:text-slate-600">•</span>
-                    <span>{customers.length} clientes totales</span>
-                  </div>
-                </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Nombre, email, teléfono, ciudad, RFC, nota o GPS"
+            resultCount={filteredCustomers.length}
+            totalCount={customers.length}
+            onKeyDown={handleSearchKeyDown}
+          />
+
+          <div className="rounded-lg border border-border bg-card">
+            <div className="flex flex-col gap-4 p-4">
                 {loading ? (
                   <div className="flex items-center justify-center py-10">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-primary" />
+                    <SpinnerGap size={32} weight="bold" className="animate-spin text-primary" />
                   </div>
                 ) : error ? (
-                  <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-6 text-center text-sm text-red-600 dark:text-red-400">
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">
                     {error}
                   </div>
                 ) : filteredCustomers.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
                     {customers.length === 0
                       ? "No hay clientes registrados todavía."
                       : "Ningún cliente coincide con la búsqueda."}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="rounded-lg border border-border">
                     <Table className="text-sm">
-                      <TableHeader className="bg-slate-50 dark:bg-slate-800">
-                        <TableRow className="dark:border-slate-700">
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Nombre</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Email</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Teléfono</TableHead>
-                          <TableHead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Ciudad</TableHead>
-                          <TableHead className="text-right text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Acciones</TableHead>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Nombre</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Email</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Teléfono</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Ciudad</TableHead>
+                          <TableHead className="text-right text-xs uppercase tracking-wide text-muted-foreground">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -330,21 +279,21 @@ export function CustomersPage() {
                           <TableRow
                             key={customer.id}
                             className={cn(
-                              "text-slate-700 dark:text-slate-300 dark:border-slate-700",
+                              "text-foreground",
                               highlightedCustomerId === customer.id &&
                                 "bg-primary/10 ring-1 ring-primary/30"
                             )}
                           >
-                            <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                            <TableCell className="font-medium">
                               {customer.name}
                             </TableCell>
-                            <TableCell className="text-slate-600 dark:text-slate-400">
+                            <TableCell className="text-muted-foreground">
                               {customer.email || "-"}
                             </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums text-slate-600 dark:text-slate-400">
+                            <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
                               {customer.phone || "-"}
                             </TableCell>
-                            <TableCell className="text-slate-600 dark:text-slate-400">
+                            <TableCell className="text-muted-foreground">
                               {customer.city || "-"}
                             </TableCell>
                             <TableCell className="text-right">
@@ -352,7 +301,7 @@ export function CustomersPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 dark:text-slate-400 dark:hover:text-slate-100"
+                                  className="h-8 w-8 p-0"
                                   onClick={() => handleEdit(customer)}
                                   aria-label={`Editar ${customer.name}`}
                                 >
@@ -374,10 +323,10 @@ export function CustomersPage() {
                       </TableBody>
                     </Table>
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 px-4 py-3 bg-slate-50/50 dark:bg-slate-800/50">
-                        <span className="text-xs text-slate-600 dark:text-slate-400">
-                          Página <span className="font-semibold text-slate-900 dark:text-slate-100">{currentPage}</span> de{" "}
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">{totalPages}</span>
+                      <div className="flex items-center justify-between border-t border-border px-4 py-3 bg-muted/30">
+                        <span className="text-xs text-muted-foreground">
+                          Página <span className="font-semibold text-foreground">{currentPage}</span> de{" "}
+                          <span className="font-semibold text-foreground">{totalPages}</span>
                         </span>
                         <div className="flex items-center gap-2">
                           <Button
@@ -390,7 +339,7 @@ export function CustomersPage() {
                           >
                             <CaretLeft size={16} weight="bold" />
                           </Button>
-                          <span className="text-xs text-slate-600 dark:text-slate-400 min-w-[60px] text-center">
+                          <span className="text-xs text-muted-foreground min-w-[60px] text-center">
                             {paginatedCustomers.length} de {filteredCustomers.length}
                           </span>
                           <Button
@@ -408,10 +357,8 @@ export function CustomersPage() {
                     )}
                   </div>
                 )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            </div>
+          </div>
         </div>
 
         <CustomerFormDialog

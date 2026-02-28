@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { type Icon } from "@tabler/icons-react";
+import type { ComponentType } from "react";
+import type { IconProps } from "@phosphor-icons/react";
 
 import {
   SidebarGroup,
@@ -18,7 +19,7 @@ export function NavSecondary({
   items: {
     title: string;
     url: string;
-    icon: Icon;
+    icon: ComponentType<IconProps>;
   }[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (

@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { IconFlame } from "@tabler/icons-react";
+import { Fire } from "@phosphor-icons/react";
 
 interface KeyPressIndicatorProps {
   show: boolean;
@@ -15,7 +15,7 @@ export function KeyPressIndicator({ show, keyLabel }: KeyPressIndicatorProps) {
   return (
     <div className="pointer-events-none fixed right-4 top-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
       <Badge className="gap-2 bg-primary text-primary-foreground shadow-lg">
-        <IconFlame className="size-3" />
+        <Fire className="size-3" weight="duotone" />
         <span className="font-mono text-xs font-bold">{keyLabel}</span>
       </Badge>
     </div>

@@ -5,20 +5,23 @@ import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  IconPlus,
-  IconUpload,
-  IconDownload,
-  IconSearch,
-  IconChevronDown,
-  IconEdit,
-  IconTrash,
-  IconDots,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconShoppingCart,
-} from "@tabler/icons-react";
+  Plus,
+  Upload,
+  Download,
+  MagnifyingGlass,
+  CaretDown,
+  PencilSimple,
+  Trash,
+  DotsThree,
+  CaretLeft,
+  CaretRight,
+  CaretDoubleLeft,
+  CaretDoubleRight,
+  ShoppingCart,
+  Funnel,
+  SpinnerGap,
+  Package,
+} from "@phosphor-icons/react";
 import type { ProductDto } from "@/api/productsApi";
 import {
   getProducts,
@@ -26,7 +29,6 @@ import {
   deactivateProduct,
 } from "@/api/productsApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { motion, useReducedMotion } from "framer-motion";
 import { DeleteProductDialog } from "@/components/products/DeleteProductDialog";
 import {
   DropdownMenu,
@@ -35,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -43,7 +45,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { IconFilter } from "@tabler/icons-react";
 import {
   Select,
   SelectContent,
@@ -53,6 +54,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { onProductUpdated } from "@/lib/product-events";
+import { PageHeader } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 // Componente de filtros reutilizable para mobile y desktop
 function FilterContent({
@@ -80,16 +83,16 @@ function FilterContent({
   clearAllFilters: () => void;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800">
+    <div className="bg-card p-4 rounded-xl border border-border">
       {/* Search Bar */}
       <div className="pb-3">
         <label className="flex flex-col min-w-40 h-11 w-full">
           <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-            <div className="text-slate-500 dark:text-slate-400 flex bg-slate-100 dark:bg-slate-800 items-center justify-center pl-3 rounded-l-lg border-r-0">
-              <IconSearch size={20} />
+            <div className="text-muted-foreground flex bg-muted items-center justify-center pl-3 rounded-l-lg border-r-0">
+              <MagnifyingGlass size={20} weight="bold" />
             </div>
             <Input
-              className="rounded-l-none border-l-0 bg-slate-100 dark:bg-slate-800 h-full focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="rounded-l-none border-l-0 bg-muted h-full focus-visible:ring-0 focus-visible:ring-offset-0"
               placeholder="Search products..."
               value={search}
               onChange={handleSearchChange}
@@ -102,7 +105,7 @@ function FilterContent({
       <div className="flex flex-col">
         {/* Category Filter */}
         <details
-          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          className="flex flex-col border-t border-t-border py-2 group"
           open={expandedFilters.category}
         >
           <summary
@@ -112,18 +115,18 @@ function FilterContent({
               toggleFilter("category");
             }}
           >
-            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+            <p className="text-foreground text-sm font-medium leading-normal">
               Categoría
             </p>
-            <IconChevronDown
+            <CaretDown
               size={20}
-              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+              className={`text-muted-foreground transition-transform ${
                 expandedFilters.category ? "rotate-180" : ""
               }`}
             />
           </summary>
           {expandedFilters.category && (
-            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+            <div className="flex flex-col gap-2 pt-2 text-muted-foreground text-sm">
               {availableCategories.length > 0 ? (
                 availableCategories.map((category) => (
                   <label
@@ -140,7 +143,7 @@ function FilterContent({
                   </label>
                 ))
               ) : (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   No hay categorías disponibles
                 </p>
               )}
@@ -150,7 +153,7 @@ function FilterContent({
 
         {/* Brand Filter */}
         <details
-          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          className="flex flex-col border-t border-t-border py-2 group"
           open={expandedFilters.brand}
         >
           <summary
@@ -160,18 +163,18 @@ function FilterContent({
               toggleFilter("brand");
             }}
           >
-            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+            <p className="text-foreground text-sm font-medium leading-normal">
               Marca
             </p>
-            <IconChevronDown
+            <CaretDown
               size={20}
-              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+              className={`text-muted-foreground transition-transform ${
                 expandedFilters.brand ? "rotate-180" : ""
               }`}
             />
           </summary>
           {expandedFilters.brand && (
-            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+            <div className="flex flex-col gap-2 pt-2 text-muted-foreground text-sm">
               {availableBrands.length > 0 ? (
                 availableBrands.map((brand) => (
                   <label
@@ -188,7 +191,7 @@ function FilterContent({
                   </label>
                 ))
               ) : (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   No hay marcas disponibles
                 </p>
               )}
@@ -198,7 +201,7 @@ function FilterContent({
 
         {/* Status Filter */}
         <details
-          className="flex flex-col border-t border-t-slate-200 dark:border-t-slate-700 py-2 group"
+          className="flex flex-col border-t border-t-border py-2 group"
           open={expandedFilters.status}
         >
           <summary
@@ -208,18 +211,18 @@ function FilterContent({
               toggleFilter("status");
             }}
           >
-            <p className="text-gray-800 dark:text-slate-200 text-sm font-medium leading-normal">
+            <p className="text-foreground text-sm font-medium leading-normal">
               Estatus
             </p>
-            <IconChevronDown
+            <CaretDown
               size={20}
-              className={`text-gray-600 dark:text-slate-400 transition-transform ${
+              className={`text-muted-foreground transition-transform ${
                 expandedFilters.status ? "rotate-180" : ""
               }`}
             />
           </summary>
           {expandedFilters.status && (
-            <div className="flex flex-col gap-2 pt-2 text-slate-600 dark:text-slate-400 text-sm">
+            <div className="flex flex-col gap-2 pt-2 text-muted-foreground text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   className="form-checkbox rounded text-primary focus:ring-primary/50"
@@ -253,7 +256,7 @@ function FilterContent({
       </div>
 
       {/* Clear Filters Button */}
-      <div className="pt-3 border-t border-slate-200 dark:border-slate-700 mt-2">
+      <div className="pt-3 border-t border-border mt-2">
         <Button
           variant="ghost"
           className="w-full text-primary hover:bg-primary/10"
@@ -269,16 +272,6 @@ function FilterContent({
 export function ProductCatalogPage() {
   useDocumentTitle("Catálogo de Productos");
   const navigate = useNavigate();
-  const prefersReducedMotion = useReducedMotion();
-  const motionInitial = prefersReducedMotion
-    ? { opacity: 1, y: 0 }
-    : { opacity: 0, y: 16 };
-  const motionAnimate = { opacity: 1, y: 0 };
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const motionTransition = {
-    duration: prefersReducedMotion ? 0 : 0.45,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
 
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductDto[]>([]);
@@ -305,7 +298,6 @@ export function ProductCatalogPage() {
   const [deletingProduct, setDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [highlightedProductId, setHighlightedProductId] = useState<
     string | null
@@ -546,8 +538,7 @@ export function ProductCatalogPage() {
 
   const handleExportCsv = () => {
     if (filteredProducts.length === 0) {
-      toast({
-        title: "Sin datos para exportar",
+      toast.info("Sin datos para exportar", {
         description: "No hay productos que coincidan con los filtros actuales.",
       });
       return;
@@ -622,8 +613,7 @@ export function ProductCatalogPage() {
 
       setTimeout(() => URL.revokeObjectURL(url), 0);
 
-      toast({
-        title: "Exportación completada",
+      toast.success("Exportación completada", {
         description: `Se exportaron ${exportedProducts.length} productos.`,
       });
     } catch (err) {
@@ -631,10 +621,8 @@ export function ProductCatalogPage() {
         err instanceof Error
           ? err.message
           : "Ocurrió un error durante la exportación.";
-      toast({
-        title: "Error al exportar",
+      toast.error("Error al exportar", {
         description: errorMessage,
-        variant: "destructive",
       });
     } finally {
       setExporting(false);
@@ -667,8 +655,7 @@ export function ProductCatalogPage() {
       price: product.price,
     };
     localStorage.setItem("quickSaleProduct", JSON.stringify(quickSaleProduct));
-    toast({
-      title: "Producto agregado",
+    toast.success("Producto agregado", {
       description: `${product.name} listo para venta`,
     });
     navigate("/sales/new");
@@ -681,8 +668,7 @@ export function ProductCatalogPage() {
     setDeleteError(null);
     try {
       await deleteProduct(selectedProduct.id);
-      toast({
-        title: "Producto eliminado",
+      toast.success("Producto eliminado", {
         description: `El producto "${selectedProduct.name}" ha sido eliminado correctamente.`,
       });
       await loadProducts();
@@ -703,10 +689,8 @@ export function ProductCatalogPage() {
 
       // Si el error indica ventas asociadas, no cerrar el diálogo
       if (!shouldOfferDeactivate) {
-        toast({
-          title: "Error al eliminar",
+        toast.error("Error al eliminar", {
           description: errorMessage,
-          variant: "destructive",
         });
       }
     } finally {
@@ -721,8 +705,7 @@ export function ProductCatalogPage() {
     setDeleteError(null);
     try {
       await deactivateProduct(selectedProduct.id);
-      toast({
-        title: "Producto desactivado",
+      toast.success("Producto desactivado", {
         description: `El producto "${selectedProduct.name}" ha sido desactivado correctamente.`,
       });
       await loadProducts();
@@ -730,13 +713,11 @@ export function ProductCatalogPage() {
       setSelectedProduct(null);
       setDeleteError(null);
     } catch (error) {
-      toast({
-        title: "Error al desactivar",
+      toast.error("Error al desactivar", {
         description:
           error instanceof Error
             ? error.message
             : "No se pudo desactivar el producto",
-        variant: "destructive",
       });
     } finally {
       setDeletingProduct(false);
@@ -754,84 +735,64 @@ export function ProductCatalogPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Catálogo de Productos" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
         <div className="w-full max-w-[1320px]">
           {/* Page Heading */}
-          <motion.header
-            className="flex flex-col gap-2 pb-2 md:pb-3"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={motionTransition}
-          >
-            <div className="flex flex-col gap-1">
-              <h1 className="text-gray-900 dark:text-white text-xl md:text-2xl font-bold leading-tight">
-                Catálogo de Productos
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm font-normal leading-snug">
-                Administra tus productos, actualiza detalles y controla el
-                inventario.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 md:size-default"
-                onClick={handleExportCsv}
-                disabled={isExportDisabled}
-                aria-busy={exporting}
-                title={
-                  isExportDisabled && !exporting
-                    ? "No hay productos para exportar con los filtros actuales."
-                    : undefined
-                }
-              >
-                {exporting ? (
-                  <>
-                    <span
-                      className="inline-flex h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
-                      aria-hidden="true"
-                    />
-                    <span>Exportando...</span>
-                  </>
-                ) : (
-                  <>
-                    <IconDownload size={18} />
-                    <span>Exportar</span>
-                    <span className="hidden sm:inline">CSV</span>
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 md:size-default"
-              >
-                <IconUpload size={18} />
-                <span className="hidden sm:inline">Importar</span>
-              </Button>
-              <Button
-                size="sm"
-                className="flex items-center gap-2 md:size-default"
-                onClick={handleCreateProduct}
-              >
-                <IconPlus size={18} />
-                <span>Crear</span>
-                <span className="hidden sm:inline">Producto</span>
-              </Button>
-            </div>
-          </motion.header>
+          <PageHeader
+            title="Catálogo de Productos"
+            description="Administra tus productos, actualiza detalles y controla el inventario."
+            icon={Package}
+            actions={
+              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 md:size-default"
+                  onClick={handleExportCsv}
+                  disabled={isExportDisabled}
+                  aria-busy={exporting}
+                  title={
+                    isExportDisabled && !exporting
+                      ? "No hay productos para exportar con los filtros actuales."
+                      : undefined
+                  }
+                >
+                  {exporting ? (
+                    <>
+                      <SpinnerGap size={14} className="animate-spin" />
+                      <span>Exportando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download size={18} weight="bold" />
+                      <span>Exportar</span>
+                      <span className="hidden sm:inline">CSV</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 md:size-default"
+                >
+                  <Upload size={18} weight="bold" />
+                  <span className="hidden sm:inline">Importar</span>
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex items-center gap-2 md:size-default"
+                  onClick={handleCreateProduct}
+                >
+                  <Plus size={18} weight="bold" />
+                  <span>Crear</span>
+                  <span className="hidden sm:inline">Producto</span>
+                </Button>
+              </div>
+            }
+          />
 
-          <motion.div
-            className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={{
-              ...motionTransition,
-              delay: prefersReducedMotion ? 0 : 0.08,
-            }}
-          >
+          <div className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2">
           {/* Mobile Filter Button */}
           <div className="lg:hidden">
             <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
@@ -840,7 +801,7 @@ export function ProductCatalogPage() {
                   variant="outline"
                   className="w-full flex items-center gap-2"
                 >
-                  <IconFilter size={18} />
+                  <Funnel size={18} weight="bold" />
                   <span>Filtros</span>
                   {(selectedFilters.category.length > 0 ||
                     selectedFilters.brand.length > 0 ||
@@ -903,18 +864,18 @@ export function ProductCatalogPage() {
 
           {/* Product Table */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <SpinnerGap size={32} className="animate-spin text-primary" />
                 </div>
               ) : error ? (
-                <div className="text-center py-12 text-red-500">{error}</div>
+                <div className="text-center py-12 text-destructive">{error}</div>
               ) : (
                 <>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
-                      <thead className="text-xs text-slate-700 dark:text-slate-300 uppercase bg-slate-50 dark:bg-slate-800">
+                    <table className="w-full text-sm text-left text-muted-foreground">
+                      <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
                         <tr>
                           <th scope="col" className="px-3 md:px-4 py-2">
                             Producto
@@ -956,7 +917,7 @@ export function ProductCatalogPage() {
                           <tr>
                             <td
                               colSpan={7}
-                              className="text-center py-8 text-slate-500"
+                              className="text-center py-8 text-muted-foreground"
                             >
                               No se encontraron productos
                             </td>
@@ -978,7 +939,7 @@ export function ProductCatalogPage() {
                                 }
                               }}
                               tabIndex={0}
-                              className={`bg-white dark:bg-slate-900 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
+                              className={`border-b border-border hover:bg-muted/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
                                 highlightedProductId === product.id
                                   ? "bg-primary/10! dark:bg-primary/20! animate-pulse ring-2 ring-primary/50"
                                   : ""
@@ -987,17 +948,17 @@ export function ProductCatalogPage() {
                             >
                               <th
                                 scope="row"
-                                className="px-3 md:px-4 py-2 font-medium text-gray-900 dark:text-white"
+                                className="px-3 md:px-4 py-2 font-medium text-foreground"
                               >
                                 <div>
                                   <p className="text-sm md:text-base">
                                     {product.name}
                                   </p>
-                                  <p className="text-xs text-slate-500">
+                                  <p className="text-xs text-muted-foreground">
                                     {product.category}
                                   </p>
                                   {/* Mostrar SKU en mobile cuando la columna está oculta */}
-                                  <p className="text-xs text-slate-400 sm:hidden mt-1">
+                                  <p className="text-xs text-muted-foreground/70 sm:hidden mt-1">
                                     {product.sku}
                                   </p>
                                 </div>
@@ -1049,7 +1010,7 @@ export function ProductCatalogPage() {
                                       size="sm"
                                       className="h-8 w-8 p-0"
                                     >
-                                      <IconDots className="h-4 w-4" />
+                                      <DotsThree className="h-4 w-4" weight="bold" />
                                       <span className="sr-only">
                                         Abrir menú
                                       </span>
@@ -1063,7 +1024,7 @@ export function ProductCatalogPage() {
                                         product.stock === 0 || !product.isActive
                                       }
                                     >
-                                      <IconShoppingCart className="mr-2 h-4 w-4" />
+                                      <ShoppingCart className="mr-2 h-4 w-4" />
                                       Vender
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -1071,7 +1032,7 @@ export function ProductCatalogPage() {
                                       onClick={() => handleEditProduct(product)}
                                       className="cursor-pointer"
                                     >
-                                      <IconEdit className="mr-2 h-4 w-4" />
+                                      <PencilSimple className="mr-2 h-4 w-4" />
                                       Editar
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
@@ -1079,9 +1040,9 @@ export function ProductCatalogPage() {
                                       onClick={() =>
                                         handleDeleteProduct(product)
                                       }
-                                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
+                                      className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5 dark:focus:bg-destructive/10"
                                     >
-                                      <IconTrash className="mr-2 h-4 w-4" />
+                                      <Trash className="mr-2 h-4 w-4" />
                                       Eliminar
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
@@ -1095,27 +1056,27 @@ export function ProductCatalogPage() {
                   </div>
 
                   {/* Pagination Controls */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 md:p-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 md:p-3 border-t border-border">
                     {/* Summary */}
-                    <div className="text-xs md:text-sm font-normal text-slate-500 dark:text-slate-400">
+                    <div className="text-xs md:text-sm font-normal text-muted-foreground">
                       Mostrando{" "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-foreground">
                         {pageIndex * pageSize + 1}
                       </span>
                       {" - "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-foreground">
                         {Math.min(
                           (pageIndex + 1) * pageSize,
                           filteredProducts.length
                         )}
                       </span>
                       {" de "}
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-foreground">
                         {filteredProducts.length}
                       </span>{" "}
                       {filteredProducts.length === 1 ? "producto" : "productos"}
                       {products.length !== filteredProducts.length && (
-                        <span className="text-slate-400">
+                        <span className="text-muted-foreground/70">
                           {" ("}
                           {products.length} totales{")"}
                         </span>
@@ -1174,7 +1135,7 @@ export function ProductCatalogPage() {
                           title="Primera página"
                         >
                           <span className="sr-only">Primera página</span>
-                          <IconChevronsLeft className="h-4 w-4" />
+                          <CaretDoubleLeft className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
@@ -1187,7 +1148,7 @@ export function ProductCatalogPage() {
                           title="Página anterior"
                         >
                           <span className="sr-only">Página anterior</span>
-                          <IconChevronLeft className="h-4 w-4" />
+                          <CaretLeft className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
@@ -1201,7 +1162,7 @@ export function ProductCatalogPage() {
                           title="Página siguiente"
                         >
                           <span className="sr-only">Página siguiente</span>
-                          <IconChevronRight className="h-4 w-4" />
+                          <CaretRight className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
@@ -1215,7 +1176,7 @@ export function ProductCatalogPage() {
                           title="Última página"
                         >
                           <span className="sr-only">Última página</span>
-                          <IconChevronsRight className="h-4 w-4" />
+                          <CaretDoubleRight className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -1224,7 +1185,7 @@ export function ProductCatalogPage() {
               )}
             </div>
           </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Diálogos */}

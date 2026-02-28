@@ -24,18 +24,18 @@ import {
 import { CustomerSelector } from "@/components/sales/CustomerSelector";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { motion, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  IconArrowLeft,
-  IconDeviceFloppy,
-  IconShoppingCart,
-  IconAlertTriangle,
-  IconLock,
-  IconRefresh,
-  IconTrash,
-  IconCheck,
-} from "@tabler/icons-react";
+  ArrowLeft,
+  FloppyDisk,
+  ShoppingCart,
+  Warning,
+  Lock,
+  ArrowCounterClockwise,
+  Trash,
+  Check,
+} from "@phosphor-icons/react";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import type {
   PaymentMethodType,
   SaleDto,
@@ -114,18 +114,7 @@ function getStatusBadge(status: SaleDto["status"]) {
 export function SaleUpsertPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const prefersReducedMotion = useReducedMotion();
   const isEditing = !!id;
-
-  const motionInitial = prefersReducedMotion
-    ? { opacity: 1, y: 0 }
-    : { opacity: 0, y: 16 };
-  const motionAnimate = { opacity: 1, y: 0 };
-  const easing: [number, number, number, number] = [0.16, 1, 0.3, 1];
-  const motionTransition = {
-    duration: prefersReducedMotion ? 0 : 0.45,
-    ease: prefersReducedMotion ? undefined : easing,
-  };
 
   // Estado de la venta existente (para edición)
   const [sale, setSale] = useState<SaleDto | null>(null);
@@ -578,7 +567,7 @@ export function SaleUpsertPage() {
             { label: "Ventas", href: "/sales" },
             { label: "Cargando..." },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <div className="w-full max-w-[1320px]">
             <div className="flex items-center gap-4 mb-4">
@@ -612,7 +601,7 @@ export function SaleUpsertPage() {
             { label: "Ventas", href: "/sales" },
             { label: "Error" },
           ]}
-          className="flex flex-1 flex-col gap-4 p-4"
+          className={PAGE_LAYOUT_CLASS}
         >
           <div className="w-full max-w-[1320px]">
             <Card>
@@ -621,7 +610,7 @@ export function SaleUpsertPage() {
                   <p className="text-error text-lg">{loadError}</p>
                   <div className="flex justify-center gap-2">
                     <Button variant="outline" onClick={() => navigate("/sales")}>
-                      <IconArrowLeft size={20} className="mr-2" />
+                      <ArrowLeft size={20} weight="bold" className="mr-2" />
                       Volver a ventas
                     </Button>
                     <Button onClick={loadSale}>Reintentar</Button>
@@ -647,15 +636,12 @@ export function SaleUpsertPage() {
               : "Nueva Orden",
           },
         ]}
-        className="flex flex-1 flex-col gap-4 p-4"
+        className={PAGE_LAYOUT_CLASS}
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[1320px]">
           {/* Header con acciones */}
-          <motion.div
+          <div
             className="flex items-center justify-between mb-6"
-            initial={motionInitial}
-            animate={motionAnimate}
-            transition={motionTransition}
           >
             <div className="flex items-center gap-4">
               <Button
@@ -665,11 +651,11 @@ export function SaleUpsertPage() {
                 onClick={handleCancel}
                 disabled={saving}
               >
-                <IconArrowLeft size={20} />
+                <ArrowLeft size={20} weight="bold" />
               </Button>
               <div>
                 <div className="flex items-center gap-3">
-                  <IconShoppingCart size={28} className="text-primary" />
+                  <ShoppingCart size={28} weight="duotone" className="text-primary" />
                   <h1 className="text-3xl font-bold">
                     {isEditing
                       ? `Orden #${sale?.saleNumber ?? ""}`
@@ -679,7 +665,7 @@ export function SaleUpsertPage() {
                     <span className="ml-2">{getStatusBadge(sale.status)}</span>
                   )}
                 </div>
-                <p className="text-slate-500 mt-1">
+                <p className="text-muted-foreground mt-1">
                   {isReadOnly
                     ? "Esta orden no puede ser editada porque ya no está en estado pendiente."
                     : isEditing
@@ -707,7 +693,7 @@ export function SaleUpsertPage() {
                     variant="outline"
                     disabled={saving || statusAction !== null}
                   >
-                    <IconDeviceFloppy size={20} className="mr-2" />
+                    <FloppyDisk size={20} weight="bold" className="mr-2" />
                     {saving && statusAction !== "approve"
                       ? "Guardando..."
                       : "Guardar"}
@@ -718,7 +704,7 @@ export function SaleUpsertPage() {
                     onClick={handleApproveSale}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    <IconCheck size={20} className="mr-2" />
+                    <Check size={20} weight="bold" className="mr-2" />
                     {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
                   </Button>
                   <Button
@@ -727,7 +713,7 @@ export function SaleUpsertPage() {
                     disabled={saving || statusAction !== null}
                     onClick={handleDeleteSale}
                   >
-                    <IconTrash size={20} className="mr-2" />
+                    <Trash size={20} weight="bold" className="mr-2" />
                     {statusAction === "delete" ? "Eliminando..." : "Borrar"}
                   </Button>
                 </>
@@ -741,7 +727,7 @@ export function SaleUpsertPage() {
                     variant="outline"
                     disabled={saving || statusAction !== null}
                   >
-                    <IconDeviceFloppy size={20} className="mr-2" />
+                    <FloppyDisk size={20} weight="bold" className="mr-2" />
                     {saving && statusAction !== "approve"
                       ? "Guardando..."
                       : "Guardar"}
@@ -752,7 +738,7 @@ export function SaleUpsertPage() {
                     onClick={handleApproveSale}
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    <IconCheck size={20} className="mr-2" />
+                    <Check size={20} weight="bold" className="mr-2" />
                     {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
                   </Button>
                 </>
@@ -767,7 +753,7 @@ export function SaleUpsertPage() {
                     disabled={statusAction !== null}
                     onClick={handleCloseSale}
                   >
-                    <IconLock size={20} className="mr-2" />
+                    <Lock size={20} weight="bold" className="mr-2" />
                     {statusAction === "close"
                       ? "Cerrando..."
                       : "Cerrar para Contabilidad"}
@@ -779,7 +765,7 @@ export function SaleUpsertPage() {
                     disabled={statusAction !== null}
                     onClick={handleRefundSale}
                   >
-                    <IconRefresh size={20} className="mr-2" />
+                    <ArrowCounterClockwise size={20} weight="bold" className="mr-2" />
                     {statusAction === "refund"
                       ? "Reembolsando..."
                       : "Reembolsar"}
@@ -787,17 +773,14 @@ export function SaleUpsertPage() {
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
 
           {/* Alerta de solo lectura */}
           {isReadOnly && (
-            <motion.div
+            <div
               className="mb-4 p-4 border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 rounded-lg flex items-center gap-3"
-              initial={motionInitial}
-              animate={motionAnimate}
-              transition={motionTransition}
             >
-              <IconAlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+              <Warning className="h-5 w-5 text-amber-600 shrink-0" />
               <div>
                 <p className="font-medium text-amber-800 dark:text-amber-200">
                   Orden no editable
@@ -815,19 +798,13 @@ export function SaleUpsertPage() {
                   ".
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Información principal */}
-            <motion.div
+            <div
               className="lg:col-span-2 space-y-4"
-              initial={motionInitial}
-              animate={motionAnimate}
-              transition={{
-                ...motionTransition,
-                delay: prefersReducedMotion ? 0 : 0.08,
-              }}
             >
               {/* Datos de la orden */}
               <Card>
@@ -928,8 +905,9 @@ export function SaleUpsertPage() {
                     />
                   ) : (
                     <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
-                      <IconShoppingCart
+                      <ShoppingCart
                         size={48}
+                        weight="duotone"
                         className="mx-auto mb-4 opacity-40"
                       />
                       <p className="text-base font-medium">
@@ -942,17 +920,11 @@ export function SaleUpsertPage() {
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
 
             {/* Panel lateral - Resumen */}
-            <motion.div
+            <div
               className="space-y-4"
-              initial={motionInitial}
-              animate={motionAnimate}
-              transition={{
-                ...motionTransition,
-                delay: prefersReducedMotion ? 0 : 0.16,
-              }}
             >
               {/* Método de Pago */}
               <Card>
@@ -1037,7 +1009,7 @@ export function SaleUpsertPage() {
               <Card className="sticky top-4">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2">
-                    <IconShoppingCart size={20} className="text-primary" />
+                    <ShoppingCart size={20} weight="duotone" className="text-primary" />
                     Resumen de la Orden
                   </CardTitle>
                 </CardHeader>
@@ -1152,7 +1124,7 @@ export function SaleUpsertPage() {
                       )}
                       {sale.status === "Closed" && (
                         <p className="text-muted-foreground">
-                          <span className="font-medium text-slate-600">
+                          <span className="font-medium text-muted-foreground">
                             Contabilizada
                           </span>{" "}
                           - Esta venta es inmutable.
@@ -1186,7 +1158,7 @@ export function SaleUpsertPage() {
                           disabled={statusAction !== null}
                           onClick={handleDeleteSale}
                         >
-                          <IconTrash size={18} className="mr-2" />
+                          <Trash size={18} weight="bold" className="mr-2" />
                           {statusAction === "delete"
                             ? "Eliminando..."
                             : "Borrar Orden"}
@@ -1201,7 +1173,7 @@ export function SaleUpsertPage() {
                             disabled={statusAction !== null}
                             onClick={handleCloseSale}
                           >
-                            <IconLock size={18} className="mr-2" />
+                            <Lock size={18} weight="bold" className="mr-2" />
                             {statusAction === "close"
                               ? "Cerrando..."
                               : "Cerrar para Contabilidad"}
@@ -1213,7 +1185,7 @@ export function SaleUpsertPage() {
                             disabled={statusAction !== null}
                             onClick={handleRefundSale}
                           >
-                            <IconRefresh size={18} className="mr-2" />
+                            <ArrowCounterClockwise size={18} weight="bold" className="mr-2" />
                             {statusAction === "refund"
                               ? "Reembolsando..."
                               : "Reembolsar Venta"}
@@ -1257,7 +1229,7 @@ export function SaleUpsertPage() {
                   </Button>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </div>
         </form>
       </DashboardLayout>

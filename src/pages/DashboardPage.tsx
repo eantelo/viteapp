@@ -17,6 +17,9 @@ import {
 } from "@/api/salesApi";
 import { getTodayRangeUTC } from "@/utils/dateUtils";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
+import { ChartLine } from "@phosphor-icons/react";
 
 export function DashboardPage() {
   useDocumentTitle("SalesNet | Panel de Análisis");
@@ -72,28 +75,21 @@ export function DashboardPage() {
     <PageTransition>
       <DashboardLayout
         breadcrumbs={[{ label: "Panel de Análisis" }]}
-        className="gap-6 p-6 pt-4"
+        className={PAGE_LAYOUT_CLASS}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Panel de análisis
-            </p>
-            <div className="space-y-1">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                Tablero
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Resumen de ventas y actividad reciente en tiempo real.
-              </p>
-            </div>
-          </div>
-          <DateRangeSelector
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            className="justify-self-end"
-          />
-        </div>
+        <PageHeader
+          title="Tablero"
+          description="Resumen de ventas y actividad reciente en tiempo real."
+          sectionLabel="Panel de análisis"
+          icon={ChartLine}
+          actions={
+            <DateRangeSelector
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              className="justify-self-end"
+            />
+          }
+        />
 
         <div className="grid gap-6">
           <SalesStatisticsCards statistics={statistics} loading={loading} />

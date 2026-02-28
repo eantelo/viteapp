@@ -33,14 +33,16 @@ import {
   type WarehouseUpdateDto,
 } from "@/api/warehousesApi";
 import {
-  IconBuildingWarehouse,
-  IconEdit,
-  IconEye,
-  IconPlus,
-  IconSearch,
-  IconTrash,
-} from "@tabler/icons-react";
+  Warehouse,
+  PencilSimple,
+  Eye,
+  Plus,
+  Trash,
+  SpinnerGap,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { PageHeader, SearchInput } from "@/components/shared";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface WarehouseFormState {
   name: string;
@@ -220,46 +222,36 @@ export function WarehousesPage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Almacenes" },
         ]}
-        className="flex flex-1 flex-col gap-3 p-3 md:p-4 lg:p-6"
+        className={PAGE_LAYOUT_CLASS}
       >
         <div className="w-full max-w-[1320px] space-y-4">
-          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                Almacenes
-              </h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Gestiona tus ubicaciones de inventario.
-              </p>
-            </div>
+          <PageHeader
+            icon={Warehouse}
+            title="Almacenes"
+            description="Gestiona tus ubicaciones de inventario."
+            actions={
+              <Button onClick={openCreateDialog} className="gap-2">
+                <Plus size={18} weight="bold" />
+                Nuevo almacén
+              </Button>
+            }
+          />
 
-            <Button onClick={openCreateDialog} className="gap-2">
-              <IconPlus size={18} />
-              Nuevo almacén
-            </Button>
-          </header>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar por nombre, código, ciudad o contacto"
+            resultCount={filteredWarehouses.length}
+            totalCount={warehouses.length}
+          />
 
-          <div className="rounded-xl border bg-card p-4">
-            <label className="relative block">
-              <span className="pointer-events-none absolute inset-y-0 left-3 inline-flex items-center text-slate-400">
-                <IconSearch size={18} />
-              </span>
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nombre, código, ciudad o contacto"
-                className="pl-10"
-              />
-            </label>
-          </div>
-
-          <div className="rounded-xl border bg-card">
+          <div className="rounded-lg border border-border bg-card">
             {loading ? (
               <div className="flex items-center justify-center py-10">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-primary dark:border-slate-700" />
+                <SpinnerGap size={32} weight="bold" className="animate-spin text-primary" />
               </div>
             ) : error ? (
-              <div className="px-4 py-6 text-sm text-error">{error}</div>
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">{error}</div>
             ) : (
               <Table>
                 <TableHeader>
@@ -275,7 +267,7 @@ export function WarehousesPage() {
                 <TableBody>
                   {filteredWarehouses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-slate-500">
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                         No se encontraron almacenes.
                       </TableCell>
                     </TableRow>
@@ -284,11 +276,11 @@ export function WarehousesPage() {
                       <TableRow key={warehouse.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <IconBuildingWarehouse size={18} className="text-slate-500" />
+                            <Warehouse size={18} weight="duotone" className="text-muted-foreground" />
                             <div>
                               <p className="font-medium">{warehouse.name}</p>
                               {warehouse.address ? (
-                                <p className="text-xs text-slate-500">{warehouse.address}</p>
+                                <p className="text-xs text-muted-foreground">{warehouse.address}</p>
                               ) : null}
                             </div>
                           </div>
@@ -318,7 +310,7 @@ export function WarehousesPage() {
                               onClick={() => navigate(`/warehouses/${warehouse.id}`)}
                               aria-label={`Ver detalle de ${warehouse.name}`}
                             >
-                              <IconEye size={16} />
+                              <Eye size={16} weight="bold" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -326,7 +318,7 @@ export function WarehousesPage() {
                               onClick={() => openEditDialog(warehouse)}
                               aria-label={`Editar ${warehouse.name}`}
                             >
-                              <IconEdit size={16} />
+                              <PencilSimple size={16} weight="bold" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -335,7 +327,7 @@ export function WarehousesPage() {
                               onClick={() => handleDeleteWarehouse(warehouse)}
                               aria-label={`Eliminar ${warehouse.name}`}
                             >
-                              <IconTrash size={16} />
+                              <Trash size={16} weight="bold" />
                             </Button>
                           </div>
                         </TableCell>

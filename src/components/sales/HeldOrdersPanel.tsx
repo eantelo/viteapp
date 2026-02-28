@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  IconClock,
-  IconTrash,
-  IconPlayerPlay,
-  IconX,
-  IconSearch,
-  IconPackage,
-} from "@tabler/icons-react";
+  Clock,
+  Trash,
+  Play,
+  X,
+  MagnifyingGlass,
+  Package,
+} from "@phosphor-icons/react";
 import type { HeldOrderDto } from "@/api/heldOrdersApi";
 import {
   Sheet,
@@ -105,7 +105,7 @@ export function HeldOrdersPanel({
                 size="icon"
                 onClick={() => onOpenChange(false)}
               >
-                <IconX className="size-4" />
+                <X className="size-4" weight="bold" />
               </Button>
             </div>
           </SheetHeader>
@@ -113,7 +113,7 @@ export function HeldOrdersPanel({
           {/* Búsqueda */}
           <div className="border-b px-6 py-3">
             <div className="relative">
-              <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" weight="bold" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -131,7 +131,7 @@ export function HeldOrdersPanel({
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <IconPackage className="size-12 text-muted-foreground mb-3" />
+                <Package className="size-12 text-muted-foreground mb-3" weight="duotone" />
                 <p className="font-semibold">
                   {searchTerm
                     ? "No se encontraron órdenes"
@@ -154,7 +154,7 @@ export function HeldOrdersPanel({
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <IconClock className="size-4 text-muted-foreground shrink-0" />
+                          <Clock className="size-4 text-muted-foreground shrink-0" weight="bold" />
                           <span className="text-xs font-medium text-muted-foreground">
                             {formatDate(order.createdAt)} •{" "}
                             {formatTime(order.createdAt)}
@@ -209,7 +209,7 @@ export function HeldOrdersPanel({
                           size="sm"
                           onClick={() => onDelete(order.id)}
                         >
-                          <IconTrash className="size-4" />
+                          <Trash className="size-4" weight="bold" />
                         </Button>
                         <Button
                           size="sm"
@@ -218,7 +218,7 @@ export function HeldOrdersPanel({
                             onOpenChange(false);
                           }}
                         >
-                          <IconPlayerPlay className="size-4 mr-1" />
+                          <Play className="size-4 mr-1" weight="bold" />
                           Recuperar
                         </Button>
                       </div>

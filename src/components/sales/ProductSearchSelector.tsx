@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
-  IconSearch,
-  IconPlus,
-  IconPackage,
-  IconBarcode,
-  IconX,
-  IconAlertTriangle,
-} from "@tabler/icons-react";
+  MagnifyingGlass,
+  Plus,
+  Package,
+  Barcode,
+  X,
+  Warning,
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductDto } from "@/api/productsApi";
 
@@ -141,9 +141,10 @@ export function ProductSearchSelector({
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
           <div className="relative" onClick={(e) => e.preventDefault()}>
-            <IconSearch
+            <MagnifyingGlass
               size={18}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+              weight="bold"
             />
             <Input
               ref={inputRef}
@@ -174,7 +175,7 @@ export function ProductSearchSelector({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Limpiar búsqueda"
               >
-                <IconX size={16} />
+                <X size={16} weight="bold" />
               </button>
             )}
           </div>
@@ -195,9 +196,10 @@ export function ProductSearchSelector({
                     exit={{ opacity: 0 }}
                     className="py-8 text-center text-muted-foreground"
                   >
-                    <IconPackage
+                    <Package
                       size={32}
                       className="mx-auto mb-2 opacity-50"
+                      weight="duotone"
                     />
                     <p className="text-sm">No se encontraron productos</p>
                     {search && (
@@ -257,7 +259,7 @@ export function ProductSearchSelector({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <IconBarcode size={12} />
+                              <Barcode size={12} weight="bold" />
                               {product.sku || "Sin SKU"}
                             </span>
                             {getStockBadge(product.stock)}
@@ -280,13 +282,14 @@ export function ProductSearchSelector({
                                 handleAddProduct(product);
                               }}
                             >
-                              <IconPlus size={16} />
+                              <Plus size={16} weight="bold" />
                             </Button>
                           )}
                           {isOutOfStock && (
-                            <IconAlertTriangle
+                            <Warning
                               size={16}
                               className="text-destructive"
+                              weight="bold"
                             />
                           )}
                         </div>

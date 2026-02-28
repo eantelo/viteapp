@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { IconAlertCircle } from "@tabler/icons-react";
+import { WarningCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -257,7 +257,7 @@ export function LeadFormDialog({
           <div className="grid gap-4 py-4">
             {error && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-                <IconAlertCircle className="size-4 shrink-0" />
+                <WarningCircle className="size-4 shrink-0" weight="duotone" />
                 {error}
               </div>
             )}

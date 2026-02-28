@@ -10,14 +10,14 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import type { SaleDto } from "@/api/salesApi";
 import {
-  IconUser,
-  IconCalendar,
-  IconCreditCard,
-  IconPrinter,
-  IconX,
-  IconReceipt,
-  IconPencil,
-} from "@tabler/icons-react";
+  User,
+  Calendar,
+  CreditCard,
+  Printer,
+  X,
+  Receipt,
+  PencilSimple,
+} from "@phosphor-icons/react";
 
 interface SaleDetailModalProps {
   open: boolean;
@@ -91,7 +91,7 @@ export function SaleDetailModal({
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle className="text-2xl flex items-center gap-3">
-                <IconReceipt className="h-6 w-6 text-primary" />
+                <Receipt className="h-6 w-6 text-primary" weight="duotone" />
                 Venta #{sale.saleNumber}
               </DialogTitle>
               <DialogDescription className="mt-2">
@@ -106,7 +106,7 @@ export function SaleDetailModal({
           {/* Información general */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-              <IconCalendar className="h-5 w-5 text-gray-500" />
+              <Calendar className="h-5 w-5 text-gray-500" weight="duotone" />
               <div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   Fecha y hora
@@ -118,7 +118,7 @@ export function SaleDetailModal({
             </div>
 
             <div className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-              <IconUser className="h-5 w-5 text-gray-500" />
+              <User className="h-5 w-5 text-gray-500" weight="duotone" />
               <div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   Cliente
@@ -135,7 +135,7 @@ export function SaleDetailModal({
           {/* Productos */}
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <IconReceipt className="h-5 w-5" />
+              <Receipt className="h-5 w-5" weight="duotone" />
               Productos
             </h3>
             <div className="space-y-2">
@@ -167,7 +167,7 @@ export function SaleDetailModal({
           {/* Pagos */}
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <IconCreditCard className="h-5 w-5" />
+              <CreditCard className="h-5 w-5" weight="duotone" />
               Pagos
             </h3>
             <div className="space-y-2">
@@ -222,7 +222,7 @@ export function SaleDetailModal({
                 onClick={() => onEdit(sale)}
                 className="gap-2"
               >
-                <IconPencil size={18} />
+                <PencilSimple size={18} weight="bold" />
                 Editar
               </Button>
             )}
@@ -232,12 +232,12 @@ export function SaleDetailModal({
                 onClick={() => onPrint(sale)}
                 className="gap-2"
               >
-                <IconPrinter size={18} />
+                <Printer size={18} weight="bold" />
                 Reimprimir
               </Button>
             )}
             <Button variant="outline" onClick={onClose} className="gap-2">
-              <IconX size={18} />
+              <X size={18} weight="bold" />
               Cerrar
             </Button>
           </div>

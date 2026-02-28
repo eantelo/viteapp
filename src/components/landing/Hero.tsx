@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, BarChart3, Globe, Shield } from "lucide-react";
+import { ArrowRight, ChartBar, Globe, Shield } from "@phosphor-icons/react";
 
 export function Hero() {
   return (
@@ -55,7 +55,7 @@ export function Hero() {
           >
             <Link to="/register">
               <Button size="lg" className="h-12 px-8 text-base rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
-                Start Free Trial <ArrowRight className="ml-2 w-4 h-4" />
+                Start Free Trial <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
               </Button>
             </Link>
             <Link to="/demo">
@@ -80,15 +80,15 @@ export function Hero() {
                 <div className="col-span-2 space-y-4">
                   <div className="h-8 w-1/3 bg-muted/50 rounded-md" />
                   <div className="h-64 bg-muted/30 rounded-lg border border-border/50 flex items-center justify-center">
-                    <BarChart3 className="w-12 h-12 text-muted-foreground/50" />
+                    <ChartBar className="w-12 h-12 text-muted-foreground/50" weight="duotone" />
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div className="h-32 bg-muted/30 rounded-lg border border-border/50 flex items-center justify-center">
-                    <Globe className="w-8 h-8 text-muted-foreground/50" />
+                    <Globe className="w-8 h-8 text-muted-foreground/50" weight="duotone" />
                   </div>
                   <div className="h-32 bg-muted/30 rounded-lg border border-border/50 flex items-center justify-center">
-                    <Shield className="w-8 h-8 text-muted-foreground/50" />
+                    <Shield className="w-8 h-8 text-muted-foreground/50" weight="duotone" />
                   </div>
                 </div>
               </div>

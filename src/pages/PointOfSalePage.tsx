@@ -1,17 +1,17 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  IconTrash,
-  IconUser,
-  IconRefresh,
-  IconPlayerPause,
-  IconCreditCardPay,
-  IconPackage,
-  IconHelp,
-  IconUserPlus,
-  IconUserX,
-  IconHistory,
-} from "@tabler/icons-react";
+  Trash,
+  User,
+  ArrowCounterClockwise,
+  Pause,
+  CreditCard,
+  Package,
+  Question,
+  UserPlus,
+  UserMinus,
+  ClockCounterClockwise,
+} from "@phosphor-icons/react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import {
@@ -38,8 +38,9 @@ import { KeyboardShortcutsModal } from "@/components/keyboard/KeyboardShortcutsM
 import { KeyPressIndicator } from "@/components/keyboard/KeyPressIndicator";
 import { ShortcutBadge } from "@/components/keyboard/ShortcutBadge";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
@@ -49,7 +50,6 @@ import { cn } from "@/lib/utils";
 
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
@@ -110,8 +110,7 @@ export function PointOfSalePage() {
     updateItemPrice,
   } = usePointOfSale({
     onSaleCreated: (sale) => {
-      toast({
-        title: "Venta registrada",
+      toast.success("Venta registrada", {
         description: `Folio #${sale.saleNumber} guardado correctamente`,
       });
     },
@@ -172,8 +171,7 @@ export function PointOfSalePage() {
           }
         );
 
-        toast({
-          title: "Venta repetida",
+        toast.success("Venta repetida", {
           description: `${items.length} productos cargados desde la venta anterior`,
         });
 
@@ -183,7 +181,7 @@ export function PointOfSalePage() {
         console.error("Error al cargar productos de venta repetida:", error);
       }
     }
-  }, [addProductToOrder, toast]);
+  }, [addProductToOrder]);
 
   const currencyFormatter = useMemo(
     () =>
@@ -203,24 +201,20 @@ export function PointOfSalePage() {
     }
     const product = await addProductByLookup(code);
     if (!product) {
-      toast({
-        title: "Producto no encontrado",
+      toast.error("Producto no encontrado", {
         description: "Verifica el código de barras o la búsqueda.",
-        variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Producto agregado",
+    toast.success("Producto agregado", {
       description: `${product.name} añadido a la orden`,
     });
   };
 
   const handleSelectProduct = (product: ProductDto) => {
     addProductToOrder(product);
-    toast({
-      title: "Producto agregado",
+    toast.success("Producto agregado", {
       description: `${product.name} añadido a la orden`,
     });
     setSearchTerm("");
@@ -229,23 +223,19 @@ export function PointOfSalePage() {
   const handleHold = async () => {
     try {
       await holdOrder();
-      toast({
-        title: "Orden guardada",
+      toast.success("Orden guardada", {
         description: "La orden se guardó correctamente en el servidor",
       });
     } catch (error) {
-      toast({
-        title: "Error al guardar",
+      toast.error("Error al guardar", {
         description: "No se pudo guardar la orden en espera",
-        variant: "destructive",
       });
     }
   };
 
   const handleClear = () => {
     clearOrder();
-    toast({
-      title: "Orden vaciada",
+    toast.success("Orden vaciada", {
       description: "El carrito se limpió correctamente",
     });
   };
@@ -277,8 +267,7 @@ export function PointOfSalePage() {
     setIsCustomerDialogOpen(false);
     if (saved) {
       await reloadCustomers();
-      toast({
-        title: "Cliente creado",
+      toast.success("Cliente creado", {
         description: "El nuevo cliente ha sido agregado",
       });
     }
@@ -298,8 +287,7 @@ export function PointOfSalePage() {
     setIsGenericCustomer(false);
     setCustomerSearchOpen(false);
     setSelectedCustomerIndex(-1);
-    toast({
-      title: "Cliente removido",
+    toast.success("Cliente removido", {
       description: "Puedes seleccionar otro cliente o usar venta rápida",
     });
   };
@@ -416,8 +404,7 @@ export function PointOfSalePage() {
       handler: () => {
         triggerIndicator("F12");
         // TODO: Implementar apertura de cajón si hay hardware disponible
-        toast({
-          title: "Cajón",
+        toast.success("Cajón", {
           description: "Funcionalidad de apertura de cajón en desarrollo",
         });
       },
@@ -449,8 +436,7 @@ export function PointOfSalePage() {
       handler: () => {
         triggerIndicator("Ctrl+H");
         // TODO: Navegar a historial de ventas
-        toast({
-          title: "Historial",
+        toast.success("Historial", {
           description: "Navegando a historial de ventas...",
         });
       },
@@ -469,7 +455,7 @@ export function PointOfSalePage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Punto de Venta" },
         ]}
-        className="flex flex-1 flex-col gap-6 p-4"
+        className={PAGE_LAYOUT_CLASS}
       >
         {/* Botón flotante para ayuda */}
         <div className="flex justify-end gap-2">
@@ -480,7 +466,7 @@ export function PointOfSalePage() {
               onClick={() => setIsHeldOrdersPanelOpen(true)}
               className="gap-2 relative"
             >
-              <IconPlayerPause className="size-4" />
+              <Pause size={16} weight="bold" />
               <span className="text-xs">Órdenes en espera</span>
               <Badge variant="default" className="ml-1">
                 {heldOrders.length}
@@ -493,7 +479,7 @@ export function PointOfSalePage() {
             onClick={() => navigate("/sales")}
             className="gap-2"
           >
-            <IconHistory className="size-4" />
+            <ClockCounterClockwise className="size-4" weight="bold" />
             <span className="text-xs">F5 - Historial</span>
           </Button>
           <Button
@@ -502,7 +488,7 @@ export function PointOfSalePage() {
             onClick={() => setIsShortcutsHelpOpen(true)}
             className="gap-2"
           >
-            <IconHelp className="size-4" />
+            <Question className="size-4" weight="bold" />
             <span className="text-xs">F1 - Atajos</span>
           </Button>
         </div>
@@ -551,7 +537,7 @@ export function PointOfSalePage() {
               <CardContent>
                 {items.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-12 text-center">
-                    <IconPackage className="size-10 text-muted-foreground" />
+                    <Package className="size-10 text-muted-foreground" weight="duotone" />
                     <div>
                       <p className="font-semibold">Tu ticket está vacío</p>
                       <p className="text-sm text-muted-foreground">
@@ -636,7 +622,7 @@ export function PointOfSalePage() {
                       }}
                       title="Crear nuevo cliente"
                     >
-                      <IconUserPlus className="size-4" />
+                      <UserPlus className="size-4" weight="bold" />
                     </Button>
                   </div>
 
@@ -661,7 +647,7 @@ export function PointOfSalePage() {
                             }}
                             className="w-full"
                           >
-                            <IconUserPlus className="size-4 mr-2" />
+                            <UserPlus className="size-4 mr-2" weight="bold" />
                             Crear nuevo cliente
                           </Button>
                         </div>
@@ -726,7 +712,7 @@ export function PointOfSalePage() {
                     }
                   }}
                 >
-                  <IconUser className="size-4 mr-2" />
+                  <User className="size-4 mr-2" weight="bold" />
                   {isGenericCustomer
                     ? "Cliente genérico seleccionado"
                     : "Venta rápida sin cliente"}
@@ -734,8 +720,8 @@ export function PointOfSalePage() {
 
                 {/* Card con información del cliente seleccionado */}
                 {isGenericCustomer ? (
-                  <div className="rounded-lg border border-dashed p-4 text-center bg-slate-50 dark:bg-slate-900/30">
-                    <IconUser className="size-8 mx-auto text-muted-foreground mb-2" />
+                  <div className="rounded-lg border border-dashed p-4 text-center bg-muted/30">
+                    <User className="size-8 mx-auto text-muted-foreground mb-2" weight="duotone" />
                     <p className="text-sm font-medium text-muted-foreground">
                       Cliente genérico/Sin cliente
                     </p>
@@ -753,8 +739,7 @@ export function PointOfSalePage() {
                             customers.find((c) => c.id === customerId) || null
                           }
                           onViewHistory={() => {
-                            toast({
-                              title: "Historial",
+                            toast.success("Historial", {
                               description:
                                 "Visualización de historial en desarrollo",
                             });
@@ -775,15 +760,15 @@ export function PointOfSalePage() {
                           className="w-full"
                           onClick={handleRemoveCustomer}
                         >
-                          <IconUserX className="size-4 mr-2" />
+                          <UserMinus className="size-4 mr-2" weight="bold" />
                           Cambiar cliente
                         </Button>
                       </>
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed p-4 text-center bg-slate-50 dark:bg-slate-900/30">
-                    <IconUser className="size-8 mx-auto text-muted-foreground mb-2" />
+                  <div className="rounded-lg border border-dashed p-4 text-center bg-muted/30">
+                    <User className="size-8 mx-auto text-muted-foreground mb-2" weight="duotone" />
                     <p className="text-sm font-medium text-muted-foreground">
                       Sin cliente seleccionado
                     </p>
@@ -803,7 +788,7 @@ export function PointOfSalePage() {
                   }}
                   disabled={customersLoading}
                 >
-                  <IconRefresh className="size-4 mr-2" />
+                  <ArrowCounterClockwise className="size-4 mr-2" weight="bold" />
                   Actualizar clientes
                 </Button>
               </CardContent>
@@ -883,7 +868,7 @@ export function PointOfSalePage() {
                     disabled={items.length === 0}
                     title="F8 para poner en espera"
                   >
-                    <IconPlayerPause className="size-4" />
+                    <Pause className="size-4" weight="bold" />
                     Poner en espera
                     <ShortcutBadge
                       shortcut="F8"
@@ -898,7 +883,7 @@ export function PointOfSalePage() {
                     disabled={items.length === 0}
                     title="ESC para limpiar"
                   >
-                    <IconTrash className="size-4" />
+                    <Trash className="size-4" weight="bold" />
                     Limpiar
                     <ShortcutBadge
                       shortcut="ESC"
@@ -925,7 +910,7 @@ export function PointOfSalePage() {
                     </>
                   ) : (
                     <>
-                      <IconCreditCardPay className="size-5" />
+                      <CreditCard className="size-5" weight="bold" />
                       Cobrar {formatCurrency(total)}
                       <ShortcutBadge
                         shortcut="F9"
@@ -952,23 +937,19 @@ export function PointOfSalePage() {
         loading={heldOrdersLoading}
         onResume={(order) => {
           resumeHeldOrder(order);
-          toast({
-            title: "Orden recuperada",
+          toast.success("Orden recuperada", {
             description: "Continuemos con el cobro",
           });
         }}
         onDelete={async (orderId) => {
           try {
             await removeHeldOrder(orderId);
-            toast({
-              title: "Orden eliminada",
+            toast.success("Orden eliminada", {
               description: "La orden en espera fue eliminada",
             });
           } catch (error) {
-            toast({
-              title: "Error",
+            toast.error("Error", {
               description: "No se pudo eliminar la orden",
-              variant: "destructive",
             });
           }
         }}
