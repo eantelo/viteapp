@@ -13,5 +13,12 @@ export default defineConfig({
   },
   server: {
     open: "/dashboard", // Auto-open browser to dashboard page
+    proxy: {
+      "/api": {
+        target: "https://salesapi.tecnoshop.com.bo",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 });

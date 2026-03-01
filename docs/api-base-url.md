@@ -25,6 +25,19 @@ El cliente HTTP centralizado (`src/api/apiClient.ts`) ya utiliza:
 
 Por lo tanto, con esta configuración todas las solicitudes del frontend apuntan al dominio configurado.
 
+## Desarrollo local sin errores CORS
+
+Para desarrollo local se agregó una configuración específica:
+
+- Archivo: `.env.development`
+- Valor: `VITE_API_URL=/`
+
+Y en `vite.config.ts` se configuró proxy para `/api` hacia:
+
+- `https://salesapi.tecnoshop.com.bo`
+
+Con esto, en `npm run dev` el navegador llama a `http://localhost:5173/api/...` y Vite reenvía al API remoto, evitando bloqueos CORS desde localhost.
+
 ## Nota operativa
 
 Si en algún momento necesitas volver a API local para desarrollo, cambia temporalmente en `.env`:
