@@ -46,6 +46,16 @@ Define la URL de API en `.env`:
 
 `VITE_API_URL=http://localhost:5205`
 
+## Despliegue en Dokploy
+
+El frontend ya incluye configuración lista para contenedor:
+
+- `Dockerfile` (build multistage con Vite + Nginx)
+- `nginx.conf` (fallback SPA para React Router)
+- `.dockerignore`
+
+Guía completa de despliegue: `docs/dokploy-deploy.md`.
+
 ## Convenciones
 
 - No llamar API directamente desde páginas: usar `src/api` + hooks/servicios.
