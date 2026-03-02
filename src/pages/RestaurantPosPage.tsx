@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Coffee, MagnifyingGlass, List, User, Trash, CreditCard, Clock, Plus, Minus, X, Pause, ClockCounterClockwise } from "@phosphor-icons/react";
+import { Coffee, MagnifyingGlass, List, User, Trash, CreditCard, Clock, Plus, Minus, X, Pause, ClockCounterClockwise, CaretUp, CaretDown } from "@phosphor-icons/react";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -24,11 +24,12 @@ import { es } from "date-fns/locale";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { type PaymentMethodType } from "@/api/salesApi";
 
+type MobileOrderSnap = "collapsed" | "mid" | "full";
+
 export function RestaurantPosPage() {
   useDocumentTitle("Punto de Venta - Restaurante");
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const orderSummaryRef = useRef<HTMLElement | null>(null);
 
   // State
   const [categories, setCategories] = useState<string[]>([]);
@@ -39,6 +40,7 @@ export function RestaurantPosPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isHeldOrdersOpen, setIsHeldOrdersOpen] = useState(false);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [mobileOrderSnap, setMobileOrderSnap] = useState<MobileOrderSnap>("collapsed");
   const [localSearchTerm, setLocalSearchTerm] = useState("");
 
   // POS Hook
@@ -131,6 +133,7 @@ export function RestaurantPosPage() {
   ) => {
     await submitSale(paymentMethod, amountReceived, reference);
     setIsPaymentDialogOpen(false);
+    setMobileOrderSnap("collapsed");
   };
 
   const handleHoldOrder = async () => {
@@ -139,6 +142,7 @@ export function RestaurantPosPage() {
       toast.success("Orden guardada", {
         description: "La orden se ha puesto en espera correctamente.",
       });
+      setMobileOrderSnap("collapsed");
     } catch {
       toast.error("Error", {
         description: "No se pudo guardar la orden.",
@@ -153,12 +157,13 @@ export function RestaurantPosPage() {
     }).format(value);
   };
 
-  const handleScrollToOrder = () => {
-    orderSummaryRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
+  const isMobileOrderExpanded = mobileOrderSnap !== "collapsed";
+  const mobileOrderSnapClass =
+    mobileOrderSnap === "full"
+      ? "translate-y-0"
+      : mobileOrderSnap === "mid"
+        ? "translate-y-[calc(100%-22rem)]"
+        : "translate-y-[calc(100%-4.25rem)]";
 
   return (
     <div className="flex min-h-dvh w-full flex-col bg-background overflow-y-auto overflow-x-hidden pb-24 md:h-screen md:overflow-hidden md:pb-0">
@@ -298,9 +303,80 @@ export function RestaurantPosPage() {
 
         {/* Right Panel - Order Summary */}
         <aside
-          ref={orderSummaryRef}
-          className="z-20 flex w-full flex-col border-t bg-card shadow-none md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl"
+          className={cn(
+            "z-30 flex w-full flex-col border-t bg-card shadow-xl md:z-20 md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl",
+            "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-300 md:static md:h-auto md:max-h-none md:rounded-none md:translate-y-0",
+            mobileOrderSnapClass
+          )}
         >
+          <div className="md:hidden flex h-17 items-center gap-2 border-b px-4">
+            <button
+              type="button"
+              className="relative flex min-w-0 flex-1 items-center justify-between text-left"
+              onClick={() =>
+                setMobileOrderSnap((prev) => {
+                  if (prev === "collapsed") return "mid";
+                  if (prev === "mid") return "full";
+                  return "collapsed";
+                })
+              }
+              aria-label="Cambiar nivel del panel de orden"
+            >
+              <div className="absolute left-1/2 top-[-0.35rem] h-1.5 w-12 -translate-x-1/2 rounded-full bg-muted-foreground/30" />
+              <div className="pt-2">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Orden actual
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  {items.length} productos
+                </p>
+              </div>
+              <div className="pt-2 text-right">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Total
+                </p>
+                <p className="text-base font-bold text-foreground">
+                  {formatCurrency(total)}
+                </p>
+              </div>
+            </button>
+
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
+                onClick={() =>
+                  setMobileOrderSnap((prev) => {
+                    if (prev === "full") return "mid";
+                    if (prev === "mid") return "collapsed";
+                    return "collapsed";
+                  })
+                }
+                disabled={mobileOrderSnap === "collapsed"}
+                aria-label="Bajar panel"
+                title="Bajar panel"
+              >
+                <CaretDown weight="bold" className="size-4" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
+                onClick={() =>
+                  setMobileOrderSnap((prev) => {
+                    if (prev === "collapsed") return "mid";
+                    if (prev === "mid") return "full";
+                    return "full";
+                  })
+                }
+                disabled={mobileOrderSnap === "full"}
+                aria-label="Subir panel"
+                title="Subir panel"
+              >
+                <CaretUp weight="bold" className="size-4" />
+              </button>
+            </div>
+          </div>
+
           {/* Customer Selection */}
           <div className="p-3 border-b bg-muted/80">
             <div className="flex items-center justify-between mb-2">
@@ -311,7 +387,10 @@ export function RestaurantPosPage() {
                 variant="ghost"
                 size="sm"
                 className="h-6 text-xs text-blue-600 hover:text-blue-700"
-                onClick={() => setIsCustomerSearchOpen(true)}
+                onClick={() => {
+                  setIsCustomerSearchOpen(true);
+                  setMobileOrderSnap("collapsed");
+                }}
               >
                 Cambiar
               </Button>
@@ -343,7 +422,10 @@ export function RestaurantPosPage() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setIsHeldOrdersOpen(true)}
+                  onClick={() => {
+                    setIsHeldOrdersOpen(true);
+                    setMobileOrderSnap("collapsed");
+                  }}
                   className="relative text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
                   title="Ver órdenes en espera"
                 >
@@ -461,7 +543,10 @@ export function RestaurantPosPage() {
             <Button
               className="w-full h-14 text-lg font-bold bg-foreground hover:bg-foreground/90 text-background shadow-lg shadow-foreground/20"
               disabled={items.length === 0 || isSubmitting}
-              onClick={() => setIsPaymentDialogOpen(true)}
+              onClick={() => {
+                setIsPaymentDialogOpen(true);
+                setMobileOrderSnap("collapsed");
+              }}
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
@@ -479,24 +564,14 @@ export function RestaurantPosPage() {
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-card/85 md:hidden">
-        <div className="mx-auto flex max-w-2xl items-center gap-2">
-          <Button
-            variant="outline"
-            className="h-12 flex-1"
-            onClick={handleScrollToOrder}
-          >
-            Orden ({items.length})
-          </Button>
-          <Button
-            className="h-12 flex-[1.4] font-semibold"
-            disabled={items.length === 0 || isSubmitting}
-            onClick={() => setIsPaymentDialogOpen(true)}
-          >
-            {isSubmitting ? "Procesando..." : `Pagar ${formatCurrency(total)}`}
-          </Button>
-        </div>
-      </div>
+      {isMobileOrderExpanded && (
+        <button
+          type="button"
+          className="fixed inset-0 z-20 bg-black/35 md:hidden"
+          onClick={() => setMobileOrderSnap("collapsed")}
+          aria-label="Cerrar panel de orden"
+        />
+      )}
 
       <PaymentDialog
         open={isPaymentDialogOpen}
