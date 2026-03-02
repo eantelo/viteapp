@@ -197,8 +197,8 @@ export function OrderProductTableEnhanced({
         </div>
 
         {/* Tabla de productos */}
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="min-w-[220px]">Producto</TableHead>
@@ -308,6 +308,8 @@ export function OrderProductTableEnhanced({
                                 }
                                 disabled={item.quantity <= 1}
                                 className="h-9 w-9 p-0 rounded-l-lg rounded-r-none border-r-0"
+                                aria-label="Disminuir cantidad"
+                                title="Disminuir cantidad"
                               >
                                 <Minus size={16} weight="bold" />
                               </Button>
@@ -369,6 +371,8 @@ export function OrderProductTableEnhanced({
                                   handleIncrement(index, item.quantity)
                                 }
                                 className="h-9 w-9 p-0 rounded-r-lg rounded-l-none border-l-0"
+                                aria-label="Aumentar cantidad"
+                                title="Aumentar cantidad"
                               >
                                 <Plus size={16} weight="bold" />
                               </Button>
@@ -400,6 +404,8 @@ export function OrderProductTableEnhanced({
                               variant="ghost"
                               className="h-8 w-8 p-0"
                               onClick={confirmEdit}
+                              aria-label="Confirmar edición de precio"
+                              title="Confirmar edición de precio"
                             >
                               <Check size={14} weight="bold" />
                             </Button>
@@ -409,6 +415,8 @@ export function OrderProductTableEnhanced({
                               variant="ghost"
                               className="h-8 w-8 p-0"
                               onClick={cancelEdit}
+                              aria-label="Cancelar edición de precio"
+                              title="Cancelar edición de precio"
                             >
                               <X size={14} weight="bold" />
                             </Button>
@@ -450,6 +458,8 @@ export function OrderProductTableEnhanced({
                               size="sm"
                               onClick={() => handleRemoveClick(index)}
                               className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              aria-label="Quitar producto"
+                              title="Quitar producto"
                             >
                               <Trash size={16} weight="bold" />
                             </Button>
@@ -468,13 +478,13 @@ export function OrderProductTableEnhanced({
         </div>
 
         {/* Footer con total */}
-        <div className="flex items-center justify-between px-4 py-3 bg-muted/30 rounded-lg border">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-muted/30 rounded-lg border">
           <div>
             <p className="text-sm text-muted-foreground">
               {items.length} producto{items.length !== 1 ? "s" : ""} en la orden
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right ml-auto">
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-2xl font-bold text-primary">
               {formatCurrency(totalAmount)}

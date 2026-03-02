@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -34,8 +34,12 @@ import {
   ArrowCounterClockwise,
   Trash,
   Check,
+  CaretUp,
+  CaretDown,
 } from "@phosphor-icons/react";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import type {
   PaymentMethodType,
   SaleDto,
@@ -67,6 +71,8 @@ interface SaleItemForm {
   price: number;
   subtotal: number;
 }
+
+type MobileSnapPoint = "collapsed" | "mid" | "full";
 
 // Helper para obtener badge de estado
 function getStatusBadge(status: SaleDto["status"]) {
@@ -115,6 +121,7 @@ export function SaleUpsertPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const isMobile = useIsMobile();
 
   // Estado de la venta existente (para edición)
   const [sale, setSale] = useState<SaleDto | null>(null);
@@ -144,9 +151,60 @@ export function SaleUpsertPage() {
   const [statusAction, setStatusAction] = useState<
     "delete" | "close" | "refund" | "approve" | null
   >(null);
+  const [mobileSnap, setMobileSnap] = useState<MobileSnapPoint>("collapsed");
+  const sheetGestureRef = useRef<{ startY: number; startTime: number } | null>(null);
 
   // Solo se pueden editar ventas en estado Pending
   const isReadOnly = isEditing && sale?.status !== "Pending";
+  const isMobileExpanded = isMobile && mobileSnap !== "collapsed";
+
+  const getNextSnapUp = (current: MobileSnapPoint): MobileSnapPoint => {
+    if (current === "collapsed") return "mid";
+    if (current === "mid") return "full";
+    return "full";
+  };
+
+  const getNextSnapDown = (current: MobileSnapPoint): MobileSnapPoint => {
+    if (current === "full") return "mid";
+    if (current === "mid") return "collapsed";
+    return "collapsed";
+  };
+
+  const mobileSnapClass =
+    mobileSnap === "full"
+      ? "translate-y-0"
+      : mobileSnap === "mid"
+      ? "translate-y-[calc(100%-24rem)]"
+      : "translate-y-[calc(100%-4.5rem)]";
+
+  const handleSheetTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    sheetGestureRef.current = { startY: touch.clientY, startTime: Date.now() };
+  };
+
+  const handleSheetTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const gesture = sheetGestureRef.current;
+    if (!gesture) return;
+
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+
+    const deltaY = touch.clientY - gesture.startY;
+    const elapsed = Math.max(Date.now() - gesture.startTime, 1);
+    const speed = Math.abs(deltaY) / elapsed;
+
+    const isSwipeUp = deltaY <= -36 || (deltaY < 0 && speed >= 0.55);
+    const isSwipeDown = deltaY >= 36 || (deltaY > 0 && speed >= 0.55);
+
+    if (isSwipeUp) {
+      setMobileSnap((prev) => getNextSnapUp(prev));
+    } else if (isSwipeDown) {
+      setMobileSnap((prev) => getNextSnapDown(prev));
+    }
+
+    sheetGestureRef.current = null;
+  };
 
   useDocumentTitle(
     isEditing
@@ -225,6 +283,13 @@ export function SaleUpsertPage() {
       loadSale();
     }
   }, [isEditing, loadSale]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileSnap("collapsed");
+      sheetGestureRef.current = null;
+    }
+  }, [isMobile]);
 
   // Cargar producto desde catálogo (quick sale)
   useEffect(() => {
@@ -557,6 +622,290 @@ export function SaleUpsertPage() {
 
   const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 
+  const sidePanelContent = (
+    <>
+      {/* Método de Pago */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Método de Pago</CardTitle>
+          <CardDescription>
+            Selecciona cómo se pagará la orden al aprobarla.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="payment-method">Método</Label>
+            <Select
+              value={paymentMethod.toString()}
+              onValueChange={(value) => {
+                const nextMethod = Number(value) as PaymentMethodType;
+                setPaymentMethod(nextMethod);
+                if (nextMethod !== PaymentMethod.Cash) {
+                  setAmountReceived("");
+                }
+              }}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger id="payment-method">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PaymentMethod.Cash.toString()}>
+                  Efectivo
+                </SelectItem>
+                <SelectItem value={PaymentMethod.Card.toString()}>
+                  Tarjeta
+                </SelectItem>
+                <SelectItem value={PaymentMethod.Voucher.toString()}>
+                  Voucher
+                </SelectItem>
+                <SelectItem value={PaymentMethod.Transfer.toString()}>
+                  Transferencia
+                </SelectItem>
+                <SelectItem value={PaymentMethod.Other.toString()}>
+                  Otro
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {paymentMethod === PaymentMethod.Cash && (
+            <div className="space-y-2">
+              <Label htmlFor="amount-received">Monto recibido</Label>
+              <Input
+                id="amount-received"
+                type="number"
+                min={0}
+                step="0.01"
+                value={amountReceived}
+                onChange={(e) => setAmountReceived(e.target.value)}
+                placeholder={totalAmount ? totalAmount.toString() : "0"}
+                disabled={isReadOnly}
+              />
+              <p className="text-xs text-muted-foreground">
+                Si lo dejas vacío, se usará el total.
+              </p>
+            </div>
+          )}
+
+          {paymentMethod !== PaymentMethod.Cash && (
+            <div className="space-y-2">
+              <Label htmlFor="payment-reference">Referencia</Label>
+              <Input
+                id="payment-reference"
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+                placeholder="Opcional"
+                disabled={isReadOnly}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resumen de la orden */}
+      <Card className="md:sticky md:top-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart size={20} weight="duotone" className="text-primary" />
+            Resumen de la Orden
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Desglose */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Productos</span>
+                <span className="font-medium">
+                  {items.length} artículo{items.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Cantidad total</span>
+                <span className="font-medium">
+                  {items.reduce((sum, item) => sum + item.quantity, 0)} unidad
+                  {items.reduce((sum, item) => sum + item.quantity, 0) !== 1
+                    ? "es"
+                    : ""}
+                </span>
+              </div>
+            </div>
+
+            {/* Lista resumida de productos */}
+            {items.length > 0 && (
+              <div className="border-t pt-3">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Productos en la orden:
+                </p>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                  {items.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="flex items-center justify-between text-xs bg-muted/50 px-2 py-1.5 rounded"
+                    >
+                      <span className="truncate flex-1 mr-2">{item.productName}</span>
+                      <span className="shrink-0 text-muted-foreground">x{item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-lg">Total</span>
+                <span className="font-bold text-2xl text-primary">
+                  {formatCurrency(totalAmount)}
+                </span>
+              </div>
+            </div>
+
+            {/* Indicador de estado */}
+            {items.length === 0 && (
+              <div className="text-center py-2 text-xs text-muted-foreground bg-muted/50 rounded">
+                Agrega productos para continuar
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Estado de la Venta - solo para ventas existentes */}
+      {isEditing && sale && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              Estado de la Venta
+              {getStatusBadge(sale.status)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Info del estado actual */}
+            <div className="text-sm space-y-1">
+              {sale.status === "Pending" && (
+                <>
+                  <p className="text-muted-foreground">
+                    <span className="font-medium text-amber-600">Stock reservado</span>{" "}
+                    - Los productos están apartados.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Puedes guardar o borrar esta orden.
+                  </p>
+                </>
+              )}
+              {sale.status === "Completed" && (
+                <>
+                  <p className="text-muted-foreground">
+                    <span className="font-medium text-green-600">Pagada y entregada</span>{" "}
+                    - Stock descontado.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Puedes cerrar para contabilidad o reembolsar.
+                  </p>
+                </>
+              )}
+              {sale.status === "Closed" && (
+                <p className="text-muted-foreground">
+                  <span className="font-medium text-muted-foreground">Contabilizada</span>{" "}
+                  - Esta venta es inmutable.
+                </p>
+              )}
+              {sale.status === "Cancelled" && (
+                <p className="text-muted-foreground">
+                  <span className="font-medium text-red-600">Cancelada</span> - Stock devuelto
+                  al inventario.
+                </p>
+              )}
+              {sale.status === "Refunded" && (
+                <p className="text-muted-foreground">
+                  <span className="font-medium text-purple-600">Reembolsada</span> - Stock
+                  devuelto al inventario.
+                </p>
+              )}
+            </div>
+
+            {/* Botones de acción según estado */}
+            <div className="border-t pt-3 space-y-2">
+              {sale.status === "Pending" && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={statusAction !== null}
+                  onClick={handleDeleteSale}
+                >
+                  <Trash size={18} weight="bold" className="mr-2" />
+                  {statusAction === "delete" ? "Eliminando..." : "Borrar Orden"}
+                </Button>
+              )}
+              {sale.status === "Completed" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={statusAction !== null}
+                    onClick={handleCloseSale}
+                  >
+                    <Lock size={18} weight="bold" className="mr-2" />
+                    {statusAction === "close"
+                      ? "Cerrando..."
+                      : "Cerrar para Contabilidad"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                    disabled={statusAction !== null}
+                    onClick={handleRefundSale}
+                  >
+                    <ArrowCounterClockwise size={18} weight="bold" className="mr-2" />
+                    {statusAction === "refund" ? "Reembolsando..." : "Reembolsar Venta"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Acciones rápidas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Acciones Rápidas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate("/pos")}
+          >
+            Ir a Punto de Venta
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate("/customers")}
+          >
+            Gestionar Clientes
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate("/products")}
+          >
+            Gestionar Productos
+          </Button>
+        </CardContent>
+      </Card>
+    </>
+  );
+
   // Renderizar estado de carga
   if (loading) {
     return (
@@ -638,34 +987,35 @@ export function SaleUpsertPage() {
         ]}
         className={PAGE_LAYOUT_CLASS}
       >
-        <form onSubmit={handleSubmit} className="w-full max-w-[1320px]">
+        <form onSubmit={handleSubmit} className="w-full max-w-[1320px] pb-24 md:pb-0">
           {/* Header con acciones */}
-          <div
-            className="flex items-center justify-between mb-6"
-          >
-            <div className="flex items-center gap-4">
+          <header className="mb-6 flex min-h-14 flex-wrap items-start justify-between gap-3 md:items-center">
+            <div className="flex min-w-0 items-start gap-3 md:gap-4">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={handleCancel}
                 disabled={saving}
+                aria-label="Volver a ventas"
+                title="Volver a ventas"
+                className="h-11 w-11 p-0"
               >
                 <ArrowLeft size={20} weight="bold" />
               </Button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <ShoppingCart size={28} weight="duotone" className="text-primary" />
-                  <h1 className="text-3xl font-bold">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                  <ShoppingCart size={24} weight="duotone" className="text-primary" />
+                  <h1 className="text-xl font-bold leading-tight md:text-3xl">
                     {isEditing
                       ? `Orden #${sale?.saleNumber ?? ""}`
                       : "Nueva Orden de Venta"}
                   </h1>
                   {isEditing && sale && (
-                    <span className="ml-2">{getStatusBadge(sale.status)}</span>
+                    <span>{getStatusBadge(sale.status)}</span>
                   )}
                 </div>
-                <p className="text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1 md:text-base">
                   {isReadOnly
                     ? "Esta orden no puede ser editada porque ya no está en estado pendiente."
                     : isEditing
@@ -675,12 +1025,13 @@ export function SaleUpsertPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
                 disabled={saving || statusAction !== null}
+                className="min-h-11"
               >
                 {isReadOnly ? "Volver" : "Cancelar"}
               </Button>
@@ -692,6 +1043,7 @@ export function SaleUpsertPage() {
                     type="submit"
                     variant="outline"
                     disabled={saving || statusAction !== null}
+                    className="min-h-11"
                   >
                     <FloppyDisk size={20} weight="bold" className="mr-2" />
                     {saving && statusAction !== "approve"
@@ -702,7 +1054,7 @@ export function SaleUpsertPage() {
                     type="button"
                     disabled={saving || statusAction !== null}
                     onClick={handleApproveSale}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="min-h-11 bg-green-600 hover:bg-green-700"
                   >
                     <Check size={20} weight="bold" className="mr-2" />
                     {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
@@ -712,6 +1064,7 @@ export function SaleUpsertPage() {
                     variant="destructive"
                     disabled={saving || statusAction !== null}
                     onClick={handleDeleteSale}
+                    className="min-h-11"
                   >
                     <Trash size={20} weight="bold" className="mr-2" />
                     {statusAction === "delete" ? "Eliminando..." : "Borrar"}
@@ -726,6 +1079,7 @@ export function SaleUpsertPage() {
                     type="submit"
                     variant="outline"
                     disabled={saving || statusAction !== null}
+                    className="min-h-11"
                   >
                     <FloppyDisk size={20} weight="bold" className="mr-2" />
                     {saving && statusAction !== "approve"
@@ -736,7 +1090,7 @@ export function SaleUpsertPage() {
                     type="button"
                     disabled={saving || statusAction !== null}
                     onClick={handleApproveSale}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="min-h-11 bg-green-600 hover:bg-green-700"
                   >
                     <Check size={20} weight="bold" className="mr-2" />
                     {statusAction === "approve" ? "Aprobando..." : "Aprobar"}
@@ -752,6 +1106,7 @@ export function SaleUpsertPage() {
                     variant="secondary"
                     disabled={statusAction !== null}
                     onClick={handleCloseSale}
+                    className="min-h-11"
                   >
                     <Lock size={20} weight="bold" className="mr-2" />
                     {statusAction === "close"
@@ -761,7 +1116,7 @@ export function SaleUpsertPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+                    className="min-h-11 border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
                     disabled={statusAction !== null}
                     onClick={handleRefundSale}
                   >
@@ -773,7 +1128,7 @@ export function SaleUpsertPage() {
                 </>
               )}
             </div>
-          </div>
+          </header>
 
           {/* Alerta de solo lectura */}
           {isReadOnly && (
@@ -801,11 +1156,9 @@ export function SaleUpsertPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Información principal */}
-            <div
-              className="lg:col-span-2 space-y-4"
-            >
+            <main className="space-y-4 min-w-0 md:col-span-2">
               {/* Datos de la orden */}
               <Card>
                 <CardHeader>
@@ -920,317 +1273,84 @@ export function SaleUpsertPage() {
                   )}
                 </CardContent>
               </Card>
-            </div>
+            </main>
 
-            {/* Panel lateral - Resumen */}
-            <div
-              className="space-y-4"
-            >
-              {/* Método de Pago */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Método de Pago</CardTitle>
-                  <CardDescription>
-                    Selecciona cómo se pagará la orden al aprobarla.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="payment-method">Método</Label>
-                    <Select
-                      value={paymentMethod.toString()}
-                      onValueChange={(value) => {
-                        const nextMethod = Number(value) as PaymentMethodType;
-                        setPaymentMethod(nextMethod);
-                        if (nextMethod !== PaymentMethod.Cash) {
-                          setAmountReceived("");
-                        }
-                      }}
-                      disabled={isReadOnly}
-                    >
-                      <SelectTrigger id="payment-method">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={PaymentMethod.Cash.toString()}>
-                          Efectivo
-                        </SelectItem>
-                        <SelectItem value={PaymentMethod.Card.toString()}>
-                          Tarjeta
-                        </SelectItem>
-                        <SelectItem value={PaymentMethod.Voucher.toString()}>
-                          Voucher
-                        </SelectItem>
-                        <SelectItem value={PaymentMethod.Transfer.toString()}>
-                          Transferencia
-                        </SelectItem>
-                        <SelectItem value={PaymentMethod.Other.toString()}>
-                          Otro
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {paymentMethod === PaymentMethod.Cash && (
-                    <div className="space-y-2">
-                      <Label htmlFor="amount-received">Monto recibido</Label>
-                      <Input
-                        id="amount-received"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={amountReceived}
-                        onChange={(e) => setAmountReceived(e.target.value)}
-                        placeholder={totalAmount ? totalAmount.toString() : "0"}
-                        disabled={isReadOnly}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Si lo dejas vacío, se usará el total.
-                      </p>
-                    </div>
-                  )}
-
-                  {paymentMethod !== PaymentMethod.Cash && (
-                    <div className="space-y-2">
-                      <Label htmlFor="payment-reference">Referencia</Label>
-                      <Input
-                        id="payment-reference"
-                        value={paymentReference}
-                        onChange={(e) => setPaymentReference(e.target.value)}
-                        placeholder="Opcional"
-                        disabled={isReadOnly}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Resumen de la orden */}
-              <Card className="sticky top-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart size={20} weight="duotone" className="text-primary" />
-                    Resumen de la Orden
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Desglose */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Productos</span>
-                        <span className="font-medium">
-                          {items.length} artículo{items.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          Cantidad total
-                        </span>
-                        <span className="font-medium">
-                          {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-                          unidad
-                          {items.reduce(
-                            (sum, item) => sum + item.quantity,
-                            0
-                          ) !== 1
-                            ? "es"
-                            : ""}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Lista resumida de productos */}
-                    {items.length > 0 && (
-                      <div className="border-t pt-3">
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Productos en la orden:
-                        </p>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                          {items.map((item) => (
-                            <div
-                              key={item.productId}
-                              className="flex items-center justify-between text-xs bg-muted/50 px-2 py-1.5 rounded"
-                            >
-                              <span className="truncate flex-1 mr-2">
-                                {item.productName}
-                              </span>
-                              <span className="shrink-0 text-muted-foreground">
-                                x{item.quantity}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Total */}
-                    <div className="border-t pt-4">
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-lg">Total</span>
-                        <span className="font-bold text-2xl text-primary">
-                          {formatCurrency(totalAmount)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Indicador de estado */}
-                    {items.length === 0 && (
-                      <div className="text-center py-2 text-xs text-muted-foreground bg-muted/50 rounded">
-                        Agrega productos para continuar
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Estado de la Venta - solo para ventas existentes */}
-              {isEditing && sale && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      Estado de la Venta
-                      {getStatusBadge(sale.status)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Info del estado actual */}
-                    <div className="text-sm space-y-1">
-                      {sale.status === "Pending" && (
-                        <>
-                          <p className="text-muted-foreground">
-                            <span className="font-medium text-amber-600">
-                              Stock reservado
-                            </span>{" "}
-                            - Los productos están apartados.
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Puedes guardar o borrar esta orden.
-                          </p>
-                        </>
-                      )}
-                      {sale.status === "Completed" && (
-                        <>
-                          <p className="text-muted-foreground">
-                            <span className="font-medium text-green-600">
-                              Pagada y entregada
-                            </span>{" "}
-                            - Stock descontado.
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Puedes cerrar para contabilidad o reembolsar.
-                          </p>
-                        </>
-                      )}
-                      {sale.status === "Closed" && (
-                        <p className="text-muted-foreground">
-                          <span className="font-medium text-muted-foreground">
-                            Contabilizada
-                          </span>{" "}
-                          - Esta venta es inmutable.
-                        </p>
-                      )}
-                      {sale.status === "Cancelled" && (
-                        <p className="text-muted-foreground">
-                          <span className="font-medium text-red-600">
-                            Cancelada
-                          </span>{" "}
-                          - Stock devuelto al inventario.
-                        </p>
-                      )}
-                      {sale.status === "Refunded" && (
-                        <p className="text-muted-foreground">
-                          <span className="font-medium text-purple-600">
-                            Reembolsada
-                          </span>{" "}
-                          - Stock devuelto al inventario.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Botones de acción según estado */}
-                    <div className="border-t pt-3 space-y-2">
-                      {sale.status === "Pending" && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          className="w-full"
-                          disabled={statusAction !== null}
-                          onClick={handleDeleteSale}
-                        >
-                          <Trash size={18} weight="bold" className="mr-2" />
-                          {statusAction === "delete"
-                            ? "Eliminando..."
-                            : "Borrar Orden"}
-                        </Button>
-                      )}
-                      {sale.status === "Completed" && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="w-full"
-                            disabled={statusAction !== null}
-                            onClick={handleCloseSale}
-                          >
-                            <Lock size={18} weight="bold" className="mr-2" />
-                            {statusAction === "close"
-                              ? "Cerrando..."
-                              : "Cerrar para Contabilidad"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
-                            disabled={statusAction !== null}
-                            onClick={handleRefundSale}
-                          >
-                            <ArrowCounterClockwise size={18} weight="bold" className="mr-2" />
-                            {statusAction === "refund"
-                              ? "Reembolsando..."
-                              : "Reembolsar Venta"}
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Acciones rápidas */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Acciones Rápidas</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate("/pos")}
-                  >
-                    Ir a Punto de Venta
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate("/customers")}
-                  >
-                    Gestionar Clientes
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate("/products")}
-                  >
-                    Gestionar Productos
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+            {/* Panel lateral - Resumen (desktop/tablet) */}
+            {!isMobile && (
+              <aside className="hidden space-y-4 md:block md:col-span-1">
+                {sidePanelContent}
+              </aside>
+            )}
           </div>
+
+          {/* Overlay móvil para bottom sheet */}
+          {isMobileExpanded && (
+            <div
+              className="fixed inset-0 z-20 bg-black/20 md:hidden"
+              onClick={() => setMobileSnap("collapsed")}
+              aria-label="Cerrar panel de resumen"
+            />
+          )}
+
+          {/* Bottom sheet móvil del panel lateral */}
+          {isMobile && (
+            <div
+              className={cn(
+                "fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-3.5rem)] flex-col rounded-t-2xl border-t bg-background shadow-2xl transition-transform duration-300 ease-out will-change-transform md:hidden",
+                mobileSnapClass
+              )}
+            >
+              <div
+                className="touch-none cursor-grab border-b px-4 py-3"
+                onTouchStart={handleSheetTouchStart}
+                onTouchEnd={handleSheetTouchEnd}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold">
+                    Resumen • {items.length} artículo{items.length !== 1 ? "s" : ""}
+                    {totalAmount > 0 && (
+                      <span className="ml-2 text-primary">{formatCurrency(totalAmount)}</span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileSnap((prev) => getNextSnapUp(prev))}
+                      disabled={mobileSnap === "full"}
+                      aria-label="Expandir panel"
+                      title="Expandir panel"
+                    >
+                      <CaretUp size={16} weight="bold" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMobileSnap((prev) => getNextSnapDown(prev))}
+                      disabled={mobileSnap === "collapsed"}
+                      aria-label="Contraer panel"
+                      title="Contraer panel"
+                    >
+                      <CaretDown size={16} weight="bold" />
+                    </Button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="mx-auto block h-1.5 w-10 cursor-grab rounded-full bg-muted active:bg-muted-foreground/40"
+                  onClick={() => setMobileSnap((prev) => getNextSnapUp(prev))}
+                  aria-label="Cambiar tamaño del panel"
+                  title="Cambiar tamaño del panel"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-4 py-4">
+                <div className="space-y-4">{sidePanelContent}</div>
+              </div>
+            </div>
+          )}
         </form>
       </DashboardLayout>
     </PageTransition>
