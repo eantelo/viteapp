@@ -67,6 +67,7 @@ Resumen técnico:
      - “Bajar panel”
    - Overlay al expandir; tap fuera colapsa.
    - Auto-colapso al abrir diálogos críticos (cliente, órdenes en espera, pago).
+   - Se añadió **CTA de cobro rápido** visible en el header del sheet móvil para evitar que la acción de pago quede oculta cuando el panel está colapsado.
 
 6. **Gestos touch**
    - Implementado `onTouchStart` / `onTouchEnd` en header del sheet.

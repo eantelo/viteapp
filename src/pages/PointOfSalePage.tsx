@@ -718,6 +718,21 @@ export function PointOfSalePage() {
                 </button>
 
                 <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1 px-2"
+                    onClick={handleCharge}
+                    disabled={
+                      isSubmitting ||
+                      items.length === 0 ||
+                      (!customerId && !isGenericCustomer)
+                    }
+                    aria-label="Cobrar venta"
+                    title="Cobrar venta"
+                  >
+                    <CreditCard className="size-3.5" weight="bold" />
+                    <span className="text-[11px] font-semibold">Cobrar</span>
+                  </Button>
                   <button
                     type="button"
                     className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
