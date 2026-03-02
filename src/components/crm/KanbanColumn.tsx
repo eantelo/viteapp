@@ -12,6 +12,7 @@ import { LeadStatusBadge } from "./LeadBadges";
 
 interface KanbanColumnProps {
   status: LeadStatus;
+  title: string;
   leads: LeadDto[];
   isOver: boolean;
   onEdit: (lead: LeadDto) => void;
@@ -22,6 +23,7 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({
   status,
+  title,
   leads,
   isOver,
   onEdit,
@@ -55,7 +57,7 @@ export function KanbanColumn({
       <div className="flex-0 sticky top-0 z-10 rounded-t-[calc(0.5rem-1px)] border-b border-border/60 bg-background/90 px-4 py-3 dark:bg-background/60">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <LeadStatusBadge status={status} />
+            <LeadStatusBadge status={status} label={title} />
             <span className="text-sm font-medium text-muted-foreground">
               {leads.length}
             </span>

@@ -5,14 +5,22 @@ import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLeadPrefill, type LeadPrefillData } from "@/contexts/FormPrefillContext";
-import { Plus, Kanban } from "@phosphor-icons/react";
-import type { LeadDto } from "@/api/leadsApi";
+import { Plus, Kanban, SlidersHorizontal } from "@phosphor-icons/react";
+import { type LeadDto, type LeadStatus } from "@/api/leadsApi";
 import { deleteLead, getLeads, sendLeadToTrello } from "@/api/leadsApi";
 import { toast } from "sonner";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadFormDialog } from "@/components/crm/LeadFormDialog";
+import { PipelineListsDialog } from "@/components/crm/PipelineListsDialog";
 import { PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
+import {
+  getDefaultPipelineListConfigs,
+  getPipelineLabelMap,
+  loadPipelineListConfigs,
+  savePipelineListConfigs,
+  type PipelineListConfig,
+} from "@/lib/crmPipelineLists";
 
 export function CrmPage() {
   useDocumentTitle("CRM - Leads");
@@ -29,13 +37,22 @@ export function CrmPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [listsDialogOpen, setListsDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadDto | null>(null);
+  const [listConfigs, setListConfigs] = useState<PipelineListConfig[]>(() =>
+    loadPipelineListConfigs()
+  );
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
     null
   );
   const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
     () => new Set()
   );
+
+  const statusLabelMap = getPipelineLabelMap(listConfigs) as Record<
+    LeadStatus,
+    string
+  >;
 
   const filteredLeads = leads.filter((lead) => {
     const term = search.trim().toLowerCase();
@@ -202,6 +219,20 @@ export function CrmPage() {
     }
   };
 
+  const handleSaveLists = (configs: PipelineListConfig[]) => {
+    setListConfigs(configs);
+    savePipelineListConfigs(configs);
+    setListsDialogOpen(false);
+    toast.success("Listas del pipeline actualizadas");
+  };
+
+  const handleResetLists = () => {
+    const defaults = getDefaultPipelineListConfigs();
+    setListConfigs(defaults);
+    savePipelineListConfigs(defaults);
+    toast.success("Listas restablecidas a valores por defecto");
+  };
+
   return (
     <PageTransition>
       <DashboardLayout
@@ -217,10 +248,20 @@ export function CrmPage() {
           sectionLabel="Gestión de ventas"
           icon={Kanban}
           actions={
-            <Button onClick={handleCreate} className="gap-2">
-              <Plus size={18} weight="bold" />
-              Nuevo Lead
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setListsDialogOpen(true)}
+                className="gap-2"
+              >
+                <SlidersHorizontal size={18} weight="bold" />
+                Configurar listas
+              </Button>
+              <Button onClick={handleCreate} className="gap-2">
+                <Plus size={18} weight="bold" />
+                Nuevo Lead
+              </Button>
+            </div>
           }
         />
 
@@ -240,6 +281,7 @@ export function CrmPage() {
           ) : (
             <KanbanBoard
               leads={filteredLeads}
+              listConfigs={listConfigs}
               isLoading={loading}
               onLeadsChange={handleLeadsChange}
               onEdit={handleEdit}
@@ -254,7 +296,16 @@ export function CrmPage() {
           open={dialogOpen}
           lead={editingLead}
           prefillData={prefillData}
+          statusLabels={statusLabelMap}
           onClose={handleDialogClose}
+        />
+
+        <PipelineListsDialog
+          open={listsDialogOpen}
+          configs={listConfigs}
+          onClose={() => setListsDialogOpen(false)}
+          onSave={handleSaveLists}
+          onReset={handleResetLists}
         />
       </DashboardLayout>
     </PageTransition>

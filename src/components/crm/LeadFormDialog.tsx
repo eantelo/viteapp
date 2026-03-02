@@ -30,10 +30,11 @@ interface LeadFormDialogProps {
   open: boolean;
   lead: LeadDto | null;
   prefillData?: LeadPrefillData | null;
+  statusLabels?: Partial<Record<LeadStatus, string>>;
   onClose: (saved: boolean) => void;
 }
 
-const statusOptions = [
+const baseStatusOptions = [
   { value: LeadStatus.New, label: "Nuevo" },
   { value: LeadStatus.Contacted, label: "Contactado" },
   { value: LeadStatus.Qualified, label: "Calificado" },
@@ -57,6 +58,7 @@ export function LeadFormDialog({
   open,
   lead,
   prefillData,
+  statusLabels,
   onClose,
 }: LeadFormDialogProps) {
   const [name, setName] = useState("");
@@ -74,6 +76,15 @@ export function LeadFormDialog({
   const [error, setError] = useState<string | null>(null);
 
   const isEditing = lead !== null;
+
+  const statusOptions = useMemo(
+    () =>
+      baseStatusOptions.map((option) => ({
+        value: option.value,
+        label: statusLabels?.[option.value] ?? option.label,
+      })),
+    [statusLabels]
+  );
 
   useEffect(() => {
     if (!open) return;

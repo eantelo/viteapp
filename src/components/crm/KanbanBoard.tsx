@@ -16,10 +16,12 @@ import { LeadStatus, type LeadDto } from "@/api/leadsApi";
 import { LeadCard } from "./LeadCard";
 import { KanbanColumn } from "./KanbanColumn";
 import { updateLeadStatus } from "@/api/leadsApi";
+import type { PipelineListConfig } from "@/lib/crmPipelineLists";
 import { toast } from "sonner";
 
 interface KanbanBoardProps {
   leads: LeadDto[];
+  listConfigs: PipelineListConfig[];
   isLoading: boolean;
   onLeadsChange: (updatedLeads: LeadDto[]) => void;
   onEdit: (lead: LeadDto) => void;
@@ -28,20 +30,19 @@ interface KanbanBoardProps {
   sendingToTrelloIds: Set<string>;
 }
 
-const STATUSES: LeadStatus[] = [0, 1, 2, 3, 4, 5, 6]; // All enum values
-
-const STATUS_LABELS: Record<LeadStatus, string> = {
-  0: "Nuevo",
-  1: "Contactado",
-  2: "Calificado",
-  3: "Propuesta",
-  4: "Negociación",
-  5: "Ganado",
-  6: "Perdido",
-};
+const STATUSES: LeadStatus[] = [
+  LeadStatus.New,
+  LeadStatus.Contacted,
+  LeadStatus.Qualified,
+  LeadStatus.Proposal,
+  LeadStatus.Negotiation,
+  LeadStatus.Won,
+  LeadStatus.Lost,
+];
 
 export function KanbanBoard({
   leads,
+  listConfigs,
   isLoading,
   onLeadsChange,
   onEdit,
@@ -51,6 +52,12 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
+
+  const orderedListConfigs = [...listConfigs].sort((a, b) => a.order - b.order);
+  const statusLabels = orderedListConfigs.reduce(
+    (acc, item) => ({ ...acc, [item.status]: item.label }),
+    {} as Record<LeadStatus, string>
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -166,7 +173,7 @@ export function KanbanBoard({
         onLeadsChange(
           leads.map((lead) => (lead.id === updated.id ? updated : lead))
         );
-        toast.success(`Lead movido a ${STATUS_LABELS[targetStatus]}`);
+        toast.success(`Lead movido a ${statusLabels[targetStatus] ?? "nueva lista"}`);
       } catch (error) {
         console.error("Error updating lead status:", error);
         // Revert on error
@@ -174,7 +181,7 @@ export function KanbanBoard({
         toast.error("Error al mover el lead");
       }
     },
-    [draggedLead, groupedLeads, leads, onLeadsChange, overStatus]
+    [draggedLead, groupedLeads, leads, onLeadsChange, overStatus, statusLabels]
   );
 
   if (isLoading) {
@@ -201,10 +208,14 @@ export function KanbanBoard({
           transition={{ duration: 0.25 }}
           className="inline-flex gap-3 pb-4 pr-4"
         >
-          {STATUSES.map((status) => (
+          {orderedListConfigs
+            .map((item) => item.status)
+            .filter((status) => STATUSES.includes(status))
+            .map((status) => (
             <KanbanColumn
               key={status}
               status={status}
+              title={statusLabels[status]}
               leads={groupedLeads[status]}
               isOver={overStatus === status}
               onEdit={onEdit}

@@ -1,7 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { LeadStatus, LeadSource } from "@/api/leadsApi";
 
-export function LeadStatusBadge({ status }: { status: LeadStatus }) {
+export function LeadStatusBadge({
+  status,
+  label,
+}: {
+  status: LeadStatus;
+  label?: string;
+}) {
   const config: Record<
     LeadStatus,
     { label: string; className: string }
@@ -43,11 +49,11 @@ export function LeadStatusBadge({ status }: { status: LeadStatus }) {
     },
   };
 
-  const { label, className } = config[status];
+  const { label: defaultLabel, className } = config[status];
 
   return (
     <Badge variant="outline" className={`text-xs font-medium ${className}`}>
-      {label}
+      {label ?? defaultLabel}
     </Badge>
   );
 }
