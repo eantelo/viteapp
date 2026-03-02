@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CircleNotch, DotsThreeVertical, PaperPlaneTilt, Trash, PencilSimple } from "@phosphor-icons/react";
+import { CircleNotch, DotsThreeVertical, PaperPlaneTilt, Trash, PencilSimple, Clock } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { LeadDto } from "@/api/leadsApi";
@@ -168,15 +168,18 @@ export function LeadCard({
           )}
 
           {/* Created date */}
-          <p className="text-[11px] text-muted-foreground/60 border-t border-border/40 pt-1">
-            {new Date(lead.createdAt).toLocaleString("es-ES", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
+          <div className="flex items-center gap-1 border-t border-border/50 pt-1.5">
+            <Clock size={11} className="shrink-0 text-muted-foreground" />
+            <p className="text-[11px] text-muted-foreground">
+              {new Date(lead.createdAt).toLocaleString("es-ES", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
         </div>
       </Card>
     </motion.div>
