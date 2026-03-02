@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,7 @@ export function SalesPage() {
   useDocumentTitle("Gestión de Ventas");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const reportSectionRef = useRef<HTMLDivElement | null>(null);
 
   const [sales, setSales] = useState<SaleDto[]>([]);
   const [statistics, setStatistics] = useState<SalesStatistics | null>(null);
@@ -442,6 +443,13 @@ export function SalesPage() {
     navigate("/sales/new");
   };
 
+  const handleScrollToReport = () => {
+    reportSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   const handleEdit = (sale: SaleDto) => {
     navigate(`/sales/${sale.id}/edit`);
   };
@@ -616,6 +624,16 @@ export function SalesPage() {
                 <ArrowCounterClockwise size={20} weight="bold" />
                 <span className="hidden sm:inline">Actualizar</span>
               </Button>
+              <Button
+                onClick={handleScrollToReport}
+                className="gap-2 text-sm"
+                variant="outline"
+                aria-label="Ir al reporte por ítem y fecha"
+                title="Ver reporte"
+              >
+                <Receipt size={20} weight="bold" />
+                <span className="hidden sm:inline">Ver reporte</span>
+              </Button>
               <Button onClick={handleCreate} className="gap-2 text-sm">
                 <Plus size={20} weight="bold" />
                 <span className="hidden sm:inline">Nueva Orden</span>
@@ -626,6 +644,99 @@ export function SalesPage() {
 
         {/* Estadísticas */}
         <SalesStatisticsCards statistics={statistics} loading={statsLoading} />
+
+        {/* Reporte: ventas por ítem por fecha */}
+        <Card
+          ref={reportSectionRef}
+          className="mt-4 border-border bg-card shadow-none"
+        >
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base font-semibold">
+              Reporte de Ventas por Ítem y Fecha
+            </CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Consolidado por producto y día usando los filtros aplicados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-10">
+                <SpinnerGap size={36} weight="bold" className="animate-spin text-primary" />
+              </div>
+            ) : salesByItemByDate.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                No hay datos para el reporte con los filtros actuales.
+              </div>
+            ) : (
+              <>
+                <div className="mb-3 text-xs text-muted-foreground">
+                  {salesByItemByDate.length} {salesByItemByDate.length === 1 ? "registro" : "registros"}
+                </div>
+
+                {/* Móvil */}
+                <div className="space-y-2 md:hidden">
+                  {salesByItemByDate.map((row) => (
+                    <div
+                      key={`${row.date}-${row.productId}`}
+                      className="rounded-lg border border-border bg-muted/20 p-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{row.productName}</p>
+                          <p className="text-xs text-muted-foreground">{formatDateShort(row.date)}</p>
+                        </div>
+                        <p className="text-sm font-semibold tabular-nums">{formatCurrency(row.amount)}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Cantidad: <span className="font-mono tabular-nums">{row.quantity}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden md:block rounded-lg border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Fecha
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Ítem
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Cantidad
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Importe
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {salesByItemByDate.map((row) => (
+                          <TableRow key={`${row.date}-${row.productId}`} className="hover:bg-muted/50">
+                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                              {formatDateShort(row.date)}
+                            </TableCell>
+                            <TableCell className="text-sm">{row.productName}</TableCell>
+                            <TableCell className="text-right text-sm font-mono tabular-nums">
+                              {row.quantity}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-semibold tabular-nums">
+                              {formatCurrency(row.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Filtros y resultados */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 lg:gap-6">
@@ -1277,96 +1388,6 @@ export function SalesPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Reporte: ventas por ítem por fecha */}
-        <Card className="mt-4 border-border bg-card shadow-none">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-base font-semibold">
-              Reporte de Ventas por Ítem y Fecha
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
-              Consolidado por producto y día usando los filtros aplicados.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <SpinnerGap size={36} weight="bold" className="animate-spin text-primary" />
-              </div>
-            ) : salesByItemByDate.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                No hay datos para el reporte con los filtros actuales.
-              </div>
-            ) : (
-              <>
-                <div className="mb-3 text-xs text-muted-foreground">
-                  {salesByItemByDate.length} {salesByItemByDate.length === 1 ? "registro" : "registros"}
-                </div>
-
-                {/* Móvil */}
-                <div className="space-y-2 md:hidden">
-                  {salesByItemByDate.map((row) => (
-                    <div
-                      key={`${row.date}-${row.productId}`}
-                      className="rounded-lg border border-border bg-muted/20 p-3"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{row.productName}</p>
-                          <p className="text-xs text-muted-foreground">{formatDateShort(row.date)}</p>
-                        </div>
-                        <p className="text-sm font-semibold tabular-nums">{formatCurrency(row.amount)}</p>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Cantidad: <span className="font-mono tabular-nums">{row.quantity}</span>
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop */}
-                <div className="hidden md:block rounded-lg border border-border overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader className="bg-muted/50">
-                        <TableRow>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Fecha
-                          </TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Ítem
-                          </TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Cantidad
-                          </TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Importe
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {salesByItemByDate.map((row) => (
-                          <TableRow key={`${row.date}-${row.productId}`} className="hover:bg-muted/50">
-                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
-                              {formatDateShort(row.date)}
-                            </TableCell>
-                            <TableCell className="text-sm">{row.productName}</TableCell>
-                            <TableCell className="text-right text-sm font-mono tabular-nums">
-                              {row.quantity}
-                            </TableCell>
-                            <TableCell className="text-right text-sm font-semibold tabular-nums">
-                              {formatCurrency(row.amount)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Modal de detalle */}
         <SaleDetailModal
