@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Coffee, MagnifyingGlass, List, User, Trash, CreditCard, Clock, Plus, Minus, X, Pause, ClockCounterClockwise, CaretUp, CaretDown } from "@phosphor-icons/react";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
@@ -42,6 +42,7 @@ export function RestaurantPosPage() {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [mobileOrderSnap, setMobileOrderSnap] = useState<MobileOrderSnap>("collapsed");
   const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const mobileSheetGestureRef = useRef<{ startY: number; startTime: number } | null>(null);
 
   // POS Hook
   const {
@@ -158,6 +159,53 @@ export function RestaurantPosPage() {
   };
 
   const isMobileOrderExpanded = mobileOrderSnap !== "collapsed";
+  const getNextSnapUp = (current: MobileOrderSnap): MobileOrderSnap => {
+    if (current === "collapsed") return "mid";
+    if (current === "mid") return "full";
+    return "full";
+  };
+  const getNextSnapDown = (current: MobileOrderSnap): MobileOrderSnap => {
+    if (current === "full") return "mid";
+    if (current === "mid") return "collapsed";
+    return "collapsed";
+  };
+
+  const handleMobileSheetTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+
+    mobileSheetGestureRef.current = {
+      startY: touch.clientY,
+      startTime: Date.now(),
+    };
+  };
+
+  const handleMobileSheetTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const gesture = mobileSheetGestureRef.current;
+    const touch = event.changedTouches[0];
+
+    if (!gesture || !touch) {
+      return;
+    }
+
+    const deltaY = touch.clientY - gesture.startY;
+    const elapsed = Math.max(Date.now() - gesture.startTime, 1);
+    const speed = Math.abs(deltaY) / elapsed;
+
+    const isSwipeUp = deltaY <= -36 || (deltaY < 0 && speed >= 0.55);
+    const isSwipeDown = deltaY >= 36 || (deltaY > 0 && speed >= 0.55);
+
+    if (isSwipeUp) {
+      setMobileOrderSnap((current) => getNextSnapUp(current));
+    } else if (isSwipeDown) {
+      setMobileOrderSnap((current) => getNextSnapDown(current));
+    }
+
+    mobileSheetGestureRef.current = null;
+  };
+
   const mobileOrderSnapClass =
     mobileOrderSnap === "full"
       ? "translate-y-0"
@@ -305,19 +353,22 @@ export function RestaurantPosPage() {
         <aside
           className={cn(
             "z-30 flex w-full flex-col border-t bg-card shadow-xl md:z-20 md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl",
-            "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-300 md:static md:h-auto md:max-h-none md:rounded-none md:translate-y-0",
+            "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-500 ease-out will-change-transform md:static md:h-auto md:max-h-none md:rounded-none md:translate-y-0",
             mobileOrderSnapClass
           )}
         >
-          <div className="md:hidden flex h-17 items-center gap-2 border-b px-4">
+          <div
+            className="md:hidden flex h-17 items-center gap-2 border-b px-4"
+            onTouchStart={handleMobileSheetTouchStart}
+            onTouchEnd={handleMobileSheetTouchEnd}
+          >
             <button
               type="button"
               className="relative flex min-w-0 flex-1 items-center justify-between text-left"
               onClick={() =>
                 setMobileOrderSnap((prev) => {
-                  if (prev === "collapsed") return "mid";
-                  if (prev === "mid") return "full";
-                  return "collapsed";
+                  if (prev === "full") return "collapsed";
+                  return getNextSnapUp(prev);
                 })
               }
               aria-label="Cambiar nivel del panel de orden"
@@ -346,11 +397,7 @@ export function RestaurantPosPage() {
                 type="button"
                 className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
                 onClick={() =>
-                  setMobileOrderSnap((prev) => {
-                    if (prev === "full") return "mid";
-                    if (prev === "mid") return "collapsed";
-                    return "collapsed";
-                  })
+                  setMobileOrderSnap((prev) => getNextSnapDown(prev))
                 }
                 disabled={mobileOrderSnap === "collapsed"}
                 aria-label="Bajar panel"
@@ -362,11 +409,7 @@ export function RestaurantPosPage() {
                 type="button"
                 className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
                 onClick={() =>
-                  setMobileOrderSnap((prev) => {
-                    if (prev === "collapsed") return "mid";
-                    if (prev === "mid") return "full";
-                    return "full";
-                  })
+                  setMobileOrderSnap((prev) => getNextSnapUp(prev))
                 }
                 disabled={mobileOrderSnap === "full"}
                 aria-label="Subir panel"

@@ -59,6 +59,18 @@ Archivo modificado: `src/pages/RestaurantPosPage.tsx`
          - `Bajar panel` (nivel anterior)
       - Esto facilita navegación con una sola mano sin depender solo del tap en la franja.
 
+11. **Gesto swipe vertical (móvil) con snap inteligente**
+      - El header del bottom sheet ahora interpreta gestos touch:
+         - swipe hacia arriba ⇒ sube un nivel (`collapsed` → `mid` → `full`),
+         - swipe hacia abajo ⇒ baja un nivel (`full` → `mid` → `collapsed`).
+      - Se aplican umbrales por:
+         - **distancia** (aprox. 36px), o
+         - **velocidad** (swipe rápido),
+         para que la interacción se sienta natural y responsiva.
+
+12. **Animación suavizada tipo spring**
+      - Se ajustó la transición del panel a un movimiento más suave (`duration-500`, `ease-out`, `will-change-transform`) para mejorar la sensación nativa en móvil.
+
 9. **Comportamiento de cierre automático del sheet**
    - El panel móvil se colapsa automáticamente cuando el usuario:
      - abre diálogo de cliente,
@@ -87,6 +99,7 @@ Archivo modificado: `src/pages/RestaurantPosPage.tsx`
    - Estado inicial colapsado mostrando franja de resumen.
    - Tap en franja avanza entre niveles (`colapsado` → `medio` → `completo`).
    - Botones de subir/bajar cambian el snap point correctamente.
+   - Swipe vertical en header cambia snap point según dirección y velocidad.
    - Tap fuera del panel colapsa de nuevo.
    - Al abrir cliente/órdenes en espera/pago, el sheet se colapsa automáticamente.
    - En desktop no aparece comportamiento de sheet.
