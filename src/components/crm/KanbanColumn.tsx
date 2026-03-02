@@ -42,7 +42,10 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col w-96 h-full rounded-lg border border-border/60 bg-card/90 text-card-foreground transition-all",
+        // Mobile: 82vw shows current column + peek of next (scroll affordance)
+        // Tablet: fixed 320px · Desktop: fixed 384px
+        "flex flex-col w-[82vw] sm:w-80 md:w-96 min-w-[260px] shrink-0 snap-start snap-always",
+        "h-full rounded-lg border border-border/60 bg-card/90 text-card-foreground transition-all",
         isOver
           ? "border-primary/50 bg-primary/5 shadow-md dark:border-primary/40 dark:bg-primary/10"
           : "shadow-sm dark:shadow-none"

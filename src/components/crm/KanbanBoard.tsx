@@ -193,25 +193,28 @@ export function KanbanBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="inline-flex gap-4 pb-4 pr-4 min-w-max"
-      >
-        {STATUSES.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            leads={groupedLeads[status]}
-            isOver={overStatus === status}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onSendToTrello={onSendToTrello}
-            sendingToTrelloIds={sendingToTrelloIds}
-          />
-        ))}
-      </motion.div>
+      {/* Scroll container: horizontal snap on mobile, natural overflow on desktop */}
+      <div className="overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1 -mx-3 px-3 md:mx-0 md:px-0">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="inline-flex gap-3 pb-4 pr-4"
+        >
+          {STATUSES.map((status) => (
+            <KanbanColumn
+              key={status}
+              status={status}
+              leads={groupedLeads[status]}
+              isOver={overStatus === status}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onSendToTrello={onSendToTrello}
+              sendingToTrelloIds={sendingToTrelloIds}
+            />
+          ))}
+        </motion.div>
+      </div>
 
       <DragOverlay>
         {draggedLead && (
