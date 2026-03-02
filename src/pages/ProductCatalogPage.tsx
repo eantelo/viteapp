@@ -68,6 +68,7 @@ function FilterContent({
   toggleFilterValue,
   availableBrands,
   clearAllFilters,
+  showSearch = true,
 }: {
   search: string;
   handleSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -81,10 +82,12 @@ function FilterContent({
   ) => void;
   availableBrands: string[];
   clearAllFilters: () => void;
+  showSearch?: boolean;
 }) {
   return (
     <div className="bg-card p-4 rounded-xl border border-border">
       {/* Search Bar */}
+      {showSearch && (
       <div className="pb-3">
         <label className="flex flex-col min-w-40 h-11 w-full">
           <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
@@ -793,25 +796,37 @@ export function ProductCatalogPage() {
           />
 
           <div className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2">
-          {/* Mobile Filter Button */}
-          <div className="lg:hidden">
+          {/* Mobile Filter Button + Inline Search */}
+          <div className="lg:hidden flex gap-2">
+            {/* Inline search bar for mobile */}
+            <div className="flex flex-1 items-center h-10 rounded-lg border border-input bg-muted overflow-hidden">
+              <div className="pl-3 text-muted-foreground shrink-0">
+                <MagnifyingGlass size={18} weight="bold" />
+              </div>
+              <Input
+                className="border-0 bg-transparent h-full focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+                placeholder="Buscar productos..."
+                value={search}
+                onChange={handleSearchChange}
+                aria-label="Buscar productos"
+              />
+            </div>
             <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full flex items-center gap-2"
+                  className="relative h-10 w-10 shrink-0 p-0 flex items-center justify-center"
+                  aria-label="Abrir filtros"
+                  title="Filtros"
                 >
                   <Funnel size={18} weight="bold" />
-                  <span>Filtros</span>
                   {(selectedFilters.category.length > 0 ||
                     selectedFilters.brand.length > 0 ||
-                    selectedFilters.status.length > 0 ||
-                    search.trim()) && (
-                    <span className="ml-auto bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                    selectedFilters.status.length > 0) && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground rounded-full w-4 h-4 text-[10px] font-bold flex items-center justify-center">
                       {selectedFilters.category.length +
                         selectedFilters.brand.length +
-                        selectedFilters.status.length +
-                        (search.trim() ? 1 : 0)}
+                        selectedFilters.status.length}
                     </span>
                   )}
                 </Button>
@@ -834,6 +849,7 @@ export function ProductCatalogPage() {
                     toggleFilterValue={toggleFilterValue}
                     availableBrands={availableBrands}
                     clearAllFilters={clearAllFilters}
+                    showSearch={false}
                   />
                   <Button
                     variant="outline"
@@ -939,7 +955,7 @@ export function ProductCatalogPage() {
                                 }
                               }}
                               tabIndex={0}
-                              className={`border-b border-border hover:bg-muted/50 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
+                              className={`border-b border-border hover:bg-muted/50 active:bg-muted/70 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${`
                                 highlightedProductId === product.id
                                   ? "bg-primary/10! dark:bg-primary/20! animate-pulse ring-2 ring-primary/50"
                                   : ""
@@ -948,7 +964,7 @@ export function ProductCatalogPage() {
                             >
                               <th
                                 scope="row"
-                                className="px-3 md:px-4 py-2 font-medium text-foreground"
+                                className="px-3 md:px-4 py-3 md:py-2 font-medium text-foreground"
                               >
                                 <div>
                                   <p className="text-sm md:text-base">
@@ -958,22 +974,34 @@ export function ProductCatalogPage() {
                                     {product.category}
                                   </p>
                                   {/* Mostrar SKU en mobile cuando la columna está oculta */}
-                                  <p className="text-xs text-muted-foreground/70 sm:hidden mt-1">
+                                  <p className="text-xs text-muted-foreground/70 sm:hidden mt-0.5">
                                     {product.sku}
                                   </p>
+                                  {/* Estatus mini badge en mobile (columna oculta en xs) */}
+                                  <span
+                                    className={`sm:hidden inline-flex mt-1 px-1.5 py-0.5 text-[10px] font-medium rounded-full ${
+                                      product.stock === 0
+                                        ? "bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300"
+                                        : !product.isActive
+                                        ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300"
+                                        : "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300"
+                                    }`}
+                                  >
+                                    {getStatusText(product.isActive, product.stock)}
+                                  </span>
                                 </div>
                               </th>
-                              <td className="hidden sm:table-cell px-3 md:px-4 py-2 text-xs md:text-sm">
+                              <td className="hidden sm:table-cell px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm">
                                 {product.sku}
                               </td>
-                              <td className="hidden md:table-cell px-3 md:px-4 py-2 text-xs md:text-sm">
+                              <td className="hidden md:table-cell px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm">
                                 {product.brand}
                               </td>
-                              <td className="px-3 md:px-4 py-2 text-xs md:text-sm font-medium">
+                              <td className="px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm font-medium">
                                 {formatPrice(product.price)}
                               </td>
                               <td
-                                className={`hidden lg:table-cell px-3 md:px-4 py-2 text-xs md:text-sm ${
+                                className={`hidden lg:table-cell px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm ${
                                   product.stock <= 10 && product.stock > 0
                                     ? "text-orange-600 dark:text-orange-400"
                                     : product.stock === 0
@@ -986,7 +1014,7 @@ export function ProductCatalogPage() {
                                   <span className="ml-1">(Bajo)</span>
                                 )}
                               </td>
-                              <td className="hidden sm:table-cell px-3 md:px-4 py-2">
+                              <td className="hidden sm:table-cell px-3 md:px-4 py-3 md:py-2">
                                 <span
                                   className={getStatusBadgeClass(
                                     product.isActive,
@@ -1000,7 +1028,7 @@ export function ProductCatalogPage() {
                                 </span>
                               </td>
                               <td
-                                className="px-3 md:px-4 py-2 text-right"
+                                className="px-3 md:px-4 py-3 md:py-2 text-right"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <DropdownMenu>
@@ -1008,7 +1036,9 @@ export function ProductCatalogPage() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-8 w-8 p-0"
+                                      className="h-11 w-11 md:h-8 md:w-8 p-0"
+                                      aria-label={`Acciones para ${product.name}`}
+                                      title="Acciones"
                                     >
                                       <DotsThree className="h-4 w-4" weight="bold" />
                                       <span className="sr-only">

@@ -264,7 +264,68 @@ export function CustomersPage() {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-border">
-                    <Table className="text-sm">
+                    {/* ── Mobile card list (< md) ─────────────────────────── */}
+                    <ul className="divide-y divide-border md:hidden">
+                      {paginatedCustomers.map((customer) => (
+                        <li
+                          key={customer.id}
+                          className={cn(
+                            "flex items-center justify-between gap-3 px-4 py-3",
+                            highlightedCustomerId === customer.id &&
+                              "bg-primary/10 ring-1 ring-inset ring-primary/30"
+                          )}
+                        >
+                          {/* Customer info */}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {customer.name}
+                            </p>
+                            <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                              {customer.phone && (
+                                <span className="font-mono tabular-nums">
+                                  {customer.phone}
+                                </span>
+                              )}
+                              {customer.city && <span>{customer.city}</span>}
+                              {!customer.phone && !customer.city && (
+                                <span className="italic">Sin datos de contacto</span>
+                              )}
+                            </p>
+                            {customer.email && (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {customer.email}
+                              </p>
+                            )}
+                          </div>
+                          {/* Touch-friendly action buttons */}
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-11 w-11 p-0 active:scale-95"
+                              onClick={() => handleEdit(customer)}
+                              aria-label={`Editar ${customer.name}`}
+                              title={`Editar ${customer.name}`}
+                            >
+                              <PencilSimple size={18} weight="bold" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-11 w-11 p-0 text-destructive hover:text-destructive/90 active:scale-95"
+                              onClick={() => handleDelete(customer)}
+                              aria-label={`Eliminar ${customer.name}`}
+                              title={`Eliminar ${customer.name}`}
+                            >
+                              <Trash size={18} weight="bold" />
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* ── Desktop table (≥ md) ─────────────────────────────── */}
+                    <Table className="hidden text-sm md:table">
                       <TableHeader className="bg-muted/50">
                         <TableRow>
                           <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Nombre</TableHead>
@@ -304,15 +365,17 @@ export function CustomersPage() {
                                   className="h-8 w-8 p-0"
                                   onClick={() => handleEdit(customer)}
                                   aria-label={`Editar ${customer.name}`}
+                                  title={`Editar ${customer.name}`}
                                 >
                                   <PencilSimple size={16} weight="bold" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-error hover:text-error/90"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
                                   onClick={() => handleDelete(customer)}
                                   aria-label={`Eliminar ${customer.name}`}
+                                  title={`Eliminar ${customer.name}`}
                                 >
                                   <Trash size={16} weight="bold" />
                                 </Button>
@@ -322,10 +385,14 @@ export function CustomersPage() {
                         ))}
                       </TableBody>
                     </Table>
+
+                    {/* ── Pagination ───────────────────────────────────────── */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-border px-4 py-3 bg-muted/30">
+                      <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
                         <span className="text-xs text-muted-foreground">
-                          Página <span className="font-semibold text-foreground">{currentPage}</span> de{" "}
+                          Página{" "}
+                          <span className="font-semibold text-foreground">{currentPage}</span>{" "}
+                          de{" "}
                           <span className="font-semibold text-foreground">{totalPages}</span>
                         </span>
                         <div className="flex items-center gap-2">
@@ -334,12 +401,13 @@ export function CustomersPage() {
                             size="sm"
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="h-8 w-8 p-0"
+                            className="h-11 w-11 p-0 md:h-8 md:w-8"
                             aria-label="Página anterior"
+                            title="Página anterior"
                           >
                             <CaretLeft size={16} weight="bold" />
                           </Button>
-                          <span className="text-xs text-muted-foreground min-w-[60px] text-center">
+                          <span className="min-w-[60px] text-center text-xs text-muted-foreground">
                             {paginatedCustomers.length} de {filteredCustomers.length}
                           </span>
                           <Button
@@ -347,8 +415,9 @@ export function CustomersPage() {
                             size="sm"
                             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="h-8 w-8 p-0"
+                            className="h-11 w-11 p-0 md:h-8 md:w-8"
                             aria-label="Próxima página"
+                            title="Próxima página"
                           >
                             <CaretRight size={16} weight="bold" />
                           </Button>
