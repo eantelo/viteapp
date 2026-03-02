@@ -213,6 +213,66 @@ export function SalesPage() {
     });
   }, [sales, search, status]);
 
+  const salesByItemByDate = useMemo(() => {
+    const grouped = new Map<
+      string,
+      {
+        date: string;
+        productId: string;
+        productName: string;
+        quantity: number;
+        amount: number;
+      }
+    >();
+
+    for (const sale of filteredSales) {
+      const saleDate = new Date(sale.date);
+      if (Number.isNaN(saleDate.getTime())) continue;
+
+      const year = saleDate.getFullYear();
+      const month = String(saleDate.getMonth() + 1).padStart(2, "0");
+      const dayOfMonth = String(saleDate.getDate()).padStart(2, "0");
+      const day = `${year}-${month}-${dayOfMonth}`;
+
+      for (const item of sale.items) {
+        const productId = item.productId || "unknown";
+        const productName =
+          item.productName?.trim() || `Producto ${item.productId?.slice(0, 8) || "N/A"}`;
+        const key = `${day}|${productId}`;
+        const quantity = item.quantity || 0;
+        const amount = (item.quantity || 0) * (item.price || 0);
+
+        const current = grouped.get(key);
+        if (current) {
+          current.quantity += quantity;
+          current.amount += amount;
+        } else {
+          grouped.set(key, {
+            date: day,
+            productId,
+            productName,
+            quantity,
+            amount,
+          });
+        }
+      }
+    }
+
+    return Array.from(grouped.values()).sort((a, b) => {
+      if (a.date !== b.date) {
+        return a.date < b.date ? 1 : -1;
+      }
+
+      if (a.amount !== b.amount) {
+        return b.amount - a.amount;
+      }
+
+      return a.productName.localeCompare(b.productName, "es", {
+        sensitivity: "base",
+      });
+    });
+  }, [filteredSales]);
+
   // Handlers
   const handleDatePresetChange = (preset: DatePreset) => {
     setDatePreset(preset);
@@ -403,6 +463,17 @@ export function SalesPage() {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+    }).format(date);
+  };
+
+  const formatDateShort = (dateString: string) => {
+    if (!dateString) return "-";
+    const date = new Date(`${dateString}T00:00:00`);
+    if (isNaN(date.getTime())) return "-";
+    return new Intl.DateTimeFormat("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     }).format(date);
   };
 
@@ -1206,6 +1277,96 @@ export function SalesPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Reporte: ventas por ítem por fecha */}
+        <Card className="mt-4 border-border bg-card shadow-none">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base font-semibold">
+              Reporte de Ventas por Ítem y Fecha
+            </CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Consolidado por producto y día usando los filtros aplicados.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-10">
+                <SpinnerGap size={36} weight="bold" className="animate-spin text-primary" />
+              </div>
+            ) : salesByItemByDate.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                No hay datos para el reporte con los filtros actuales.
+              </div>
+            ) : (
+              <>
+                <div className="mb-3 text-xs text-muted-foreground">
+                  {salesByItemByDate.length} {salesByItemByDate.length === 1 ? "registro" : "registros"}
+                </div>
+
+                {/* Móvil */}
+                <div className="space-y-2 md:hidden">
+                  {salesByItemByDate.map((row) => (
+                    <div
+                      key={`${row.date}-${row.productId}`}
+                      className="rounded-lg border border-border bg-muted/20 p-3"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{row.productName}</p>
+                          <p className="text-xs text-muted-foreground">{formatDateShort(row.date)}</p>
+                        </div>
+                        <p className="text-sm font-semibold tabular-nums">{formatCurrency(row.amount)}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Cantidad: <span className="font-mono tabular-nums">{row.quantity}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop */}
+                <div className="hidden md:block rounded-lg border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Fecha
+                          </TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Ítem
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Cantidad
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Importe
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {salesByItemByDate.map((row) => (
+                          <TableRow key={`${row.date}-${row.productId}`} className="hover:bg-muted/50">
+                            <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                              {formatDateShort(row.date)}
+                            </TableCell>
+                            <TableCell className="text-sm">{row.productName}</TableCell>
+                            <TableCell className="text-right text-sm font-mono tabular-nums">
+                              {row.quantity}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-semibold tabular-nums">
+                              {formatCurrency(row.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Modal de detalle */}
         <SaleDetailModal
