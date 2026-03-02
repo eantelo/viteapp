@@ -21,6 +21,7 @@ import {
   Funnel,
   SpinnerGap,
   Package,
+  X,
 } from "@phosphor-icons/react";
 import type { ProductDto } from "@/api/productsApi";
 import {
@@ -797,25 +798,35 @@ export function ProductCatalogPage() {
 
           <div className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2">
           {/* Mobile Filter Button + Inline Search */}
-          <div className="lg:hidden flex gap-2">
+          <div className="lg:hidden sticky top-0 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 -mx-3 px-3 md:-mx-4 md:px-4 pb-3 pt-1 border-b border-border/50 flex gap-2">
             {/* Inline search bar for mobile */}
-            <div className="flex flex-1 items-center h-10 rounded-lg border border-input bg-muted overflow-hidden">
+            <div className="relative flex flex-1 items-center h-11 rounded-xl border border-input bg-muted overflow-hidden shadow-sm">
               <div className="pl-3 text-muted-foreground shrink-0">
                 <MagnifyingGlass size={18} weight="bold" />
               </div>
               <Input
-                className="border-0 bg-transparent h-full focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none"
+                className="border-0 bg-transparent h-full focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none text-base"
                 placeholder="Buscar productos..."
                 value={search}
                 onChange={handleSearchChange}
                 aria-label="Buscar productos"
               />
+              {search.trim().length > 0 && (
+                <button
+                  type="button"
+                  className="pr-3 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                  aria-label="Limpiar búsqueda"
+                  onClick={() => setSearch("")}
+                >
+                  <X size={16} weight="bold" />
+                </button>
+              )}
             </div>
             <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
               <SheetTrigger asChild>
                 <Button
                   variant="outline"
-                  className="relative h-10 w-10 shrink-0 p-0 flex items-center justify-center"
+                  className="relative h-11 w-11 shrink-0 p-0 flex items-center justify-center rounded-xl shadow-sm"
                   aria-label="Abrir filtros"
                   title="Filtros"
                 >
