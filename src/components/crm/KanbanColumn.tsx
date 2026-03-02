@@ -13,6 +13,7 @@ import { LeadStatusBadge } from "./LeadBadges";
 interface KanbanColumnProps {
   status: LeadStatus;
   title: string;
+  compactMode?: boolean;
   leads: LeadDto[];
   isOver: boolean;
   onEdit: (lead: LeadDto) => void;
@@ -24,6 +25,7 @@ interface KanbanColumnProps {
 export function KanbanColumn({
   status,
   title,
+  compactMode = false,
   leads,
   isOver,
   onEdit,
@@ -46,7 +48,9 @@ export function KanbanColumn({
       className={cn(
         // Mobile: 82vw shows current column + peek of next (scroll affordance)
         // Tablet: fixed 320px · Desktop: fixed 384px
-        "flex flex-col w-[82vw] sm:w-80 md:w-96 min-w-[260px] shrink-0 snap-start snap-always",
+        compactMode
+          ? "flex flex-col w-[78vw] sm:w-72 md:w-80 min-w-60 shrink-0 snap-start snap-always"
+          : "flex flex-col w-[82vw] sm:w-80 md:w-96 min-w-[260px] shrink-0 snap-start snap-always",
         "h-full rounded-lg border border-border/60 bg-card/90 text-card-foreground transition-all",
         isOver
           ? "border-primary/50 bg-primary/5 shadow-md dark:border-primary/40 dark:bg-primary/10"
@@ -54,7 +58,12 @@ export function KanbanColumn({
       )}
     >
       {/* Column header */}
-      <div className="flex-0 sticky top-0 z-10 rounded-t-[calc(0.5rem-1px)] border-b border-border/60 bg-background/90 px-4 py-3 dark:bg-background/60">
+      <div
+        className={cn(
+          "flex-0 sticky top-0 z-10 rounded-t-[calc(0.5rem-1px)] border-b border-border/60 bg-background/90 dark:bg-background/60",
+          compactMode ? "px-3 py-2" : "px-4 py-3"
+        )}
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <LeadStatusBadge status={status} label={title} />
@@ -62,7 +71,7 @@ export function KanbanColumn({
               {leads.length}
             </span>
           </div>
-          {totalValue > 0 && (
+          {!compactMode && totalValue > 0 && (
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Total</p>
               <p className="text-sm font-semibold text-foreground">
@@ -77,7 +86,12 @@ export function KanbanColumn({
       </div>
 
       {/* Cards area */}
-      <div className="flex-1 overflow-y-auto space-y-2 p-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200/80 dark:scrollbar-thumb-slate-700/60">
+      <div
+        className={cn(
+          "flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200/80 dark:scrollbar-thumb-slate-700/60",
+          compactMode ? "p-2" : "p-3"
+        )}
+      >
         <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
           <AnimatePresence mode="popLayout">
             {leads.length === 0 ? (

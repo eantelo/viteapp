@@ -4,18 +4,34 @@ export interface PipelineListConfig {
   status: LeadStatusType;
   label: string;
   order: number;
+  visible: boolean;
 }
 
 const STORAGE_KEY = "salesnet.crm.pipeline.lists";
 
 const DEFAULT_PIPELINE_LISTS: PipelineListConfig[] = [
-  { status: LeadStatus.New, label: "Nuevo", order: 0 },
-  { status: LeadStatus.Contacted, label: "Contactado", order: 1 },
-  { status: LeadStatus.Qualified, label: "Calificado", order: 2 },
-  { status: LeadStatus.Proposal, label: "Propuesta", order: 3 },
-  { status: LeadStatus.Negotiation, label: "Negociación", order: 4 },
-  { status: LeadStatus.Won, label: "Ganado", order: 5 },
-  { status: LeadStatus.Lost, label: "Perdido", order: 6 },
+  { status: LeadStatus.New, label: "Nuevo", order: 0, visible: true },
+  {
+    status: LeadStatus.Contacted,
+    label: "Contactado",
+    order: 1,
+    visible: true,
+  },
+  {
+    status: LeadStatus.Qualified,
+    label: "Calificado",
+    order: 2,
+    visible: true,
+  },
+  { status: LeadStatus.Proposal, label: "Propuesta", order: 3, visible: true },
+  {
+    status: LeadStatus.Negotiation,
+    label: "Negociación",
+    order: 4,
+    visible: true,
+  },
+  { status: LeadStatus.Won, label: "Ganado", order: 5, visible: true },
+  { status: LeadStatus.Lost, label: "Perdido", order: 6, visible: true },
 ];
 
 export function getDefaultPipelineListConfigs(): PipelineListConfig[] {
@@ -44,6 +60,8 @@ function normalizePipelineListConfigs(
       typeof candidate.order === "number" && Number.isFinite(candidate.order)
         ? candidate.order
         : Number.MAX_SAFE_INTEGER;
+    const visible =
+      typeof candidate.visible === "boolean" ? candidate.visible : true;
 
     if (typeof status !== "number") {
       continue;
@@ -60,6 +78,7 @@ function normalizePipelineListConfigs(
       status,
       label: label || fallback.label,
       order,
+      visible,
     });
   }
 
@@ -70,7 +89,7 @@ function normalizePipelineListConfigs(
 
   return merged
     .sort((a, b) => a.order - b.order)
-    .map((item, index) => ({ ...item, order: index }));
+    .map((item, index) => ({ ...item, order: index, visible: item.visible }));
 }
 
 export function loadPipelineListConfigs(): PipelineListConfig[] {

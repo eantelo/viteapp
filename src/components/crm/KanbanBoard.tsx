@@ -22,6 +22,7 @@ import { toast } from "sonner";
 interface KanbanBoardProps {
   leads: LeadDto[];
   listConfigs: PipelineListConfig[];
+  compactMode?: boolean;
   isLoading: boolean;
   onLeadsChange: (updatedLeads: LeadDto[]) => void;
   onEdit: (lead: LeadDto) => void;
@@ -43,6 +44,7 @@ const STATUSES: LeadStatus[] = [
 export function KanbanBoard({
   leads,
   listConfigs,
+  compactMode = false,
   isLoading,
   onLeadsChange,
   onEdit,
@@ -54,6 +56,7 @@ export function KanbanBoard({
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
 
   const orderedListConfigs = [...listConfigs].sort((a, b) => a.order - b.order);
+  const visibleListConfigs = orderedListConfigs.filter((item) => item.visible);
   const statusLabels = orderedListConfigs.reduce(
     (acc, item) => ({ ...acc, [item.status]: item.label }),
     {} as Record<LeadStatus, string>
@@ -192,6 +195,16 @@ export function KanbanBoard({
     );
   }
 
+  if (visibleListConfigs.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          No hay listas visibles. Activa al menos una lista en “Configurar listas”.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -208,7 +221,7 @@ export function KanbanBoard({
           transition={{ duration: 0.25 }}
           className="inline-flex gap-3 pb-4 pr-4"
         >
-          {orderedListConfigs
+          {visibleListConfigs
             .map((item) => item.status)
             .filter((status) => STATUSES.includes(status))
             .map((status) => (
@@ -216,6 +229,7 @@ export function KanbanBoard({
               key={status}
               status={status}
               title={statusLabels[status]}
+              compactMode={compactMode}
               leads={groupedLeads[status]}
               isOver={overStatus === status}
               onEdit={onEdit}

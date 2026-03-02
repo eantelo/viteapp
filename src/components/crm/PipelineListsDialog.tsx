@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { PipelineListConfig } from "@/lib/crmPipelineLists";
 
 interface PipelineListsDialogProps {
@@ -36,16 +37,28 @@ export function PipelineListsDialog({
   onReset,
 }: PipelineListsDialogProps) {
   const [draft, setDraft] = useState<PipelineListConfig[]>(configs);
+  const [showOnlyVisible, setShowOnlyVisible] = useState(false);
 
   useEffect(() => {
     if (open) {
       setDraft(configs.map((item) => ({ ...item })));
+      setShowOnlyVisible(false);
     }
   }, [open, configs]);
 
   const hasEmptyLabels = useMemo(
     () => draft.some((item) => item.label.trim().length === 0),
     [draft],
+  );
+
+  const hasVisibleLists = useMemo(
+    () => draft.some((item) => item.visible),
+    [draft],
+  );
+
+  const listsToRender = useMemo(
+    () => (showOnlyVisible ? draft.filter((item) => item.visible) : draft),
+    [draft, showOnlyVisible],
   );
 
   const handleLabelChange = (status: number, value: string) => {
@@ -70,11 +83,20 @@ export function PipelineListsDialog({
     setDraft(moved);
   };
 
+  const handleVisibilityChange = (status: number, visible: boolean) => {
+    setDraft((prev) =>
+      prev.map((item) =>
+        item.status === status ? { ...item, visible } : item,
+      ),
+    );
+  };
+
   const handleSave = () => {
     const sanitized = draft.map((item, index) => ({
       ...item,
       label: item.label.trim(),
       order: index,
+      visible: item.visible,
     }));
 
     onSave(sanitized);
@@ -93,8 +115,27 @@ export function PipelineListsDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {showOnlyVisible
+              ? `Mostrando ${listsToRender.length} listas activas`
+              : `Mostrando ${draft.length} listas`}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowOnlyVisible((prev) => !prev)}
+          >
+            {showOnlyVisible ? "Ver todas" : "Solo activas"}
+          </Button>
+        </div>
+
         <div className="grid gap-3 py-3">
-          {draft.map((item, index) => (
+          {listsToRender.map((item) => {
+            const index = draft.findIndex((entry) => entry.status === item.status);
+
+            return (
             <div
               key={item.status}
               className="grid grid-cols-[1fr_auto] gap-2 rounded-md border border-border/70 p-3"
@@ -108,6 +149,22 @@ export function PipelineListsDialog({
                   placeholder="Nombre de la lista"
                   maxLength={40}
                 />
+                <div className="mt-1 flex items-center gap-2">
+                  <Switch
+                    id={`pipeline-visible-${item.status}`}
+                    checked={item.visible}
+                    onCheckedChange={(checked) =>
+                      handleVisibilityChange(item.status, checked)
+                    }
+                    aria-label={`Mostrar lista ${item.label || index + 1}`}
+                  />
+                  <Label
+                    htmlFor={`pipeline-visible-${item.status}`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    {item.visible ? "Visible en tablero" : "Oculta"}
+                  </Label>
+                </div>
               </div>
 
               <div className="flex items-end gap-1">
@@ -135,7 +192,7 @@ export function PipelineListsDialog({
                 </Button>
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         <DialogFooter className="justify-between">
@@ -147,7 +204,11 @@ export function PipelineListsDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleSave} disabled={hasEmptyLabels}>
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={hasEmptyLabels || !hasVisibleLists}
+            >
               Guardar listas
             </Button>
           </div>

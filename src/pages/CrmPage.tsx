@@ -4,8 +4,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useLeadPrefill, type LeadPrefillData } from "@/contexts/FormPrefillContext";
-import { Plus, Kanban, SlidersHorizontal } from "@phosphor-icons/react";
+import { Plus, Kanban, SlidersHorizontal, Columns } from "@phosphor-icons/react";
 import { type LeadDto, type LeadStatus } from "@/api/leadsApi";
 import { deleteLead, getLeads, sendLeadToTrello } from "@/api/leadsApi";
 import { toast } from "sonner";
@@ -24,6 +25,8 @@ import {
 
 export function CrmPage() {
   useDocumentTitle("CRM - Leads");
+  const isMobile = useIsMobile();
+  const compactStorageKey = "salesnet.crm.pipeline.compact";
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Prefill data from interface agent
@@ -38,6 +41,20 @@ export function CrmPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [listsDialogOpen, setListsDialogOpen] = useState(false);
+  const [hasCompactPreference, setHasCompactPreference] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("salesnet.crm.pipeline.compact") !== null;
+    } catch {
+      return false;
+    }
+  });
+  const [compactMode, setCompactMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("salesnet.crm.pipeline.compact") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [editingLead, setEditingLead] = useState<LeadDto | null>(null);
   const [listConfigs, setListConfigs] = useState<PipelineListConfig[]>(() =>
     loadPipelineListConfigs()
@@ -85,6 +102,12 @@ export function CrmPage() {
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
+
+  useEffect(() => {
+    if (!hasCompactPreference) {
+      setCompactMode(isMobile);
+    }
+  }, [hasCompactPreference, isMobile]);
 
   // Apply prefill data from interface agent (only once)
   useEffect(() => {
@@ -233,6 +256,26 @@ export function CrmPage() {
     toast.success("Listas restablecidas a valores por defecto");
   };
 
+  const toggleCompactMode = () => {
+    setCompactMode((prev) => {
+      const next = !prev;
+      localStorage.setItem(compactStorageKey, next ? "1" : "0");
+      return next;
+    });
+    setHasCompactPreference(true);
+  };
+
+  const restoreCompactAuto = () => {
+    localStorage.removeItem(compactStorageKey);
+    setHasCompactPreference(false);
+    setCompactMode(isMobile);
+    toast.success("Modo compacto automático restaurado", {
+      description: isMobile
+        ? "Se activará automáticamente en móvil"
+        : "Se desactivará automáticamente en pantallas grandes",
+    });
+  };
+
   return (
     <PageTransition>
       <DashboardLayout
@@ -257,6 +300,30 @@ export function CrmPage() {
                 <SlidersHorizontal size={18} weight="bold" />
                 Configurar listas
               </Button>
+              <Button
+                variant={compactMode ? "default" : "outline"}
+                onClick={toggleCompactMode}
+                className="gap-2"
+              >
+                <Columns size={18} weight="bold" />
+                {isMobile
+                  ? compactMode
+                    ? "Compacto: ON"
+                    : "Compacto: OFF"
+                  : compactMode
+                    ? "Desactivar compacto"
+                    : "Activar compacto"}
+                {!hasCompactPreference && " (auto)"}
+              </Button>
+              {hasCompactPreference && (
+                <Button
+                  variant="ghost"
+                  onClick={restoreCompactAuto}
+                  className="gap-2"
+                >
+                  Restaurar auto
+                </Button>
+              )}
               <Button onClick={handleCreate} className="gap-2">
                 <Plus size={18} weight="bold" />
                 Nuevo Lead
@@ -282,6 +349,7 @@ export function CrmPage() {
             <KanbanBoard
               leads={filteredLeads}
               listConfigs={listConfigs}
+              compactMode={compactMode}
               isLoading={loading}
               onLeadsChange={handleLeadsChange}
               onEdit={handleEdit}
