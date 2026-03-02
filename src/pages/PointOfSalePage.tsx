@@ -11,6 +11,8 @@ import {
   UserPlus,
   UserMinus,
   ClockCounterClockwise,
+  CaretUp,
+  CaretDown,
 } from "@phosphor-icons/react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -48,6 +50,8 @@ import type { CustomerDto } from "@/api/customersApi";
 import { type PaymentMethodType } from "@/api/salesApi";
 import { cn } from "@/lib/utils";
 
+type MobileSummarySnap = "collapsed" | "mid" | "full";
+
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
   const navigate = useNavigate();
@@ -62,11 +66,17 @@ export function PointOfSalePage() {
   const [customerToEdit, setCustomerToEdit] = useState<CustomerDto | null>(
     null
   );
+  const [mobileSummarySnap, setMobileSummarySnap] =
+    useState<MobileSummarySnap>("collapsed");
 
   // Referencias para elementos enfocables
   const customerSearchInputRef = useRef<HTMLInputElement>(null);
   const discountInputRef = useRef<HTMLInputElement>(null);
   const customerDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileSheetGestureRef = useRef<{
+    startY: number;
+    startTime: number;
+  } | null>(null);
 
   // Hook para indicadores visuales
   const { recentKeyPress, triggerIndicator } = useKeyPressIndicator();
@@ -194,6 +204,69 @@ export function PointOfSalePage() {
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
 
+  const isMobileSummaryExpanded = mobileSummarySnap !== "collapsed";
+
+  const getNextSnapUp = (current: MobileSummarySnap): MobileSummarySnap => {
+    if (current === "collapsed") return "mid";
+    if (current === "mid") return "full";
+    return "full";
+  };
+
+  const getNextSnapDown = (
+    current: MobileSummarySnap
+  ): MobileSummarySnap => {
+    if (current === "full") return "mid";
+    if (current === "mid") return "collapsed";
+    return "collapsed";
+  };
+
+  const handleMobileSheetTouchStart = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+
+    mobileSheetGestureRef.current = {
+      startY: touch.clientY,
+      startTime: Date.now(),
+    };
+  };
+
+  const handleMobileSheetTouchEnd = (
+    event: React.TouchEvent<HTMLDivElement>
+  ) => {
+    const gesture = mobileSheetGestureRef.current;
+    const touch = event.changedTouches[0];
+
+    if (!gesture || !touch) {
+      return;
+    }
+
+    const deltaY = touch.clientY - gesture.startY;
+    const elapsed = Math.max(Date.now() - gesture.startTime, 1);
+    const speed = Math.abs(deltaY) / elapsed;
+
+    const isSwipeUp = deltaY <= -36 || (deltaY < 0 && speed >= 0.55);
+    const isSwipeDown = deltaY >= 36 || (deltaY > 0 && speed >= 0.55);
+
+    if (isSwipeUp) {
+      setMobileSummarySnap((current) => getNextSnapUp(current));
+    } else if (isSwipeDown) {
+      setMobileSummarySnap((current) => getNextSnapDown(current));
+    }
+
+    mobileSheetGestureRef.current = null;
+  };
+
+  const mobileSummarySnapClass =
+    mobileSummarySnap === "full"
+      ? "translate-y-0"
+      : mobileSummarySnap === "mid"
+        ? "translate-y-[calc(100%-22rem)]"
+        : "translate-y-[calc(100%-4.25rem)]";
+
   const handleLookupSubmit = async () => {
     const code = searchTerm.trim();
     if (!code || isLookupPending) {
@@ -241,6 +314,7 @@ export function PointOfSalePage() {
   };
 
   const handleCharge = () => {
+    setMobileSummarySnap("collapsed");
     setIsPaymentDialogOpen(true);
   };
 
@@ -443,6 +517,12 @@ export function PointOfSalePage() {
     },
   ]);
 
+  useEffect(() => {
+    if (isCustomerDialogOpen || isPaymentDialogOpen || isHeldOrdersPanelOpen) {
+      setMobileSummarySnap("collapsed");
+    }
+  }, [isCustomerDialogOpen, isPaymentDialogOpen, isHeldOrdersPanelOpen]);
+
   return (
     <PageTransition>
       <KeyPressIndicator
@@ -457,477 +537,589 @@ export function PointOfSalePage() {
         ]}
         className={PAGE_LAYOUT_CLASS}
       >
-        {/* Botón flotante para ayuda */}
-        <div className="flex justify-end gap-2">
-          {heldOrders.length > 0 && (
+        <div className="flex min-h-dvh w-full flex-col overflow-y-auto overflow-x-hidden pb-24 md:h-screen md:overflow-hidden md:pb-0">
+          <div className="flex flex-wrap items-center justify-end gap-2 md:flex-nowrap">
+            {heldOrders.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setMobileSummarySnap("collapsed");
+                  setIsHeldOrdersPanelOpen(true);
+                }}
+                className="relative gap-2"
+              >
+                <Pause size={16} weight="bold" />
+                <span className="text-xs">Órdenes</span>
+                <Badge variant="default" className="ml-1">
+                  {heldOrders.length}
+                </Badge>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsHeldOrdersPanelOpen(true)}
-              className="gap-2 relative"
+              onClick={() => navigate("/sales")}
+              className="gap-2"
             >
-              <Pause size={16} weight="bold" />
-              <span className="text-xs">Órdenes en espera</span>
-              <Badge variant="default" className="ml-1">
-                {heldOrders.length}
-              </Badge>
+              <ClockCounterClockwise className="size-4" weight="bold" />
+              <span className="text-xs">F5</span>
+              <span className="hidden sm:inline text-xs">- Historial</span>
             </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/sales")}
-            className="gap-2"
-          >
-            <ClockCounterClockwise className="size-4" weight="bold" />
-            <span className="text-xs">F5 - Historial</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsShortcutsHelpOpen(true)}
-            className="gap-2"
-          >
-            <Question className="size-4" weight="bold" />
-            <span className="text-xs">F1 - Atajos</span>
-          </Button>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <div className="flex flex-col gap-6">
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle>Punto de Venta</CardTitle>
-                <CardDescription>
-                  Escanea un código o busca por nombre para agregar productos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="pos-search">
-                      Búsqueda rápida con autocompletado
-                    </Label>
-                    <ShortcutBadge shortcut="F2" variant="outline" />
-                  </div>
-                  <ProductAutoComplete
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    results={searchResults}
-                    onSelect={handleSelectProduct}
-                    onSubmit={handleLookupSubmit}
-                    isLoading={isSearchLoading}
-                    isSubmitting={isLookupPending}
-                    error={searchError}
-                    placeholder="Escanea código o busca por nombre"
-                    formatCurrency={formatCurrency}
-                    showSubmitButton={true}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle>Orden actual</CardTitle>
-                <CardDescription>
-                  Administra los productos del ticket
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-12 text-center">
-                    <Package className="size-10 text-muted-foreground" weight="duotone" />
-                    <div>
-                      <p className="font-semibold">Tu ticket está vacío</p>
-                      <p className="text-sm text-muted-foreground">
-                        Escanea un código o busca un producto para comenzar
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <OrderProductTablePos
-                    items={items.map((item) => ({
-                      productId: item.productId,
-                      name: item.name,
-                      sku: item.sku,
-                      quantity: item.quantity,
-                      price: item.price,
-                      stock: item.stock,
-                    }))}
-                    onIncrement={incrementItem}
-                    onDecrement={decrementItem}
-                    onRemoveItem={removeItem}
-                    onQuantityChange={(productId: string, quantity: number) => {
-                      const item = items.find((i) => i.productId === productId);
-                      if (item) {
-                        const difference = quantity - item.quantity;
-                        if (difference > 0) {
-                          for (let i = 0; i < difference; i++) {
-                            incrementItem(productId);
-                          }
-                        } else {
-                          for (let i = 0; i < -difference; i++) {
-                            decrementItem(productId);
-                          }
-                        }
-                      }
-                    }}
-                    onPriceChange={updateItemPrice}
-                    formatCurrency={formatCurrency}
-                  />
-                )}
-              </CardContent>
-            </Card>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsShortcutsHelpOpen(true)}
+              className="gap-2"
+            >
+              <Question className="size-4" weight="bold" />
+              <span className="text-xs">F1</span>
+              <span className="hidden sm:inline text-xs">- Atajos</span>
+            </Button>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle>Cliente</CardTitle>
-                <CardDescription>
-                  Busca, crea o vende sin cliente identificado
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Busqueda con autocomplete */}
-                <div className="space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <Label>Buscar cliente</Label>
-                    <ShortcutBadge shortcut="F3" variant="outline" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      ref={customerSearchInputRef}
-                      value={customerSearchTerm}
-                      onChange={(e) => {
-                        setCustomerSearchTerm(e.target.value);
-                        setSelectedCustomerIndex(-1);
-                      }}
-                      onKeyDown={handleCustomerSearchKeyDown}
-                      placeholder="Nombre, email o teléfono"
-                      className="flex-1"
-                      onFocus={() => setCustomerSearchOpen(true)}
-                      onBlur={() => {
-                        // Delay to allow button clicks to register
-                        setTimeout(() => setCustomerSearchOpen(false), 200);
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setCustomerToEdit(null);
-                        setIsCustomerDialogOpen(true);
-                      }}
-                      title="Crear nuevo cliente"
-                    >
-                      <UserPlus className="size-4" weight="bold" />
-                    </Button>
-                  </div>
-
-                  {/* Dropdown de búsqueda */}
-                  {customerSearchOpen && customerSearchTerm.trim() && (
-                    <div
-                      ref={customerDropdownRef}
-                      className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95"
-                    >
-                      {filteredCustomers.length === 0 ? (
-                        <div className="p-4 text-center">
-                          <p className="text-sm text-muted-foreground mb-3">
-                            No se encontraron clientes
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setCustomerToEdit(null);
-                              setIsCustomerDialogOpen(true);
-                              setCustomerSearchOpen(false);
-                            }}
-                            className="w-full"
-                          >
-                            <UserPlus className="size-4 mr-2" weight="bold" />
-                            Crear nuevo cliente
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="max-h-[200px] overflow-y-auto p-1">
-                          {filteredCustomers.map((customer, index) => (
-                            <button
-                              key={customer.id}
-                              type="button"
-                              onClick={() => handleSelectCustomer(customer.id)}
-                              onMouseEnter={() =>
-                                setSelectedCustomerIndex(index)
-                              }
-                              className={cn(
-                                "relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
-                                selectedCustomerIndex === index
-                                  ? "bg-accent text-accent-foreground"
-                                  : "hover:bg-accent hover:text-accent-foreground"
-                              )}
-                            >
-                              <Avatar className="h-8 w-8 mr-2">
-                                <AvatarFallback className="text-xs">
-                                  {customer.name.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex flex-col items-start flex-1 overflow-hidden">
-                                <span className="font-medium truncate w-full text-left">
-                                  {customer.name}
-                                </span>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
-                                  <span className="truncate">
-                                    {customer.email}
-                                  </span>
-                                  {customer.phone && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="truncate">
-                                        {customer.phone}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+          <div className="flex flex-1 flex-col gap-6 md:flex-row md:overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col gap-6 pb-28 md:pb-0">
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle>Punto de Venta</CardTitle>
+                  <CardDescription>
+                    Escanea un código o busca por nombre para agregar productos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label htmlFor="pos-search">
+                        Búsqueda rápida con autocompletado
+                      </Label>
+                      <ShortcutBadge shortcut="F2" variant="outline" />
                     </div>
-                  )}
-                </div>
-
-                {/* Botón para cliente genérico */}
-                <Button
-                  variant={isGenericCustomer ? "default" : "outline"}
-                  className="w-full justify-center"
-                  onClick={() => {
-                    setIsGenericCustomer(!isGenericCustomer);
-                    if (!isGenericCustomer) {
-                      setCustomerId("");
-                      setCustomerSearchTerm("");
-                      setCustomerSearchOpen(false);
-                    }
-                  }}
-                >
-                  <User className="size-4 mr-2" weight="bold" />
-                  {isGenericCustomer
-                    ? "Cliente genérico seleccionado"
-                    : "Venta rápida sin cliente"}
-                </Button>
-
-                {/* Card con información del cliente seleccionado */}
-                {isGenericCustomer ? (
-                  <div className="rounded-lg border border-dashed p-4 text-center bg-muted/30">
-                    <User className="size-8 mx-auto text-muted-foreground mb-2" weight="duotone" />
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Cliente genérico/Sin cliente
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Venta rápida sin identificación
-                    </p>
+                    <ProductAutoComplete
+                      value={searchTerm}
+                      onChange={setSearchTerm}
+                      results={searchResults}
+                      onSelect={handleSelectProduct}
+                      onSubmit={handleLookupSubmit}
+                      isLoading={isSearchLoading}
+                      isSubmitting={isLookupPending}
+                      error={searchError}
+                      placeholder="Escanea código o busca por nombre"
+                      formatCurrency={formatCurrency}
+                      showSubmitButton={true}
+                    />
                   </div>
-                ) : customerId ? (
-                  <div className="space-y-3">
-                    {/* Mostrar card del cliente seleccionado */}
-                    {customers.find((c) => c.id === customerId) && (
-                      <>
-                        <CustomerCard
-                          customer={
-                            customers.find((c) => c.id === customerId) || null
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle>Orden actual</CardTitle>
+                  <CardDescription>
+                    Administra los productos del ticket
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {items.length === 0 ? (
+                    <div className="flex min-h-[190px] flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-12 text-center">
+                      <Package
+                        className="size-10 text-muted-foreground"
+                        weight="duotone"
+                      />
+                      <div>
+                        <p className="font-semibold">Tu ticket está vacío</p>
+                        <p className="text-sm text-muted-foreground">
+                          Escanea un código o busca un producto para comenzar
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <OrderProductTablePos
+                      items={items.map((item) => ({
+                        productId: item.productId,
+                        name: item.name,
+                        sku: item.sku,
+                        quantity: item.quantity,
+                        price: item.price,
+                        stock: item.stock,
+                      }))}
+                      onIncrement={incrementItem}
+                      onDecrement={decrementItem}
+                      onRemoveItem={removeItem}
+                      onQuantityChange={(
+                        productId: string,
+                        quantity: number
+                      ) => {
+                        const item = items.find(
+                          (i) => i.productId === productId
+                        );
+                        if (item) {
+                          const difference = quantity - item.quantity;
+                          if (difference > 0) {
+                            for (let i = 0; i < difference; i++) {
+                              incrementItem(productId);
+                            }
+                          } else {
+                            for (let i = 0; i < -difference; i++) {
+                              decrementItem(productId);
+                            }
                           }
-                          onViewHistory={() => {
-                            toast.success("Historial", {
-                              description:
-                                "Visualización de historial en desarrollo",
-                            });
-                          }}
-                          onEdit={() => {
-                            setCustomerToEdit(
-                              customers.find((c) => c.id === customerId) || null
-                            );
-                            setIsCustomerDialogOpen(true);
-                          }}
-                          onRemove={handleRemoveCustomer}
-                          formatCurrency={formatCurrency}
-                          className="shadow-sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                          onClick={handleRemoveCustomer}
-                        >
-                          <UserMinus className="size-4 mr-2" weight="bold" />
-                          Cambiar cliente
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed p-4 text-center bg-muted/30">
-                    <User className="size-8 mx-auto text-muted-foreground mb-2" weight="duotone" />
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Sin cliente seleccionado
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Busca o crea un cliente para continuar
-                    </p>
-                  </div>
-                )}
+                        }
+                      }}
+                      onPriceChange={updateItemPrice}
+                      formatCurrency={formatCurrency}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-                {/* Botón para recargar clientes */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    void reloadCustomers();
-                  }}
-                  disabled={customersLoading}
+            <aside
+              className={cn(
+                "z-30 flex w-full flex-col border-t bg-background shadow-xl md:z-10 md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-none",
+                "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-500 ease-out will-change-transform md:static md:h-auto md:max-h-none md:rounded-none md:translate-y-0",
+                mobileSummarySnapClass
+              )}
+            >
+              <div
+                className="flex h-[72px] items-center gap-2 border-b px-4 md:hidden"
+                onTouchStart={handleMobileSheetTouchStart}
+                onTouchEnd={handleMobileSheetTouchEnd}
+              >
+                <button
+                  type="button"
+                  className="relative flex min-w-0 flex-1 items-center justify-between text-left"
+                  onClick={() =>
+                    setMobileSummarySnap((prev) => {
+                      if (prev === "full") return "collapsed";
+                      return getNextSnapUp(prev);
+                    })
+                  }
+                  aria-label="Cambiar nivel del panel de resumen"
+                  title="Cambiar nivel del panel"
                 >
-                  <ArrowCounterClockwise className="size-4 mr-2" weight="bold" />
-                  Actualizar clientes
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle>Resumen</CardTitle>
-                <CardDescription>
-                  Totales calculados en tiempo real
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold">
-                    {formatCurrency(subtotal)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Descuento</span>
-                    <ShortcutBadge shortcut="F4" variant="outline" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">
-                      {formatCurrency(appliedDiscount)}
-                    </span>
-                  </div>
-                  <Input
-                    ref={discountInputRef}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discount === 0 ? "" : discount.toString()}
-                    onChange={(event) =>
-                      handleDiscountChange(event.target.value)
-                    }
-                    placeholder="0.00"
-                    className="h-9"
-                  />
-                </div>
-                {taxRate > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Impuesto ({(taxRate * 100).toFixed(2)}%)
-                    </span>
-                    <span className="font-semibold">
-                      {formatCurrency(taxAmount)}
-                    </span>
-                  </div>
-                )}
-                <Separator className="my-3" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Total a cobrar
+                  <div className="absolute left-1/2 top-[-0.35rem] h-1.5 w-12 -translate-x-1/2 rounded-full bg-muted-foreground/30" />
+                  <div className="pt-2">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Resumen
                     </p>
-                    <p className="text-3xl font-black tracking-tight">
+                    <p className="text-sm font-semibold text-foreground">
+                      {items.length} productos
+                    </p>
+                  </div>
+                  <div className="pt-2 text-right">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Total
+                    </p>
+                    <p className="text-base font-bold text-foreground">
                       {formatCurrency(total)}
                     </p>
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {items.length} producto{items.length === 1 ? "" : "s"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </button>
 
-            <Card className="shadow-sm">
-              <CardContent className="space-y-4 pt-6">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1 group relative"
-                    onClick={handleHold}
-                    disabled={items.length === 0}
-                    title="F8 para poner en espera"
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    onClick={() =>
+                      setMobileSummarySnap((prev) => getNextSnapDown(prev))
+                    }
+                    disabled={mobileSummarySnap === "collapsed"}
+                    aria-label="Bajar panel"
+                    title="Bajar panel"
                   >
-                    <Pause className="size-4" weight="bold" />
-                    Poner en espera
-                    <ShortcutBadge
-                      shortcut="F8"
-                      variant="outline"
-                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 group relative"
-                    onClick={handleClear}
-                    disabled={items.length === 0}
-                    title="ESC para limpiar"
+                    <CaretDown weight="bold" className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    onClick={() =>
+                      setMobileSummarySnap((prev) => getNextSnapUp(prev))
+                    }
+                    disabled={mobileSummarySnap === "full"}
+                    aria-label="Subir panel"
+                    title="Subir panel"
                   >
-                    <Trash className="size-4" weight="bold" />
-                    Limpiar
-                    <ShortcutBadge
-                      shortcut="ESC"
-                      variant="outline"
-                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  </Button>
+                    <CaretUp weight="bold" className="size-4" />
+                  </button>
                 </div>
-                <Button
-                  className="w-full group relative"
-                  size="lg"
-                  onClick={handleCharge}
-                  disabled={
-                    isSubmitting ||
-                    items.length === 0 ||
-                    (!customerId && !isGenericCustomer)
-                  }
-                  title="F9 para proceder al pago"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Spinner size="sm" />
-                      Procesando...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="size-5" weight="bold" />
-                      Cobrar {formatCurrency(total)}
-                      <ShortcutBadge
-                        shortcut="F9"
-                        className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              </div>
+
+              <div className="flex-1 space-y-6 overflow-y-auto p-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-0 md:space-y-6">
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle>Cliente</CardTitle>
+                    <CardDescription>
+                      Busca, crea o vende sin cliente identificado
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="relative space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Buscar cliente</Label>
+                        <ShortcutBadge shortcut="F3" variant="outline" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          ref={customerSearchInputRef}
+                          value={customerSearchTerm}
+                          onChange={(e) => {
+                            setCustomerSearchTerm(e.target.value);
+                            setSelectedCustomerIndex(-1);
+                          }}
+                          onKeyDown={handleCustomerSearchKeyDown}
+                          placeholder="Nombre, email o teléfono"
+                          className="flex-1"
+                          onFocus={() => setCustomerSearchOpen(true)}
+                          onBlur={() => {
+                            setTimeout(() => setCustomerSearchOpen(false), 200);
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setCustomerToEdit(null);
+                            setMobileSummarySnap("collapsed");
+                            setIsCustomerDialogOpen(true);
+                          }}
+                          aria-label="Crear nuevo cliente"
+                          title="Crear nuevo cliente"
+                        >
+                          <UserPlus className="size-4" weight="bold" />
+                        </Button>
+                      </div>
+
+                      {customerSearchOpen && customerSearchTerm.trim() && (
+                        <div
+                          ref={customerDropdownRef}
+                          className="absolute left-0 top-full z-50 mt-1 w-full animate-in zoom-in-95 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-none fade-in-0"
+                        >
+                          {filteredCustomers.length === 0 ? (
+                            <div className="p-4 text-center">
+                              <p className="mb-3 text-sm text-muted-foreground">
+                                No se encontraron clientes
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setCustomerToEdit(null);
+                                  setMobileSummarySnap("collapsed");
+                                  setIsCustomerDialogOpen(true);
+                                  setCustomerSearchOpen(false);
+                                }}
+                                className="w-full"
+                              >
+                                <UserPlus
+                                  className="mr-2 size-4"
+                                  weight="bold"
+                                />
+                                Crear nuevo cliente
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="max-h-[200px] overflow-y-auto p-1">
+                              {filteredCustomers.map((customer, index) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleSelectCustomer(customer.id)
+                                  }
+                                  onMouseEnter={() =>
+                                    setSelectedCustomerIndex(index)
+                                  }
+                                  className={cn(
+                                    "relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+                                    selectedCustomerIndex === index
+                                      ? "bg-accent text-accent-foreground"
+                                      : "hover:bg-accent hover:text-accent-foreground"
+                                  )}
+                                >
+                                  <Avatar className="mr-2 h-8 w-8">
+                                    <AvatarFallback className="text-xs">
+                                      {customer.name.slice(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex flex-1 flex-col items-start overflow-hidden">
+                                    <span className="w-full truncate text-left font-medium">
+                                      {customer.name}
+                                    </span>
+                                    <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
+                                      <span className="truncate">
+                                        {customer.email}
+                                      </span>
+                                      {customer.phone && (
+                                        <>
+                                          <span>•</span>
+                                          <span className="truncate">
+                                            {customer.phone}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      variant={isGenericCustomer ? "default" : "outline"}
+                      className="w-full justify-center"
+                      onClick={() => {
+                        setIsGenericCustomer(!isGenericCustomer);
+                        if (!isGenericCustomer) {
+                          setCustomerId("");
+                          setCustomerSearchTerm("");
+                          setCustomerSearchOpen(false);
+                        }
+                      }}
+                    >
+                      <User className="mr-2 size-4" weight="bold" />
+                      {isGenericCustomer
+                        ? "Cliente genérico seleccionado"
+                        : "Venta rápida sin cliente"}
+                    </Button>
+
+                    {isGenericCustomer ? (
+                      <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center">
+                        <User
+                          className="mx-auto mb-2 size-8 text-muted-foreground"
+                          weight="duotone"
+                        />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Cliente genérico/Sin cliente
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Venta rápida sin identificación
+                        </p>
+                      </div>
+                    ) : customerId ? (
+                      <div className="space-y-3">
+                        {customers.find((c) => c.id === customerId) && (
+                          <>
+                            <CustomerCard
+                              customer={
+                                customers.find((c) => c.id === customerId) ||
+                                null
+                              }
+                              onViewHistory={() => {
+                                toast.success("Historial", {
+                                  description:
+                                    "Visualización de historial en desarrollo",
+                                });
+                              }}
+                              onEdit={() => {
+                                setCustomerToEdit(
+                                  customers.find((c) => c.id === customerId) ||
+                                    null
+                                );
+                                setMobileSummarySnap("collapsed");
+                                setIsCustomerDialogOpen(true);
+                              }}
+                              onRemove={handleRemoveCustomer}
+                              formatCurrency={formatCurrency}
+                              className="shadow-sm"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={handleRemoveCustomer}
+                            >
+                              <UserMinus
+                                className="mr-2 size-4"
+                                weight="bold"
+                              />
+                              Cambiar cliente
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center">
+                        <User
+                          className="mx-auto mb-2 size-8 text-muted-foreground"
+                          weight="duotone"
+                        />
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Sin cliente seleccionado
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Busca o crea un cliente para continuar
+                        </p>
+                      </div>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => {
+                        void reloadCustomers();
+                      }}
+                      disabled={customersLoading}
+                    >
+                      <ArrowCounterClockwise
+                        className="mr-2 size-4"
+                        weight="bold"
                       />
-                    </>
-                  )}
-                </Button>
-                {!customerId && !isGenericCustomer && (
-                  <p className="text-center text-sm text-destructive">
-                    Selecciona un cliente o usa la venta rápida para habilitar
-                    el cobro
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                      Actualizar clientes
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle>Resumen</CardTitle>
+                    <CardDescription>
+                      Totales calculados en tiempo real
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-semibold">
+                        {formatCurrency(subtotal)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Descuento</span>
+                        <ShortcutBadge shortcut="F4" variant="outline" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">
+                          {formatCurrency(appliedDiscount)}
+                        </span>
+                      </div>
+                      <Input
+                        ref={discountInputRef}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={discount === 0 ? "" : discount.toString()}
+                        onChange={(event) =>
+                          handleDiscountChange(event.target.value)
+                        }
+                        placeholder="0.00"
+                        className="h-9"
+                      />
+                    </div>
+                    {taxRate > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Impuesto ({(taxRate * 100).toFixed(2)}%)
+                        </span>
+                        <span className="font-semibold">
+                          {formatCurrency(taxAmount)}
+                        </span>
+                      </div>
+                    )}
+                    <Separator className="my-3" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Total a cobrar
+                        </p>
+                        <p className="text-3xl font-black tracking-tight">
+                          {formatCurrency(total)}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {items.length} producto{items.length === 1 ? "" : "s"}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                  <CardContent className="space-y-4 pt-6">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        className="group relative flex-1"
+                        onClick={handleHold}
+                        disabled={items.length === 0}
+                        title="F8 para poner en espera"
+                      >
+                        <Pause className="size-4" weight="bold" />
+                        Poner en espera
+                        <ShortcutBadge
+                          shortcut="F8"
+                          variant="outline"
+                          className="absolute right-2 opacity-0 transition-opacity group-hover:opacity-100"
+                        />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="group relative flex-1"
+                        onClick={handleClear}
+                        disabled={items.length === 0}
+                        title="ESC para limpiar"
+                      >
+                        <Trash className="size-4" weight="bold" />
+                        Limpiar
+                        <ShortcutBadge
+                          shortcut="ESC"
+                          variant="outline"
+                          className="absolute right-2 opacity-0 transition-opacity group-hover:opacity-100"
+                        />
+                      </Button>
+                    </div>
+                    <Button
+                      className="group relative w-full"
+                      size="lg"
+                      onClick={handleCharge}
+                      disabled={
+                        isSubmitting ||
+                        items.length === 0 ||
+                        (!customerId && !isGenericCustomer)
+                      }
+                      title="F9 para proceder al pago"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Spinner size="sm" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="size-5" weight="bold" />
+                          Cobrar {formatCurrency(total)}
+                          <ShortcutBadge
+                            shortcut="F9"
+                            className="absolute right-2 opacity-0 transition-opacity group-hover:opacity-100"
+                          />
+                        </>
+                      )}
+                    </Button>
+                    {!customerId && !isGenericCustomer && (
+                      <p className="text-center text-sm text-destructive">
+                        Selecciona un cliente o usa la venta rápida para
+                        habilitar el cobro
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </aside>
           </div>
+
+          {isMobileSummaryExpanded && (
+            <button
+              type="button"
+              className="fixed inset-0 z-20 bg-black/35 md:hidden"
+              onClick={() => setMobileSummarySnap("collapsed")}
+              aria-label="Cerrar panel de resumen"
+              title="Cerrar panel"
+            />
+          )}
         </div>
       </DashboardLayout>
       <HeldOrdersPanel

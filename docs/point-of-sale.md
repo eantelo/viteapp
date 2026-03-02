@@ -47,6 +47,7 @@ Se puede inyectar un callback opcional `onSaleCreated` (usado en la página para
 - **shadcn/ui**: `Card`, `Table`, `Select`, `Badge`, `Input`, `Button`, `Avatar`, `Skeleton`, `Separator` y `Spinner` garantizan estilo consistente.
 - **Sidebar**: se añadió la nueva entrada "Punto de Venta" (`IconCashRegister`) en `app-sidebar.tsx` para exponer `/pos` desde la navegación principal.
 - **Rutas**: `App.tsx` declara `<Route path="/pos" element={<PointOfSalePage />}>` dentro del `ProtectedRoute`, alineado con las otras páginas del dashboard.
+- **Mobile sheet POS**: se documentó la mejora mobile-first con snap points, gestos touch y overlay en [pos-mobile-first-sheet.md](./pos-mobile-first-sheet.md).
 
 ## Futuras mejoras sugeridas
 
