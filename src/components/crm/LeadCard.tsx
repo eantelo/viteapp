@@ -166,6 +166,17 @@ export function LeadCard({
               "{lead.notes}"
             </p>
           )}
+
+          {/* Created date */}
+          <p className="text-[11px] text-muted-foreground/60 border-t border-border/40 pt-1">
+            {new Date(lead.createdAt).toLocaleString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
         </div>
       </Card>
     </motion.div>
