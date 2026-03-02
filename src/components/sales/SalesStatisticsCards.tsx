@@ -31,7 +31,7 @@ export function SalesStatisticsCards({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-4 md:gap-4">
         {[1, 2, 3, 4].map((i) => (
           <Card
             key={i}
@@ -67,21 +67,21 @@ export function SalesStatisticsCards({
   return (
     <div className="space-y-4">
       {/* Tarjetas de resumen */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-2 lg:grid-cols-4 md:gap-4">
         <Card className="rounded-lg border-border/60 bg-card shadow-none">
           <CardHeader className="gap-2 pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Total vendido
               </CardTitle>
-              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
                 <CurrencyDollar className="h-4 w-4 text-muted-foreground" weight="duotone" />
               </div>
             </div>
-            <CardDescription>Ingresos netos del periodo</CardDescription>
+            <CardDescription className="hidden sm:block">Ingresos netos del periodo</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground tabular-nums font-mono">
+            <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums font-mono">
               {formatCurrency(statistics.totalSales)}
             </div>
           </CardContent>
@@ -93,14 +93,14 @@ export function SalesStatisticsCards({
               <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Transacciones
               </CardTitle>
-              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
                 <Receipt className="h-4 w-4 text-muted-foreground" weight="duotone" />
               </div>
             </div>
-            <CardDescription>Operaciones registradas</CardDescription>
+            <CardDescription className="hidden sm:block">Operaciones registradas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground tabular-nums font-mono">
+            <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums font-mono">
               {statistics.transactionCount}
             </div>
           </CardContent>
@@ -112,14 +112,14 @@ export function SalesStatisticsCards({
               <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Ticket promedio
               </CardTitle>
-              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
                 <TrendUp className="h-4 w-4 text-muted-foreground" weight="duotone" />
               </div>
             </div>
-            <CardDescription>Promedio por venta</CardDescription>
+            <CardDescription className="hidden sm:block">Promedio por venta</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground tabular-nums font-mono">
+            <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums font-mono">
               {formatCurrency(statistics.averageTicket)}
             </div>
           </CardContent>
@@ -131,14 +131,14 @@ export function SalesStatisticsCards({
               <CardTitle className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Métodos de pago
               </CardTitle>
-              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
+              <div className="hidden sm:flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-muted/40">
                 <CreditCard className="h-4 w-4 text-muted-foreground" weight="duotone" />
               </div>
             </div>
-            <CardDescription>Cobros activos en el sistema</CardDescription>
+            <CardDescription className="hidden sm:block">Cobros activos en el sistema</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground tabular-nums font-mono">
+            <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums font-mono">
               {statistics.salesByPaymentMethod.length}
             </div>
           </CardContent>
