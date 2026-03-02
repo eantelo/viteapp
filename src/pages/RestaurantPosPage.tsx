@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Coffee, MagnifyingGlass, List, User, Trash, CreditCard, Clock, Plus, Minus, X, Pause, ClockCounterClockwise } from "@phosphor-icons/react";
 import { usePointOfSale } from "@/hooks/usePointOfSale";
@@ -28,6 +28,7 @@ export function RestaurantPosPage() {
   useDocumentTitle("Punto de Venta - Restaurante");
   const navigate = useNavigate();
   const { auth } = useAuth();
+  const orderSummaryRef = useRef<HTMLElement | null>(null);
 
   // State
   const [categories, setCategories] = useState<string[]>([]);
@@ -152,8 +153,15 @@ export function RestaurantPosPage() {
     }).format(value);
   };
 
+  const handleScrollToOrder = () => {
+    orderSummaryRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
-    <div className="flex min-h-dvh w-full flex-col bg-background overflow-y-auto overflow-x-hidden md:h-screen md:overflow-hidden">
+    <div className="flex min-h-dvh w-full flex-col bg-background overflow-y-auto overflow-x-hidden pb-24 md:h-screen md:overflow-hidden md:pb-0">
       {/* Header */}
       <header className="z-10 flex min-h-14 flex-wrap items-center justify-between gap-2 bg-sidebar px-4 py-2 text-sidebar-foreground shadow-md md:h-14 md:flex-nowrap md:py-0">
         <div className="flex items-center gap-4">
@@ -255,12 +263,12 @@ export function RestaurantPosPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
+              <div className="grid grid-cols-2 gap-4 pb-28 sm:grid-cols-3 sm:pb-20 lg:grid-cols-4 xl:grid-cols-5">
                 {filteredProducts.map((product) => (
                   <button
                     key={product.id}
                     onClick={() => addProductToOrder(product)}
-                    className="group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:shadow-md hover:border-border active:scale-95"
+                    className="group relative flex min-h-[186px] flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:border-border hover:shadow-md active:scale-95 sm:min-h-0"
                   >
                     <div className="aspect-4/3 w-full bg-muted flex items-center justify-center relative">
                       {/* Product Image Placeholder */}
@@ -271,7 +279,7 @@ export function RestaurantPosPage() {
                       <h3 className="font-semibold text-foreground line-clamp-2 text-sm leading-tight min-h-[2.5em]">
                         {product.name}
                       </h3>
-                      <p className="mt-1 font-bold text-foreground/80">
+                      <p className="mt-1 text-base font-bold text-foreground/80 sm:text-sm">
                         {formatCurrency(product.price)}
                       </p>
                     </div>
@@ -289,7 +297,10 @@ export function RestaurantPosPage() {
         </main>
 
         {/* Right Panel - Order Summary */}
-        <aside className="z-20 flex w-full flex-col border-t bg-card shadow-none md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl">
+        <aside
+          ref={orderSummaryRef}
+          className="z-20 flex w-full flex-col border-t bg-card shadow-none md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl"
+        >
           {/* Customer Selection */}
           <div className="p-3 border-b bg-muted/80">
             <div className="flex items-center justify-between mb-2">
@@ -466,6 +477,25 @@ export function RestaurantPosPage() {
             </Button>
           </div>
         </aside>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-backdrop-filter:bg-card/85 md:hidden">
+        <div className="mx-auto flex max-w-2xl items-center gap-2">
+          <Button
+            variant="outline"
+            className="h-12 flex-1"
+            onClick={handleScrollToOrder}
+          >
+            Orden ({items.length})
+          </Button>
+          <Button
+            className="h-12 flex-[1.4] font-semibold"
+            disabled={items.length === 0 || isSubmitting}
+            onClick={() => setIsPaymentDialogOpen(true)}
+          >
+            {isSubmitting ? "Procesando..." : `Pagar ${formatCurrency(total)}`}
+          </Button>
+        </div>
       </div>
 
       <PaymentDialog

@@ -37,11 +37,23 @@ Archivo modificado: `src/pages/RestaurantPosPage.tsx`
    - Se agregaron `title` y `aria-label` en botones de incrementar, disminuir y eliminar producto.
    - Se normalizó clase de Tailwind `aspect-[4/3]` a `aspect-4/3`.
 
+6. **Modo touch-first en móvil (iteración adicional)**
+   - Se agregó una **barra inferior fija** solo en móvil (`md:hidden`) con dos acciones rápidas:
+     - `Orden (N)`: hace scroll suave al panel de orden.
+     - `Pagar $Total`: abre el flujo de pago directamente.
+   - Se añadió `padding-bottom` móvil al layout raíz para evitar que la barra tape contenido.
+
+7. **Tarjetas de productos más cómodas para touch**
+   - Se incrementó la altura mínima de las tarjetas en móvil (`min-h-[186px]`).
+   - Se aumentó legibilidad del precio en móvil (`text-base`).
+   - Se incrementó padding inferior del grid en móvil para evitar superposición con la barra fija.
+
 ## Resultado esperado
 
 - Se puede navegar toda la pantalla POS en móvil sin cortes laterales.
 - El contenido ya no queda truncado por ancho fijo del panel derecho.
 - La experiencia touch mejora al tener una distribución vertical natural en móvil.
+- El usuario puede completar acciones clave sin recorrer toda la pantalla: ver orden y pagar desde la barra inferior.
 - Desktop mantiene la distribución de dos paneles como antes.
 
 ## Verificación sugerida
@@ -51,3 +63,6 @@ Archivo modificado: `src/pages/RestaurantPosPage.tsx`
 3. Confirmar que la sección de productos se ve completa y desplazable.
 4. Confirmar que la orden aparece debajo en móvil (sin recorte lateral).
 5. Confirmar que en desktop (`>= md`) sigue panel derecho fijo.
+6. En móvil, confirmar que la barra inferior fija muestra:
+   - Botón `Orden (N)` y realiza scroll al resumen.
+   - Botón `Pagar` con total actualizado y estado deshabilitado cuando no hay productos.
