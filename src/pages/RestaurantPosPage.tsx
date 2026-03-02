@@ -138,7 +138,7 @@ export function RestaurantPosPage() {
       toast.success("Orden guardada", {
         description: "La orden se ha puesto en espera correctamente.",
       });
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "No se pudo guardar la orden.",
       });
@@ -153,9 +153,9 @@ export function RestaurantPosPage() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background overflow-hidden">
+    <div className="flex min-h-dvh w-full flex-col bg-background overflow-y-auto overflow-x-hidden md:h-screen md:overflow-hidden">
       {/* Header */}
-      <header className="flex h-14 items-center justify-between bg-sidebar px-4 text-sidebar-foreground shadow-md z-10">
+      <header className="z-10 flex min-h-14 flex-wrap items-center justify-between gap-2 bg-sidebar px-4 py-2 text-sidebar-foreground shadow-md md:h-14 md:flex-nowrap md:py-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -168,24 +168,27 @@ export function RestaurantPosPage() {
           <h1 className="text-lg font-semibold tracking-tight">SalesNet POS</h1>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-sidebar-foreground/70">
+        <div className="flex w-full items-center justify-end gap-3 text-sm text-sidebar-foreground/70 md:w-auto md:gap-6">
           <div className="flex items-center gap-2">
             <User weight="bold" className="size-4" />
-            <span>{auth?.email || "Usuario"}</span>
+            <span className="hidden sm:inline">{auth?.email || "Usuario"}</span>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <span>Terminal 01</span>
           </div>
           <div className="flex items-center gap-2 font-medium text-white bg-sidebar-accent px-3 py-1 rounded-full">
             <Clock weight="bold" className="size-4" />
-            <span>
+            <span className="hidden sm:inline">
               {format(currentTime, "EEEE, d MMM | h:mm a", { locale: es })}
+            </span>
+            <span className="sm:hidden">
+              {format(currentTime, "h:mm a", { locale: es })}
             </span>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
         {/* Left Sidebar - Categories */}
         <aside className="w-24 flex-col items-center gap-2 border-r bg-card py-4 hidden md:flex overflow-y-auto">
           {categories.map((category) => (
@@ -218,10 +221,10 @@ export function RestaurantPosPage() {
         </aside>
 
         {/* Main Content - Products */}
-        <main className="flex-1 flex flex-col bg-muted/50 relative">
+        <main className="relative flex min-h-[45vh] flex-1 flex-col bg-muted/50 md:min-h-0">
           {/* Search Bar */}
-          <div className="p-4 bg-card border-b flex gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col gap-3 border-b bg-card p-4 sm:flex-row">
+            <div className="relative w-full sm:max-w-md">
               <MagnifyingGlass weight="bold" className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar producto..."
@@ -231,7 +234,7 @@ export function RestaurantPosPage() {
               />
             </div>
             {/* Mobile Category Selector (visible only on small screens) */}
-            <div className="md:hidden flex-1 overflow-x-auto flex gap-2 pb-1">
+            <div className="flex w-full gap-2 overflow-x-auto pb-1 md:hidden">
               {categories.map((cat) => (
                 <Badge
                   key={cat}
@@ -246,7 +249,7 @@ export function RestaurantPosPage() {
           </div>
 
           {/* Products Grid */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="h-[52vh] p-4 md:h-auto md:flex-1">
             {isLoading ? (
               <div className="flex h-full items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
@@ -259,7 +262,7 @@ export function RestaurantPosPage() {
                     onClick={() => addProductToOrder(product)}
                     className="group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:shadow-md hover:border-border active:scale-95"
                   >
-                    <div className="aspect-[4/3] w-full bg-muted flex items-center justify-center relative">
+                    <div className="aspect-4/3 w-full bg-muted flex items-center justify-center relative">
                       {/* Product Image Placeholder */}
                       <Coffee weight="duotone" className="size-12 text-muted-foreground/50" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
@@ -286,7 +289,7 @@ export function RestaurantPosPage() {
         </main>
 
         {/* Right Panel - Order Summary */}
-        <aside className="w-[380px] flex flex-col bg-card border-l shadow-xl z-20">
+        <aside className="z-20 flex w-full flex-col border-t bg-card shadow-none md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-xl">
           {/* Customer Selection */}
           <div className="p-3 border-b bg-muted/80">
             <div className="flex items-center justify-between mb-2">
@@ -373,6 +376,8 @@ export function RestaurantPosPage() {
                     <button
                       onClick={() => incrementItem(item.productId)}
                       className="text-muted-foreground hover:text-foreground p-0.5"
+                      title="Incrementar cantidad"
+                      aria-label={`Incrementar cantidad de ${item.name}`}
                     >
                       <Plus weight="bold" className="size-3" />
                     </button>
@@ -380,6 +385,8 @@ export function RestaurantPosPage() {
                     <button
                       onClick={() => decrementItem(item.productId)}
                       className="text-muted-foreground hover:text-foreground p-0.5"
+                      title="Disminuir cantidad"
+                      aria-label={`Disminuir cantidad de ${item.name}`}
                     >
                       <Minus weight="bold" className="size-3" />
                     </button>
@@ -402,6 +409,8 @@ export function RestaurantPosPage() {
                   <button
                     onClick={() => removeItem(item.productId)}
                     className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Quitar producto"
+                    aria-label={`Quitar ${item.name} de la orden`}
                   >
                     <X weight="bold" className="size-4" />
                   </button>
