@@ -104,6 +104,7 @@ function FilterContent({
           </div>
         </label>
       </div>
+      )}
 
       {/* Filter Accordions */}
       <div className="flex flex-col">
@@ -966,7 +967,7 @@ export function ProductCatalogPage() {
                                 }
                               }}
                               tabIndex={0}
-                              className={`border-b border-border hover:bg-muted/50 active:bg-muted/70 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${`
+                              className={`border-b border-border hover:bg-muted/50 active:bg-muted/70 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
                                 highlightedProductId === product.id
                                   ? "bg-primary/10! dark:bg-primary/20! animate-pulse ring-2 ring-primary/50"
                                   : ""
