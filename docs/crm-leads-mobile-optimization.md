@@ -17,6 +17,13 @@ La página de Pipeline de Leads (`/crm`) no era usable en dispositivos móviles 
 
 ## Cambios aplicados
 
+### `src/pages/CrmPage.tsx`
+- Se añadió un contenedor mobile-first con `min-h-dvh`, `overflow-x-hidden` y espaciado seguro para evitar clipping vertical/horizontal dentro de `DashboardLayout`.
+- La barra de acciones del header ahora se reorganiza en móvil: controles secundarios en grid de 2 columnas, botón **Nuevo Lead** a ancho completo y altura táctil de 44px (`h-11`).
+- Los textos de botones se acortan en móvil (`Listas`, `Compacto ON/OFF`, `Volver a auto`) para evitar wrapping incómodo y mantener los iconos visibles.
+- La búsqueda usa placeholder corto en móvil y queda fija arriba del contenido (`sticky`) para no perderla al desplazarse entre columnas.
+- Se añadió una pista visual bajo la búsqueda indicando que el tablero se navega con deslizamiento horizontal, junto con el número de listas visibles.
+
 ### `src/components/crm/KanbanBoard.tsx`
 - Añadido contenedor `div.overflow-x-auto.snap-x.snap-mandatory.scroll-smooth` envolviendo el `motion.div` con las columnas.
 - El tablero ahora tiene scroll horizontal contenido con snapping column-by-column.
@@ -37,13 +44,15 @@ La página de Pipeline de Leads (`/crm`) no era usable en dispositivos móviles 
 
 ## Tests manuales sugeridos
 
-1. **Scroll horizontal**: Abrir `/crm` en mobile (390px), deslizar horizontalmente → las columnas deben snappear una a una.
-2. **Peek de columna**: La columna siguiente debe asomarse ~50px al margen derecho, indicando que hay más contenido.
-3. **Botones visibles**: Sin hacer hover, los botones edit/delete/Trello deben ser visibles en cada tarjeta.
-4. **DnD en mobile**: Mantener presionado un lead > 300ms debe iniciar el arrastre (PointerSensor con distance: 6).
-5. **Desktop sin cambios**: En viewport ≥1024px el layout debe ser idéntico al anterior.
+1. **Header en mobile (390px)**: los botones del header deben apilarse sin overflow; `Nuevo Lead` debe ocupar todo el ancho y ser fácil de tocar.
+2. **Búsqueda sticky**: hacer scroll vertical y confirmar que el buscador permanece visible arriba del tablero.
+3. **Scroll horizontal**: deslizar horizontalmente → las columnas deben snappear una a una.
+4. **Peek de columna**: la columna siguiente debe asomarse ~50px al margen derecho, indicando que hay más contenido.
+5. **Botones visibles**: sin hacer hover, los botones edit/delete/Trello deben ser visibles en cada tarjeta.
+6. **DnD en mobile**: mantener presionado un lead > 300ms debe iniciar el arrastre (PointerSensor con distance: 6).
+7. **Desktop sin cambios**: en viewport ≥1024px el layout debe mantenerse igual en estructura y comportamiento.
 
 ## Resultado esperado
 
-- Mobile: tablero tipo carrusel horizontal con snap, botones accesibles, lead cards con touch targets adecuados.
+- Mobile: header ordenado y táctil, búsqueda siempre accesible, tablero tipo carrusel horizontal con snap y lead cards con touch targets adecuados.
 - Desktop: sin cambios visuales, comportamiento idéntico al original.

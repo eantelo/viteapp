@@ -70,6 +70,17 @@ export function CrmPage() {
     LeadStatus,
     string
   >;
+  const visibleListsCount = listConfigs.filter((item) => item.visible).length;
+  const searchPlaceholder = isMobile
+    ? "Buscar leads..."
+    : "Buscar por nombre, empresa, email, teléfono...";
+  const compactButtonLabel = isMobile
+    ? compactMode
+      ? "Compacto ON"
+      : "Compacto OFF"
+    : compactMode
+      ? "Desactivar compacto"
+      : "Activar compacto";
 
   const filteredLeads = leads.filter((lead) => {
     const term = search.trim().toLowerCase();
@@ -285,79 +296,104 @@ export function CrmPage() {
         ]}
         className={PAGE_LAYOUT_CLASS}
       >
-        <PageHeader
-          title="Pipeline de Leads"
-          description="Gestiona tu pipeline de ventas con un sistema visual de kanban. Arrastra leads entre etapas."
-          sectionLabel="Gestión de ventas"
-          icon={Kanban}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setListsDialogOpen(true)}
-                className="gap-2"
-              >
-                <SlidersHorizontal size={18} weight="bold" />
-                Configurar listas
-              </Button>
-              <Button
-                variant={compactMode ? "default" : "outline"}
-                onClick={toggleCompactMode}
-                className="gap-2"
-              >
-                <Columns size={18} weight="bold" />
-                {isMobile
-                  ? compactMode
-                    ? "Compacto: ON"
-                    : "Compacto: OFF"
-                  : compactMode
-                    ? "Desactivar compacto"
-                    : "Activar compacto"}
-                {!hasCompactPreference && " (auto)"}
-              </Button>
-              {hasCompactPreference && (
+        <div className="flex min-h-dvh w-full flex-col gap-4 overflow-y-auto overflow-x-hidden pb-2 md:min-h-0 md:overflow-visible md:pb-0">
+          <PageHeader
+            title="Pipeline de Leads"
+            description="Gestiona tu pipeline de ventas con un sistema visual de kanban. Arrastra leads entre etapas."
+            sectionLabel="Gestión de ventas"
+            icon={Kanban}
+            actions={
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() => setListsDialogOpen(true)}
+                    className="h-11 justify-center gap-2 px-3 text-sm sm:h-9"
+                    title="Configurar listas visibles del pipeline"
+                    aria-label="Configurar listas visibles del pipeline"
+                  >
+                    <SlidersHorizontal size={18} weight="bold" />
+                    <span className="truncate">
+                      {isMobile ? "Listas" : "Configurar listas"}
+                    </span>
+                  </Button>
+                  <Button
+                    variant={compactMode ? "default" : "outline"}
+                    onClick={toggleCompactMode}
+                    className="h-11 justify-center gap-2 px-3 text-sm sm:h-9"
+                    title="Alternar vista compacta del pipeline"
+                    aria-label="Alternar vista compacta del pipeline"
+                  >
+                    <Columns size={18} weight="bold" />
+                    <span className="truncate">
+                      {compactButtonLabel}
+                      {!hasCompactPreference && " (auto)"}
+                    </span>
+                  </Button>
+                  {hasCompactPreference && (
+                    <Button
+                      variant="ghost"
+                      onClick={restoreCompactAuto}
+                      className="col-span-2 h-11 justify-center gap-2 px-3 text-sm sm:col-span-1 sm:h-9"
+                      title="Restaurar modo compacto automático según el dispositivo"
+                      aria-label="Restaurar modo compacto automático según el dispositivo"
+                    >
+                      {isMobile ? "Volver a auto" : "Restaurar auto"}
+                    </Button>
+                  )}
+                </div>
                 <Button
-                  variant="ghost"
-                  onClick={restoreCompactAuto}
-                  className="gap-2"
+                  onClick={handleCreate}
+                  className="h-11 w-full gap-2 text-sm sm:h-9 sm:w-auto"
+                  title="Crear un nuevo lead"
+                  aria-label="Crear un nuevo lead"
                 >
-                  Restaurar auto
+                  <Plus size={18} weight="bold" />
+                  Nuevo Lead
                 </Button>
-              )}
-              <Button onClick={handleCreate} className="gap-2">
-                <Plus size={18} weight="bold" />
-                Nuevo Lead
-              </Button>
-            </div>
-          }
-        />
+              </div>
+            }
+          />
 
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar por nombre, empresa, email, teléfono..."
-          resultCount={filteredLeads.length}
-          totalCount={leads.length}
-        />
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={searchPlaceholder}
+            resultCount={filteredLeads.length}
+            totalCount={leads.length}
+            className="sticky top-0 z-10 rounded-lg bg-background/95 pb-1 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          />
 
-        <div className="flex-1 min-h-0 min-w-0">
-          {error ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-              {error}
+          {isMobile && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs">
+              <p className="min-w-0 text-muted-foreground">
+                Desliza horizontalmente para cambiar de etapa.
+              </p>
+              <span className="shrink-0 font-medium text-foreground">
+                {visibleListsCount} lista{visibleListsCount === 1 ? "" : "s"}
+              </span>
             </div>
-          ) : (
-            <KanbanBoard
-              leads={filteredLeads}
-              listConfigs={listConfigs}
-              compactMode={compactMode}
-              isLoading={loading}
-              onLeadsChange={handleLeadsChange}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onSendToTrello={handleSendToTrello}
-              sendingToTrelloIds={sendingToTrelloIds}
-            />
           )}
+
+          <div className="flex flex-1 min-h-[22rem] min-w-0 flex-col">
+            {error ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {error}
+              </div>
+            ) : (
+              <KanbanBoard
+                leads={filteredLeads}
+                listConfigs={listConfigs}
+                compactMode={compactMode}
+                isLoading={loading}
+                onLeadsChange={handleLeadsChange}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onSendToTrello={handleSendToTrello}
+                sendingToTrelloIds={sendingToTrelloIds}
+              />
+            )}
+          </div>
         </div>
 
         <LeadFormDialog
