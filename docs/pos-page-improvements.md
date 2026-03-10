@@ -4,6 +4,12 @@
 
 Se han implementado las mismas mejoras que en el formulario de órdenes de venta en la página de **Punto de Venta** (`PointOfSalePage.tsx`). La tabla "Orden actual" ahora utiliza un componente mejorado especializado para el flujo de POS.
 
+## Actualización marzo 2026
+
+- ✅ `RestaurantPosPage.tsx` ahora opera sin IVA en el resumen ni en el total final.
+- ✅ El hook `usePointOfSale` se invoca con `includeTax: false` en este flujo.
+- ✅ Se eliminó la fila visual de **Impuestos (IVA)** del panel de orden para evitar confusión al cobrar.
+
 ## Cambios Realizados
 
 ### 1. Nuevo Componente: `OrderProductTablePos`

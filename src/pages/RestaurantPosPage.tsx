@@ -59,7 +59,6 @@ export function RestaurantPosPage() {
     resumeHeldOrder,
     heldOrders,
     subtotal,
-    taxAmount,
     total,
     submitSale,
     isSubmitting,
@@ -69,7 +68,7 @@ export function RestaurantPosPage() {
         description: `Ticket #${sale.saleNumber} generado exitosamente.`,
       });
     },
-    includeTax: true,
+    includeTax: false,
   });
 
   // Load initial data (only once on mount)
@@ -567,10 +566,6 @@ export function RestaurantPosPage() {
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Impuestos (IVA)</span>
-                <span>{formatCurrency(taxAmount)}</span>
               </div>
               <Separator />
               <div className="flex justify-between items-end">

@@ -31,7 +31,6 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
-import { CustomerCard } from "@/components/customers/CustomerDetailCard";
 import { PaymentDialog } from "@/components/sales/PaymentDialog";
 import { HeldOrdersPanel } from "@/components/sales/HeldOrdersPanel";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
@@ -204,6 +203,11 @@ export function PointOfSalePage() {
 
   const formatCurrency = (value: number) => currencyFormatter.format(value);
 
+  const selectedCustomer = useMemo(
+    () => customers.find((customer) => customer.id === customerId) ?? null,
+    [customers, customerId]
+  );
+
   const isMobileSummaryExpanded = mobileSummarySnap !== "collapsed";
 
   const getNextSnapUp = (current: MobileSummarySnap): MobileSummarySnap => {
@@ -299,7 +303,7 @@ export function PointOfSalePage() {
       toast.success("Orden guardada", {
         description: "La orden se guardó correctamente en el servidor",
       });
-    } catch (error) {
+    } catch {
       toast.error("Error al guardar", {
         description: "No se pudo guardar la orden en espera",
       });
@@ -517,12 +521,6 @@ export function PointOfSalePage() {
     },
   ]);
 
-  useEffect(() => {
-    if (isCustomerDialogOpen || isPaymentDialogOpen || isHeldOrdersPanelOpen) {
-      setMobileSummarySnap("collapsed");
-    }
-  }, [isCustomerDialogOpen, isPaymentDialogOpen, isHeldOrdersPanelOpen]);
-
   return (
     <PageTransition>
       <KeyPressIndicator
@@ -676,8 +674,8 @@ export function PointOfSalePage() {
 
             <aside
               className={cn(
-                "z-30 flex w-full flex-col border-t bg-background shadow-xl md:z-10 md:w-[380px] md:min-w-[380px] md:border-t-0 md:border-l md:shadow-none",
-                "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-500 ease-out will-change-transform md:static md:h-auto md:max-h-none md:rounded-none md:translate-y-0",
+                "z-30 flex w-full flex-col border-t bg-background shadow-xl md:z-10 md:w-[400px] md:min-w-[400px] md:border-t-0 md:border-l md:shadow-none",
+                "fixed inset-x-0 bottom-0 h-[82dvh] rounded-t-2xl transition-transform duration-500 ease-out will-change-transform md:static md:h-full md:max-h-full md:rounded-none md:translate-y-0",
                 mobileSummarySnapClass
               )}
             >
@@ -760,15 +758,15 @@ export function PointOfSalePage() {
                 </div>
               </div>
 
-              <div className="flex-1 space-y-6 overflow-y-auto p-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:p-0 md:space-y-6">
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-3">
+              <div className="flex-1 space-y-4 overflow-y-auto p-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:flex md:min-h-0 md:flex-col md:space-y-3 md:overflow-hidden md:p-3">
+                <Card className="shadow-sm md:flex md:min-h-0 md:flex-1 md:flex-col">
+                  <CardHeader className="pb-2 md:px-4 md:pt-4">
                     <CardTitle>Cliente</CardTitle>
                     <CardDescription>
                       Busca, crea o vende sin cliente identificado
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 md:flex md:min-h-0 md:flex-1 md:flex-col md:px-4 md:pb-4">
                     <div className="relative space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Buscar cliente</Label>
@@ -883,137 +881,160 @@ export function PointOfSalePage() {
                       )}
                     </div>
 
-                    <Button
-                      variant={isGenericCustomer ? "default" : "outline"}
-                      className="w-full justify-center"
-                      onClick={() => {
-                        setIsGenericCustomer(!isGenericCustomer);
-                        if (!isGenericCustomer) {
-                          setCustomerId("");
-                          setCustomerSearchTerm("");
-                          setCustomerSearchOpen(false);
-                        }
-                      }}
-                    >
-                      <User className="mr-2 size-4" weight="bold" />
-                      {isGenericCustomer
-                        ? "Cliente genérico seleccionado"
-                        : "Venta rápida sin cliente"}
-                    </Button>
+                    <div className="space-y-3 md:min-h-0 md:flex-1 md:overflow-y-auto md:pr-1">
+                      <Button
+                        variant={isGenericCustomer ? "default" : "outline"}
+                        className="w-full justify-center md:h-10"
+                        onClick={() => {
+                          setIsGenericCustomer(!isGenericCustomer);
+                          if (!isGenericCustomer) {
+                            setCustomerId("");
+                            setCustomerSearchTerm("");
+                            setCustomerSearchOpen(false);
+                          }
+                        }}
+                      >
+                        <User className="mr-2 size-4" weight="bold" />
+                        {isGenericCustomer
+                          ? "Cliente genérico seleccionado"
+                          : "Venta rápida sin cliente"}
+                      </Button>
 
-                    {isGenericCustomer ? (
-                      <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center">
-                        <User
-                          className="mx-auto mb-2 size-8 text-muted-foreground"
-                          weight="duotone"
-                        />
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Cliente genérico/Sin cliente
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Venta rápida sin identificación
-                        </p>
-                      </div>
-                    ) : customerId ? (
-                      <div className="space-y-3">
-                        {customers.find((c) => c.id === customerId) && (
-                          <>
-                            <CustomerCard
-                              customer={
-                                customers.find((c) => c.id === customerId) ||
-                                null
-                              }
-                              onViewHistory={() => {
-                                toast.success("Historial", {
-                                  description:
-                                    "Visualización de historial en desarrollo",
-                                });
-                              }}
-                              onEdit={() => {
-                                setCustomerToEdit(
-                                  customers.find((c) => c.id === customerId) ||
-                                    null
-                                );
-                                setMobileSummarySnap("collapsed");
-                                setIsCustomerDialogOpen(true);
-                              }}
-                              onRemove={handleRemoveCustomer}
-                              formatCurrency={formatCurrency}
-                              className="shadow-sm"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={handleRemoveCustomer}
-                            >
-                              <UserMinus
-                                className="mr-2 size-4"
-                                weight="bold"
-                              />
-                              Cambiar cliente
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-center">
-                        <User
-                          className="mx-auto mb-2 size-8 text-muted-foreground"
-                          weight="duotone"
-                        />
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Sin cliente seleccionado
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Busca o crea un cliente para continuar
-                        </p>
-                      </div>
-                    )}
+                      {isGenericCustomer ? (
+                        <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-center md:p-3">
+                          <User
+                            className="mx-auto mb-2 size-7 text-muted-foreground"
+                            weight="duotone"
+                          />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Cliente genérico/Sin cliente
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Venta rápida sin identificación
+                          </p>
+                        </div>
+                      ) : selectedCustomer ? (
+                        <div className="space-y-2">
+                          <div className="rounded-xl border bg-card/70 p-3 shadow-sm">
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-11 w-11 border">
+                                <AvatarFallback className="text-sm font-semibold">
+                                  {selectedCustomer.name.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <p className="truncate text-sm font-semibold text-foreground">
+                                  {selectedCustomer.name}
+                                </p>
+                                {selectedCustomer.email && (
+                                  <p className="truncate text-xs text-muted-foreground">
+                                    {selectedCustomer.email}
+                                  </p>
+                                )}
+                                {selectedCustomer.phone && (
+                                  <p className="truncate text-xs text-muted-foreground">
+                                    {selectedCustomer.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9"
+                                onClick={() => {
+                                  setCustomerToEdit(selectedCustomer);
+                                  setMobileSummarySnap("collapsed");
+                                  setIsCustomerDialogOpen(true);
+                                }}
+                              >
+                                <UserPlus className="mr-2 size-4" weight="bold" />
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9"
+                                onClick={handleRemoveCustomer}
+                              >
+                                <UserMinus className="mr-2 size-4" weight="bold" />
+                                Cambiar
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed bg-muted/30 p-3 text-center md:p-3">
+                          <User
+                            className="mx-auto mb-2 size-7 text-muted-foreground"
+                            weight="duotone"
+                          />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Sin cliente seleccionado
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Busca o crea un cliente para continuar
+                          </p>
+                        </div>
+                      )}
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        void reloadCustomers();
-                      }}
-                      disabled={customersLoading}
-                    >
-                      <ArrowCounterClockwise
-                        className="mr-2 size-4"
-                        weight="bold"
-                      />
-                      Actualizar clientes
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full md:h-9"
+                        onClick={() => {
+                          void reloadCustomers();
+                        }}
+                        disabled={customersLoading}
+                      >
+                        <ArrowCounterClockwise
+                          className="mr-2 size-4"
+                          weight="bold"
+                        />
+                        Actualizar clientes
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-3">
+                <Card className="border-primary/10 bg-linear-to-br from-background via-background to-primary/5 shadow-sm">
+                  <CardHeader className="pb-2 md:px-4 md:pt-4">
                     <CardTitle>Resumen</CardTitle>
                     <CardDescription>
                       Totales calculados en tiempo real
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-semibold">
-                        {formatCurrency(subtotal)}
-                      </span>
+                  <CardContent className="space-y-3 md:px-4 md:pb-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border bg-card/80 p-2.5 md:p-2.5">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                          Subtotal
+                        </p>
+                        <p className="mt-1 text-base font-semibold tracking-tight md:text-lg">
+                          {formatCurrency(subtotal)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border bg-card/80 p-2.5 md:p-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                              Descuento
+                            </p>
+                            <p className="mt-1 text-base font-semibold tracking-tight md:text-lg">
+                              {formatCurrency(appliedDiscount)}
+                            </p>
+                          </div>
+                          <ShortcutBadge shortcut="F4" variant="outline" />
+                        </div>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Descuento</span>
-                        <ShortcutBadge shortcut="F4" variant="outline" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">
-                          {formatCurrency(appliedDiscount)}
-                        </span>
-                      </div>
+                      <Label htmlFor="pos-discount" className="text-muted-foreground">
+                        Ajuste manual
+                      </Label>
                       <Input
+                        id="pos-discount"
                         ref={discountInputRef}
                         type="number"
                         min="0"
@@ -1036,13 +1057,13 @@ export function PointOfSalePage() {
                         </span>
                       </div>
                     )}
-                    <Separator className="my-3" />
-                    <div className="flex items-center justify-between">
+                    <Separator className="my-1" />
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5 md:px-4 md:py-3">
                       <div>
                         <p className="text-sm text-muted-foreground">
                           Total a cobrar
                         </p>
-                        <p className="text-3xl font-black tracking-tight">
+                        <p className="text-2xl font-black tracking-tight md:text-3xl">
                           {formatCurrency(total)}
                         </p>
                       </div>
@@ -1053,12 +1074,12 @@ export function PointOfSalePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
-                  <CardContent className="space-y-4 pt-6">
-                    <div className="flex items-center gap-3">
+                <Card className="shadow-sm md:mt-auto">
+                  <CardContent className="space-y-3 pt-5 md:px-4 md:pb-4 md:pt-4">
+                    <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="outline"
-                        className="group relative flex-1"
+                        className="group relative h-10 px-3 text-sm"
                         onClick={handleHold}
                         disabled={items.length === 0}
                         title="F8 para poner en espera"
@@ -1073,7 +1094,7 @@ export function PointOfSalePage() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="group relative flex-1"
+                        className="group relative h-10 px-3 text-sm"
                         onClick={handleClear}
                         disabled={items.length === 0}
                         title="ESC para limpiar"
@@ -1088,7 +1109,7 @@ export function PointOfSalePage() {
                       </Button>
                     </div>
                     <Button
-                      className="group relative w-full"
+                      className="group relative h-11 w-full text-base"
                       size="lg"
                       onClick={handleCharge}
                       disabled={
@@ -1154,7 +1175,7 @@ export function PointOfSalePage() {
             toast.success("Orden eliminada", {
               description: "La orden en espera fue eliminada",
             });
-          } catch (error) {
+          } catch {
             toast.error("Error", {
               description: "No se pudo eliminar la orden",
             });

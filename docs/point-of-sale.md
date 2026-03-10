@@ -7,9 +7,11 @@ La página `PointOfSalePage` introduce una experiencia de caja rápida dentro de
    - Tarjeta "Orden actual" que dibuja la tabla de líneas con controles de cantidad y acciones por ítem.
 2. **Columna derecha**
    - Búsqueda y creación de cliente con input de búsqueda, lista filtrada y botón "Nuevo" que abre modal.
+   - Cuando hay cliente seleccionado, se muestra un resumen compacto con avatar, datos esenciales y acciones rápidas de edición/cambio, evitando el crecimiento excesivo de la columna.
    - Resumen de totales (subtotal, descuento editable, total — impuestos NO incluidos en el Punto de Venta).
    - **Método de pago**: selector de método (Efectivo, Tarjeta, Vale, Transferencia, Otro), campo de monto recibido (solo para efectivo), referencia opcional, y cálculo de cambio en tiempo real.
    - Acciones rápidas: poner en espera, limpiar, reanudar y cobrar.
+   - En desktop, la barra lateral derecha queda acotada al alto disponible del viewport: el bloque de cliente absorbe el scroll interno cuando hace falta y el resumen/acciones permanecen visibles para evitar que el checkout “se corte” en pantallas bajas.
 
 ## Integraciones con `Sales.Api`
 
@@ -48,6 +50,8 @@ Se puede inyectar un callback opcional `onSaleCreated` (usado en la página para
 - **Sidebar**: se añadió la nueva entrada "Punto de Venta" (`IconCashRegister`) en `app-sidebar.tsx` para exponer `/pos` desde la navegación principal.
 - **Rutas**: `App.tsx` declara `<Route path="/pos" element={<PointOfSalePage />}>` dentro del `ProtectedRoute`, alineado con las otras páginas del dashboard.
 - **Mobile sheet POS**: se documentó la mejora mobile-first con snap points, gestos touch y overlay en [pos-mobile-first-sheet.md](./pos-mobile-first-sheet.md).
+- **Desktop checkout rail**: la columna derecha usa ahora una composición más compacta, con tarjetas de resumen visual y acciones ancladas al final para mantener el flujo de cobro siempre a la vista.
+- **Compact customer summary**: el detalle del cliente seleccionado en POS evita la tarjeta extendida tradicional y prioriza una ficha corta optimizada para cajas con pantallas de menor altura.
 
 ## Futuras mejoras sugeridas
 
