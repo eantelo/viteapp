@@ -1068,7 +1068,7 @@ export function SalesPage() {
                         </div>
 
                         {/* Row 4: actions */}
-                        <div className="mt-3 flex items-center gap-1 border-t border-border pt-3">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1081,7 +1081,7 @@ export function SalesPage() {
                           </Button>
 
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleSendToTrello(sale)}
                             disabled={sendingToTrelloIds.has(sale.id)}
@@ -1095,13 +1095,14 @@ export function SalesPage() {
                                 ? "Enviando a Trello..."
                                 : "Enviar venta a Trello"
                             }
-                            className="min-h-11 min-w-11 text-sky-600 hover:text-sky-700"
+                            className="min-h-11 gap-2 border-sky-500/40 px-3 text-sky-600 hover:text-sky-700"
                           >
                             {sendingToTrelloIds.has(sale.id) ? (
                               <SpinnerGap size={20} weight="bold" className="animate-spin" />
                             ) : (
                               <PaperPlaneTilt size={20} weight="bold" />
                             )}
+                            <span className="text-sm font-medium">Trello</span>
                           </Button>
 
                           {sale.status === "Pending" && (
@@ -1337,7 +1338,7 @@ export function SalesPage() {
                                   </Button>
 
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
                                     onClick={() => handleSendToTrello(sale)}
                                     disabled={sendingToTrelloIds.has(sale.id)}
@@ -1351,13 +1352,14 @@ export function SalesPage() {
                                         ? "Enviando a Trello..."
                                         : "Enviar venta a Trello"
                                     }
-                                    className="text-sky-600 hover:text-sky-700"
+                                    className="gap-1.5 border-sky-500/40 px-2 text-sky-600 hover:text-sky-700"
                                   >
                                     {sendingToTrelloIds.has(sale.id) ? (
                                       <SpinnerGap size={18} weight="bold" className="animate-spin" />
                                     ) : (
                                       <PaperPlaneTilt size={18} weight="bold" />
                                     )}
+                                    <span className="font-medium">Trello</span>
                                   </Button>
 
                                   {sale.status === "Pending" && (
@@ -1493,6 +1495,8 @@ export function SalesPage() {
             setSelectedSale(null);
             handleEdit(sale);
           }}
+          onSendToTrello={handleSendToTrello}
+          isSendingToTrello={selectedSale ? sendingToTrelloIds.has(selectedSale.id) : false}
         />
       </DashboardLayout>
     </PageTransition>

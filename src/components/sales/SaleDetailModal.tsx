@@ -13,10 +13,12 @@ import {
   User,
   Calendar,
   CreditCard,
+  PaperPlaneTilt,
   Printer,
   X,
   Receipt,
   PencilSimple,
+  SpinnerGap,
 } from "@phosphor-icons/react";
 
 interface SaleDetailModalProps {
@@ -25,6 +27,8 @@ interface SaleDetailModalProps {
   onClose: () => void;
   onPrint?: (sale: SaleDto) => void;
   onEdit?: (sale: SaleDto) => void;
+  onSendToTrello?: (sale: SaleDto) => void;
+  isSendingToTrello?: boolean;
 }
 
 export function SaleDetailModal({
@@ -33,6 +37,8 @@ export function SaleDetailModal({
   onClose,
   onPrint,
   onEdit,
+  onSendToTrello,
+  isSendingToTrello = false,
 }: SaleDetailModalProps) {
   if (!sale) return null;
 
@@ -215,7 +221,7 @@ export function SaleDetailModal({
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {onEdit && sale.status === "Pending" && (
               <Button
                 variant="outline"
@@ -224,6 +230,21 @@ export function SaleDetailModal({
               >
                 <PencilSimple size={18} weight="bold" />
                 Editar
+              </Button>
+            )}
+            {onSendToTrello && (
+              <Button
+                variant="outline"
+                onClick={() => onSendToTrello(sale)}
+                className="gap-2 border-sky-500/40 text-sky-600 hover:text-sky-700"
+                disabled={isSendingToTrello}
+              >
+                {isSendingToTrello ? (
+                  <SpinnerGap size={18} weight="bold" className="animate-spin" />
+                ) : (
+                  <PaperPlaneTilt size={18} weight="bold" />
+                )}
+                {isSendingToTrello ? "Enviando a Trello..." : "Enviar a Trello"}
               </Button>
             )}
             {onPrint && (

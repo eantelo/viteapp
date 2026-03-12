@@ -4,7 +4,8 @@
 En `Gestión de Ventas` ahora hay una acción para **enviar una venta a Trello** usando los datos completos de la orden.
 
 ## Experiencia de usuario
-- Acción disponible en tarjetas móviles y tabla desktop.
+- Acción disponible en tarjetas móviles, tabla desktop y modal de detalle.
+- En el listado se muestra como botón visible con la etiqueta **Trello**.
 - Solicita confirmación antes de enviar.
 - Mientras se procesa, el botón queda deshabilitado y muestra spinner.
 - Al completarse, muestra toast de éxito o error.
