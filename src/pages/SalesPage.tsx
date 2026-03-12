@@ -41,6 +41,7 @@ import {
   Lock,
   Money,
   Package,
+  PaperPlaneTilt,
   Receipt,
   SpinnerGap,
   Funnel,
@@ -59,6 +60,7 @@ import {
   downloadShippingLabels,
   refundSale,
   closeSale,
+  sendSaleToTrello,
 } from "@/api/salesApi";
 import type { SalesStatistics, SalesHistoryParams } from "@/api/salesApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -111,6 +113,9 @@ export function SalesPage() {
   const [selectedSale, setSelectedSale] = useState<SaleDto | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedSaleIds, setSelectedSaleIds] = useState<string[]>([]);
+  const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
+    new Set()
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedMobileActions, setExpandedMobileActions] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -310,6 +315,43 @@ export function SalesPage() {
       toast.error(
         err instanceof Error ? err.message : "Error al descargar la factura"
       );
+    }
+  };
+
+  const handleSendToTrello = async (sale: SaleDto) => {
+    if (
+      !confirm(
+        `¿Enviar la venta #${sale.saleNumber} a Trello con los datos del cliente y el detalle de la orden?`
+      )
+    ) {
+      return;
+    }
+
+    if (sendingToTrelloIds.has(sale.id)) {
+      return;
+    }
+
+    setSendingToTrelloIds((prev) => {
+      const next = new Set(prev);
+      next.add(sale.id);
+      return next;
+    });
+
+    try {
+      await sendSaleToTrello(sale.id);
+      toast.success("Venta enviada a Trello", {
+        description: `Orden #${sale.saleNumber}`,
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Error al enviar la venta a Trello"
+      );
+    } finally {
+      setSendingToTrelloIds((prev) => {
+        const next = new Set(prev);
+        next.delete(sale.id);
+        return next;
+      });
     }
   };
 
@@ -1038,6 +1080,30 @@ export function SalesPage() {
                             <Eye size={20} weight="bold" />
                           </Button>
 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSendToTrello(sale)}
+                            disabled={sendingToTrelloIds.has(sale.id)}
+                            aria-label={
+                              sendingToTrelloIds.has(sale.id)
+                                ? "Enviando venta a Trello"
+                                : "Enviar venta a Trello"
+                            }
+                            title={
+                              sendingToTrelloIds.has(sale.id)
+                                ? "Enviando a Trello..."
+                                : "Enviar venta a Trello"
+                            }
+                            className="min-h-11 min-w-11 text-sky-600 hover:text-sky-700"
+                          >
+                            {sendingToTrelloIds.has(sale.id) ? (
+                              <SpinnerGap size={20} weight="bold" className="animate-spin" />
+                            ) : (
+                              <PaperPlaneTilt size={20} weight="bold" />
+                            )}
+                          </Button>
+
                           {sale.status === "Pending" && (
                             <>
                               <Button
@@ -1268,6 +1334,30 @@ export function SalesPage() {
                                     title="Ver detalle"
                                   >
                                     <Eye size={18} weight="bold" />
+                                  </Button>
+
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleSendToTrello(sale)}
+                                    disabled={sendingToTrelloIds.has(sale.id)}
+                                    aria-label={
+                                      sendingToTrelloIds.has(sale.id)
+                                        ? "Enviando venta a Trello"
+                                        : "Enviar venta a Trello"
+                                    }
+                                    title={
+                                      sendingToTrelloIds.has(sale.id)
+                                        ? "Enviando a Trello..."
+                                        : "Enviar venta a Trello"
+                                    }
+                                    className="text-sky-600 hover:text-sky-700"
+                                  >
+                                    {sendingToTrelloIds.has(sale.id) ? (
+                                      <SpinnerGap size={18} weight="bold" className="animate-spin" />
+                                    ) : (
+                                      <PaperPlaneTilt size={18} weight="bold" />
+                                    )}
                                   </Button>
 
                                   {sale.status === "Pending" && (

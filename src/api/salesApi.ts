@@ -147,6 +147,12 @@ export async function refundSale(id: string): Promise<void> {
   });
 }
 
+export async function sendSaleToTrello(id: string): Promise<void> {
+  return apiClient<void>(`/api/sales/${id}/send-to-trello`, {
+    method: "POST",
+  });
+}
+
 // Historial de ventas y estadísticas
 export interface SalesHistoryParams {
   dateFrom?: string;
