@@ -16,6 +16,7 @@ En `Gestión de Ventas` ahora hay una acción para **enviar una venta a Trello**
 ## Datos visibles en Trello
 - Número de venta.
 - Cliente y sus datos de contacto.
+- Si la venta está pagada, el asunto del correo agrega `#pagado` para que la tarjeta nazca con la etiqueta `pagado`.
 - Total y estado de la venta.
 - Ítems vendidos.
 - Pagos registrados.
