@@ -48,7 +48,7 @@ export interface SaleDto {
 
 export interface SaleCreateDto {
   date: string;
-  customerId: string;
+  customerId: string | null;
   items: Array<{
     productId: string;
     quantity: number;
@@ -59,7 +59,7 @@ export interface SaleCreateDto {
 
 export interface SaleUpdateDto {
   date: string;
-  customerId: string;
+  customerId: string | null;
   items: Array<{
     productId: string;
     quantity: number;

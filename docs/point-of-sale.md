@@ -23,7 +23,7 @@ La página se basa en el nuevo hook `usePointOfSale`, que encapsula la comunicac
 | Escanear código | `GET /api/products/by-barcode/{barcode}` | Intenta coincidencia exacta antes de degradar a búsqueda textual. |
 | Listar clientes | `GET /api/customers` | Solo clientes activos aparecen en el selector. |
 | Crear cliente | `POST /api/customers` | Modal `CustomerFormDialog` para capturar datos básicos. |
-| Registrar venta | `POST /api/sales` | Envía fecha actual, `customerId` obligatorio, líneas con `productId`+`quantity`, y **pagos** con método, monto, monto recibido (opcional) y referencia. |
+| Registrar venta | `POST /api/sales` | Envía fecha actual, `customerId` opcional (`null` para cliente genérico), líneas con `productId`+`quantity`, y **pagos** con método, monto, monto recibido (opcional) y referencia. |
 
 > **Nota:** el hook evita bloquear la UI manteniendo estados de carga independientes (`isSearchLoading`, `isLookupPending`, `isSubmitting`). Las acciones optimistas (agregar, modificar, hold/clear) solo actualizan estado local y nunca congelan el grid principal.
 

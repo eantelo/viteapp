@@ -65,6 +65,9 @@ export function CrmPage() {
   const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const statusLabelMap = getPipelineLabelMap(listConfigs) as Record<
     LeadStatus,
@@ -92,6 +95,8 @@ export function CrmPage() {
       (lead.phone ?? "").toLowerCase().includes(term)
     );
   });
+  const selectedVisibleCount = filteredLeads.filter((lead) => selectedLeadIds.has(lead.id)).length;
+  const selectedCount = selectedLeadIds.size;
 
   const loadLeads = useCallback(async () => {
     try {
@@ -119,6 +124,19 @@ export function CrmPage() {
       setCompactMode(isMobile);
     }
   }, [hasCompactPreference, isMobile]);
+
+  useEffect(() => {
+    setSelectedLeadIds((prev) => {
+      const availableLeadIds = new Set(leads.map((lead) => lead.id));
+      const next = new Set([...prev].filter((leadId) => availableLeadIds.has(leadId)));
+
+      if (next.size === prev.size) {
+        return prev;
+      }
+
+      return next;
+    });
+  }, [leads]);
 
   // Apply prefill data from interface agent (only once)
   useEffect(() => {
@@ -202,6 +220,27 @@ export function CrmPage() {
 
   const handleLeadsChange = useCallback((updatedLeads: LeadDto[]) => {
     setLeads(updatedLeads);
+  }, []);
+
+  const handleToggleLeadSelection = useCallback(
+    (lead: LeadDto, isSelected: boolean) => {
+      setSelectedLeadIds((prev) => {
+        const next = new Set(prev);
+
+        if (isSelected) {
+          next.add(lead.id);
+        } else {
+          next.delete(lead.id);
+        }
+
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedLeadIds(new Set());
   }, []);
 
   const handleSendToTrello = async (lead: LeadDto) => {
@@ -386,12 +425,34 @@ export function CrmPage() {
             placeholder={searchPlaceholder}
             resultCount={filteredLeads.length}
             totalCount={leads.length}
-            className="sticky top-0 z-10 rounded-lg bg-background/95 pb-1 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            className="sticky top-0 z-10 rounded-lg bg-background/95 pb-1 backdrop-blur supports-backdrop-filter:bg-background/80"
           />
 
           <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
             Puedes cambiar el nombre de cada lista desde el encabezado de la columna sin salir del CRM.
           </div>
+
+          {selectedCount > 0 && (
+            <div className="flex flex-col gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-foreground sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="font-medium">
+                  {selectedCount} tarjeta{selectedCount === 1 ? "" : "s"} marcada{selectedCount === 1 ? "" : "s"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedVisibleCount} visible{selectedVisibleCount === 1 ? "" : "s"} con el filtro actual.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearSelection}
+                className="justify-center sm:justify-start"
+              >
+                Limpiar selección
+              </Button>
+            </div>
+          )}
 
           {isMobile && (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs">
@@ -404,7 +465,7 @@ export function CrmPage() {
             </div>
           )}
 
-          <div className="flex flex-1 min-h-[22rem] min-w-0 flex-col">
+          <div className="flex min-h-88 min-w-0 flex-1 flex-col">
             {error ? (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
                 {error}
@@ -421,6 +482,8 @@ export function CrmPage() {
                 onDelete={handleDelete}
                 onSendToTrello={handleSendToTrello}
                 sendingToTrelloIds={sendingToTrelloIds}
+                selectedLeadIds={selectedLeadIds}
+                onToggleLeadSelection={handleToggleLeadSelection}
               />
             )}
           </div>

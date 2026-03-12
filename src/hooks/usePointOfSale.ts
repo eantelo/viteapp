@@ -487,7 +487,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
         const sale = await createSale({
           date: new Date().toISOString(),
-          customerId: customerId || "", // Allow empty string for generic customer
+          customerId: customerId || null,
           items: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,

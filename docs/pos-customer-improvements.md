@@ -186,7 +186,7 @@ const { results, isSearching } = searchCustomers("Juan");
 
 Se modificó para permitir ventas sin cliente identificado:
 
-- **Cliente genérico permitido**: `customerId` puede ser cadena vacía (`""`)
+- **Cliente genérico permitido**: `customerId` puede enviarse como `null`
 - **Validación flexible**: permite cobrar con cliente genérico o específico
 - **Mantiene toda la lógica existente**: descuentos, impuestos, totales
 
@@ -247,7 +247,7 @@ disabled={isSubmitting || items.length === 0 || (!customerId && !isGenericCustom
 2. Se habilita el estado genérico
 3. Puede agregar productos directamente
 4. Procede a cobrar sin identificar cliente
-5. La venta se registra con `customerId` vacío
+5. La venta se registra con `customerId: null`
 
 ### Flujo 3: Crear nuevo cliente durante POS
 

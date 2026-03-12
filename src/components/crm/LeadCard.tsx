@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { LeadDto } from "@/api/leadsApi";
 import { LeadSourceBadge } from "./LeadBadges";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface LeadCardProps {
   lead: LeadDto;
@@ -14,6 +15,9 @@ interface LeadCardProps {
   onDelete: (lead: LeadDto) => void;
   onSendToTrello: (lead: LeadDto) => void;
   isSendingToTrello?: boolean;
+  isMarked?: boolean;
+  onMarkedChange?: (lead: LeadDto, isMarked: boolean) => void;
+  showSelectionControl?: boolean;
 }
 
 export function LeadCard({
@@ -23,6 +27,9 @@ export function LeadCard({
   onDelete,
   onSendToTrello,
   isSendingToTrello = false,
+  isMarked = false,
+  onMarkedChange,
+  showSelectionControl = true,
 }: LeadCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: lead.id });
@@ -47,6 +54,14 @@ export function LeadCard({
     onSendToTrello(lead);
   };
 
+  const handleToggleMarked = (checked: boolean | "indeterminate") => {
+    onMarkedChange?.(lead, checked === true);
+  };
+
+  const stopCardInteraction = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <motion.div
       ref={setNodeRef}
@@ -64,7 +79,8 @@ export function LeadCard({
           "group relative cursor-grab border-border/60 transition-all active:cursor-grabbing",
           isDragging
             ? "opacity-50 shadow-lg ring-2 ring-primary/50"
-            : "hover:shadow-md hover:border-border/80 dark:hover:shadow-none"
+            : "hover:shadow-md hover:border-border/80 dark:hover:shadow-none",
+          isMarked && !isDragging && "border-primary/60 bg-primary/5 ring-1 ring-primary/20"
         )}
       >
         {/* Grip indicator */}
@@ -76,18 +92,34 @@ export function LeadCard({
           />
         </div>
 
-        <div className="p-4 pl-6 space-y-3">
+        <div className="space-y-3 p-4 pl-4">
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {lead.name}
-              </h3>
-              {lead.company && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {lead.company}
-                </p>
-              )}
+            <div className="flex min-w-0 flex-1 items-start gap-2">
+              {showSelectionControl ? (
+                <div
+                  className="flex shrink-0 pt-0.5"
+                  onClick={stopCardInteraction}
+                  onPointerDown={stopCardInteraction}
+                >
+                  <Checkbox
+                    checked={isMarked}
+                    onCheckedChange={handleToggleMarked}
+                    aria-label={isMarked ? `Desmarcar tarjeta ${lead.name}` : `Marcar tarjeta ${lead.name}`}
+                  />
+                </div>
+              ) : null}
+
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-semibold text-foreground">
+                  {lead.name}
+                </h3>
+                {lead.company && (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {lead.company}
+                  </p>
+                )}
+              </div>
             </div>
             {/* Buttons: always visible on mobile (no hover), fade-in on desktop hover */}
             <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">

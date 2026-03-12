@@ -31,6 +31,8 @@ interface KanbanBoardProps {
   onDelete: (lead: LeadDto) => void;
   onSendToTrello: (lead: LeadDto) => void;
   sendingToTrelloIds: Set<string>;
+  selectedLeadIds: Set<string>;
+  onToggleLeadSelection: (lead: LeadDto, isSelected: boolean) => void;
 }
 
 const STATUSES: LeadStatus[] = [
@@ -54,6 +56,8 @@ export function KanbanBoard({
   onDelete,
   onSendToTrello,
   sendingToTrelloIds,
+  selectedLeadIds,
+  onToggleLeadSelection,
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
@@ -236,6 +240,8 @@ export function KanbanBoard({
               onDelete={onDelete}
               onSendToTrello={onSendToTrello}
               sendingToTrelloIds={sendingToTrelloIds}
+              selectedLeadIds={selectedLeadIds}
+              onToggleLeadSelection={onToggleLeadSelection}
             />
           ))}
         </motion.div>
@@ -251,6 +257,7 @@ export function KanbanBoard({
               onDelete={() => {}}
               onSendToTrello={() => {}}
               isSendingToTrello={false}
+              showSelectionControl={false}
             />
           </div>
         )}
