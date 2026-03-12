@@ -13,7 +13,9 @@ Permitir que el usuario defina las **listas del tablero CRM** donde se colocan l
 ## Qué se agregó
 
 ### 1) Configuración de listas en UI
-En `CrmPage` se añadió el botón **"Configurar listas"**, que abre un diálogo para editar:
+En `CrmPage` ahora se puede **renombrar cada lista directamente desde el encabezado de la columna** en el tablero CRM, sin salir de la página.
+
+Además, se mantiene el botón **"Configurar listas"**, que abre un diálogo para editar:
 
 - etiquetas de las listas,
 - orden de listas (mover arriba/abajo),
@@ -68,10 +70,10 @@ Cuando el usuario cambia manualmente el modo, aparece el botón **"Restaurar aut
 ## Comportamiento esperado
 
 1. Entrar a `/crm`.
-2. Click en **Configurar listas**.
-3. Renombrar listas y cambiar orden.
-4. Opcional: ocultar listas que no quieras ver.
-5. Guardar.
-6. El tablero refleja inmediatamente los cambios y los conserva al recargar la página.
+2. En cualquier columna, hacer click en el ícono de editar del encabezado.
+3. Cambiar el nombre y confirmar con **Enter** o el check.
+4. El tablero refleja inmediatamente el cambio y lo conserva al recargar la página.
+5. Si necesitas reordenar u ocultar listas, abrir **Configurar listas**.
+6. Guardar los cambios del diálogo si hiciste ajustes adicionales.
 7. Al editar un lead, el selector de estado usa los nuevos nombres.
 8. Opcional: activar modo compacto para vista móvil más densa.

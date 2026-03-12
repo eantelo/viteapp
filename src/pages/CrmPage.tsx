@@ -260,6 +260,31 @@ export function CrmPage() {
     toast.success("Listas del pipeline actualizadas");
   };
 
+  const handleRenameList = useCallback(
+    (status: LeadStatus, nextLabel: string) => {
+      const sanitizedLabel = nextLabel.trim();
+
+      if (!sanitizedLabel) {
+        toast.error("El nombre de la lista no puede estar vacío");
+        return false;
+      }
+
+      const currentConfig = listConfigs.find((item) => item.status === status);
+      if (!currentConfig || currentConfig.label === sanitizedLabel) {
+        return true;
+      }
+
+      const updatedConfigs = listConfigs.map((item) =>
+        item.status === status ? { ...item, label: sanitizedLabel } : item,
+      );
+
+      setListConfigs(updatedConfigs);
+      savePipelineListConfigs(updatedConfigs);
+      return true;
+    },
+    [listConfigs],
+  );
+
   const handleResetLists = () => {
     const defaults = getDefaultPipelineListConfigs();
     setListConfigs(defaults);
@@ -364,6 +389,10 @@ export function CrmPage() {
             className="sticky top-0 z-10 rounded-lg bg-background/95 pb-1 backdrop-blur supports-[backdrop-filter]:bg-background/80"
           />
 
+          <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            Puedes cambiar el nombre de cada lista desde el encabezado de la columna sin salir del CRM.
+          </div>
+
           {isMobile && (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs">
               <p className="min-w-0 text-muted-foreground">
@@ -386,6 +415,7 @@ export function CrmPage() {
                 listConfigs={listConfigs}
                 compactMode={compactMode}
                 isLoading={loading}
+                onRenameList={handleRenameList}
                 onLeadsChange={handleLeadsChange}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

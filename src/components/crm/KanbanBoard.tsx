@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -7,6 +7,7 @@ import {
   pointerWithin,
   useSensor,
   useSensors,
+  type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
 } from "@dnd-kit/core";
@@ -24,6 +25,7 @@ interface KanbanBoardProps {
   listConfigs: PipelineListConfig[];
   compactMode?: boolean;
   isLoading: boolean;
+  onRenameList: (status: LeadStatus, nextLabel: string) => boolean;
   onLeadsChange: (updatedLeads: LeadDto[]) => void;
   onEdit: (lead: LeadDto) => void;
   onDelete: (lead: LeadDto) => void;
@@ -46,6 +48,7 @@ export function KanbanBoard({
   listConfigs,
   compactMode = false,
   isLoading,
+  onRenameList,
   onLeadsChange,
   onEdit,
   onDelete,
@@ -77,7 +80,7 @@ export function KanbanBoard({
     {} as Record<LeadStatus, LeadDto[]>
   );
 
-  const handleDragStart = (e: any) => {
+  const handleDragStart = (e: DragStartEvent) => {
     const leadId = e.active.id;
     const lead = leads.find((l) => l.id === leadId);
     if (lead) {
@@ -102,90 +105,87 @@ export function KanbanBoard({
     }
   };
 
-  const handleDragEnd = useCallback(
-    async (e: DragEndEvent) => {
-      const { over } = e;
-      const currentDraggedLead = draggedLead;
-      const lastOverStatus = overStatus;
-      
-      setDraggedLead(null);
-      setOverStatus(null);
+  const handleDragEnd = async (e: DragEndEvent) => {
+    const { over } = e;
+    const currentDraggedLead = draggedLead;
+    const lastOverStatus = overStatus;
 
-      if (!currentDraggedLead) return;
+    setDraggedLead(null);
+    setOverStatus(null);
 
-      if (over && over.id === currentDraggedLead.id) {
-        return;
-      }
+    if (!currentDraggedLead) return;
 
-      let targetStatus: LeadStatus | null = null;
-      let targetIndex: number | null = null;
+    if (over && over.id === currentDraggedLead.id) {
+      return;
+    }
 
-      if (over) {
-        if (typeof over.id === "string" && over.id.startsWith("status-")) {
-          const statusStr = over.id.replace("status-", "");
-          targetStatus = parseInt(statusStr, 10) as LeadStatus;
-          targetIndex = groupedLeads[targetStatus]?.length ?? 0;
-        } else {
-          const overLead = leads.find((l) => l.id === over.id);
-          if (overLead) {
-            targetStatus = overLead.status;
-            const targetLeads = groupedLeads[targetStatus] ?? [];
-            targetIndex = targetLeads.findIndex((l) => l.id === overLead.id);
-            if (targetIndex < 0) {
-              targetIndex = targetLeads.length;
-            }
+    let targetStatus: LeadStatus | null = null;
+    let targetIndex: number | null = null;
+
+    if (over) {
+      if (typeof over.id === "string" && over.id.startsWith("status-")) {
+        const statusStr = over.id.replace("status-", "");
+        targetStatus = parseInt(statusStr, 10) as LeadStatus;
+        targetIndex = groupedLeads[targetStatus]?.length ?? 0;
+      } else {
+        const overLead = leads.find((l) => l.id === over.id);
+        if (overLead) {
+          targetStatus = overLead.status;
+          const targetLeads = groupedLeads[targetStatus] ?? [];
+          targetIndex = targetLeads.findIndex((l) => l.id === overLead.id);
+          if (targetIndex < 0) {
+            targetIndex = targetLeads.length;
           }
         }
-      } else if (lastOverStatus !== null) {
-        targetStatus = lastOverStatus;
-        targetIndex = groupedLeads[targetStatus]?.length ?? 0;
       }
+    } else if (lastOverStatus !== null) {
+      targetStatus = lastOverStatus;
+      targetIndex = groupedLeads[targetStatus]?.length ?? 0;
+    }
 
-      if (targetStatus === null || targetIndex === null) {
-        return;
-      }
+    if (targetStatus === null || targetIndex === null) {
+      return;
+    }
 
-      // Skip if no actual change
-      if (currentDraggedLead.status === targetStatus) {
-        return;
-      }
+    // Skip if no actual change
+    if (currentDraggedLead.status === targetStatus) {
+      return;
+    }
 
-      const shouldOfferConversion =
-        targetStatus === LeadStatus.Won && !currentDraggedLead.customerId;
-      const convertToCustomer = shouldOfferConversion
-        ? confirm(
-            `¿Deseas crear un cliente con los datos del lead "${currentDraggedLead.name}"?`
-          )
-        : false;
+    const shouldOfferConversion =
+      targetStatus === LeadStatus.Won && !currentDraggedLead.customerId;
+    const convertToCustomer = shouldOfferConversion
+      ? confirm(
+          `¿Deseas crear un cliente con los datos del lead "${currentDraggedLead.name}"?`
+        )
+      : false;
 
-      // Optimistic update: update local state immediately
-      const updatedLeads = leads.map((lead) =>
-        lead.id === currentDraggedLead.id
-          ? { ...lead, status: targetStatus!, position: targetIndex! }
-          : lead
+    // Optimistic update: update local state immediately
+    const updatedLeads = leads.map((lead) =>
+      lead.id === currentDraggedLead.id
+        ? { ...lead, status: targetStatus, position: targetIndex }
+        : lead
+    );
+    onLeadsChange(updatedLeads);
+
+    // Sync with server in background
+    try {
+      const updated = await updateLeadStatus(currentDraggedLead.id, {
+        status: targetStatus,
+        position: targetIndex,
+        convertToCustomer,
+      });
+      onLeadsChange(
+        leads.map((lead) => (lead.id === updated.id ? updated : lead))
       );
-      onLeadsChange(updatedLeads);
-
-      // Sync with server in background
-      try {
-        const updated = await updateLeadStatus(currentDraggedLead.id, {
-          status: targetStatus,
-          position: targetIndex,
-          convertToCustomer,
-        });
-        onLeadsChange(
-          leads.map((lead) => (lead.id === updated.id ? updated : lead))
-        );
-        toast.success(`Lead movido a ${statusLabels[targetStatus] ?? "nueva lista"}`);
-      } catch (error) {
-        console.error("Error updating lead status:", error);
-        // Revert on error
-        onLeadsChange(leads);
-        toast.error("Error al mover el lead");
-      }
-    },
-    [draggedLead, groupedLeads, leads, onLeadsChange, overStatus, statusLabels]
-  );
+      toast.success(`Lead movido a ${statusLabels[targetStatus] ?? "nueva lista"}`);
+    } catch (error) {
+      console.error("Error updating lead status:", error);
+      // Revert on error
+      onLeadsChange(leads);
+      toast.error("Error al mover el lead");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -222,16 +222,16 @@ export function KanbanBoard({
           className="inline-flex gap-3 pb-4 pr-4"
         >
           {visibleListConfigs
-            .map((item) => item.status)
-            .filter((status) => STATUSES.includes(status))
-            .map((status) => (
+            .filter((item) => STATUSES.includes(item.status))
+            .map((item) => (
             <KanbanColumn
-              key={status}
-              status={status}
-              title={statusLabels[status]}
+              key={item.status}
+              status={item.status}
+              title={item.label}
               compactMode={compactMode}
-              leads={groupedLeads[status]}
-              isOver={overStatus === status}
+              leads={groupedLeads[item.status]}
+              isOver={overStatus === item.status}
+              onRenameTitle={onRenameList}
               onEdit={onEdit}
               onDelete={onDelete}
               onSendToTrello={onSendToTrello}
