@@ -13,7 +13,7 @@ Archivo modificado:
 Se agregó una nueva sección en la parte inferior de la pantalla:
 
 - **Título**: `Reporte de Ventas por Ítem y Fecha`
-- **Fuente de datos**: ventas filtradas actualmente (`filteredSales`)
+- **Fuente de datos**: ventas filtradas actualmente (`filteredSales`), excluyendo ventas con estado `Refunded`
 - **Agrupación**:
   - Fecha (día local en formato `YYYY-MM-DD`)
   - Producto (`productId`)
@@ -28,6 +28,8 @@ Se agregó una nueva sección en la parte inferior de la pantalla:
   - estado,
   - búsqueda,
   - y demás filtros aplicados en la página.
+- Las ventas `Refunded` se discriminan y no participan en el consolidado, aunque sigan visibles en la lista principal si los filtros las incluyen.
+- Cuando existen ventas reembolsadas dentro del conjunto filtrado, la UI muestra una nota indicando cuántas fueron excluidas del reporte.
 - Si no hay resultados, muestra estado vacío.
 - Respeta estado de carga (`loading`) con spinner.
 

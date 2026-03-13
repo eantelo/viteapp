@@ -219,6 +219,13 @@ export function SalesPage() {
     });
   }, [sales, search, status]);
 
+  const reportSales = useMemo(
+    () => filteredSales.filter((sale) => sale.status !== "Refunded"),
+    [filteredSales]
+  );
+
+  const excludedRefundedSalesCount = filteredSales.length - reportSales.length;
+
   const salesByItemByDate = useMemo(() => {
     const grouped = new Map<
       string,
@@ -231,7 +238,7 @@ export function SalesPage() {
       }
     >();
 
-    for (const sale of filteredSales) {
+    for (const sale of reportSales) {
       const saleDate = new Date(sale.date);
       if (Number.isNaN(saleDate.getTime())) continue;
 
@@ -277,7 +284,7 @@ export function SalesPage() {
         sensitivity: "base",
       });
     });
-  }, [filteredSales]);
+  }, [reportSales]);
 
   // Handlers
   const handleDatePresetChange = (preset: DatePreset) => {
@@ -697,7 +704,7 @@ export function SalesPage() {
               Reporte de Ventas por Ítem y Fecha
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              Consolidado por producto y día usando los filtros aplicados.
+              Consolidado por producto y día usando los filtros aplicados, excluyendo ventas reembolsadas.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -714,6 +721,12 @@ export function SalesPage() {
                 <div className="mb-3 text-xs text-muted-foreground">
                   {salesByItemByDate.length} {salesByItemByDate.length === 1 ? "registro" : "registros"}
                 </div>
+
+                {excludedRefundedSalesCount > 0 && (
+                  <div className="mb-3 rounded-md border border-purple-500/30 bg-purple-500/5 px-3 py-2 text-xs text-muted-foreground">
+                    Se {excludedRefundedSalesCount === 1 ? "excluyó" : "excluyeron"} {excludedRefundedSalesCount} {excludedRefundedSalesCount === 1 ? "venta reembolsada" : "ventas reembolsadas"} del consolidado.
+                  </div>
+                )}
 
                 {/* Móvil */}
                 <div className="space-y-2 md:hidden">
