@@ -63,6 +63,7 @@ import type { ProductDto } from "@/api/productsApi";
 import { getProducts } from "@/api/productsApi";
 import { ProductSearchSelector } from "@/components/sales/ProductSearchSelector";
 import { OrderProductTableEnhanced } from "@/components/sales/OrderProductTableEnhanced";
+import { ConfirmDialog } from "@/components/shared";
 
 interface SaleItemForm {
   productId: string;
@@ -151,6 +152,7 @@ export function SaleUpsertPage() {
   const [statusAction, setStatusAction] = useState<
     "delete" | "close" | "refund" | "approve" | null
   >(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mobileSnap, setMobileSnap] = useState<MobileSnapPoint>("collapsed");
   const sheetGestureRef = useRef<{ startY: number; startTime: number } | null>(null);
 
@@ -462,13 +464,11 @@ export function SaleUpsertPage() {
   // Funciones para transiciones de estado
   const handleDeleteSale = async () => {
     if (!sale) return;
-    if (
-      !confirm(
-        `¿Eliminar la orden de venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSale = async () => {
+    if (!sale) return;
     setStatusAction("delete");
     try {
       await deleteSale(sale.id);
@@ -1351,6 +1351,25 @@ export function SaleUpsertPage() {
               </div>
             </div>
           )}
+
+          <ConfirmDialog
+            open={deleteDialogOpen}
+            title="Eliminar orden de venta"
+            description={
+              sale
+                ? `Se eliminará la orden de venta #${sale.saleNumber}. Esta acción no se puede deshacer.`
+                : ""
+            }
+            confirmLabel="Eliminar orden"
+            cancelLabel="Volver"
+            tone="destructive"
+            isLoading={statusAction === "delete"}
+            onConfirm={() => void confirmDeleteSale()}
+            onCancel={() => {
+              if (statusAction === "delete") return;
+              setDeleteDialogOpen(false);
+            }}
+          />
         </form>
       </DashboardLayout>
     </PageTransition>

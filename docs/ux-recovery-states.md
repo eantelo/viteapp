@@ -9,6 +9,7 @@ Reducir fricción en flujos administrativos reemplazando confirmaciones nativas 
 - Se creó `ConfirmDialog` en `src/components/shared/ConfirmDialog.tsx`.
 - `Clientes`, `CRM` y `Ventas` ya no dependen de `confirm()` o `alert()` para acciones críticas frecuentes.
 - `Compras`, `Usuarios`, `Proveedores`, `Almacenes` y `Traslados` ahora usan el mismo patrón de confirmación con estado de carga y copy contextual.
+- `Usuarios` ya no usa `window.prompt` para reseteo de contraseña; ahora abre un diálogo propio con validación mínima y acción explícita.
 - Los estados vacíos de `Clientes` ahora muestran CTA contextual:
   - crear cliente si no existe ninguno
   - limpiar búsqueda si no hubo coincidencias
@@ -23,6 +24,8 @@ Reducir fricción en flujos administrativos reemplazando confirmaciones nativas 
   - eliminar proveedor
   - eliminar almacén
   - cancelar traslado
+  - eliminar producto desde detalle
+  - eliminar orden de venta desde edición
 
 ## Regla UX
 

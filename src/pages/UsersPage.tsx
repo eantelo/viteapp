@@ -3,6 +3,16 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -23,7 +33,7 @@ import {
   Users,
   SpinnerGap,
 } from "@phosphor-icons/react";
-import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, EmptyState, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import {
   getUsers,
@@ -48,6 +58,11 @@ export function UsersPage() {
   const [editingUser, setEditingUser] = useState<UserDto | null>(null);
   const [userToToggle, setUserToToggle] = useState<UserDto | null>(null);
   const [toggleLoading, setToggleLoading] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState<UserDto | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) {
@@ -63,6 +78,8 @@ export function UsersPage() {
       );
     });
   }, [users, search]);
+
+  const hasActiveSearch = search.trim().length > 0;
 
   const loadData = useCallback(async () => {
     try {
@@ -127,33 +144,53 @@ export function UsersPage() {
     }
   };
 
-  const handleResetPassword = async (user: UserDto) => {
+  const handleResetPassword = (user: UserDto) => {
     if (!canManage) {
       return;
     }
+    setUserToResetPassword(user);
+    setNewPassword("");
+    setPasswordError(null);
+    setPasswordDialogOpen(true);
+  };
 
-    const newPassword = window.prompt(
-      `Nueva contraseña para ${user.fullName} (mínimo 6 caracteres):`
-    );
-
-    if (!newPassword) {
+  const closePasswordDialog = (force = false) => {
+    if (resetLoading && !force) {
       return;
     }
 
-    if (newPassword.trim().length < 6) {
-      toast.error("La contraseña debe tener al menos 6 caracteres.");
+    setPasswordDialogOpen(false);
+    setUserToResetPassword(null);
+    setNewPassword("");
+    setPasswordError(null);
+  };
+
+  const confirmResetPassword = async () => {
+    if (!userToResetPassword) {
+      return;
+    }
+
+    const trimmedPassword = newPassword.trim();
+    if (trimmedPassword.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
     try {
-      await resetUserPassword(user.id, { newPassword });
+      setResetLoading(true);
+      await resetUserPassword(userToResetPassword.id, {
+        newPassword: trimmedPassword,
+      });
       toast.success("Contraseña restablecida correctamente");
+      closePasswordDialog(true);
     } catch (resetError) {
       toast.error(
         resetError instanceof Error
           ? resetError.message
           : "No se pudo restablecer la contraseña"
       );
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -200,9 +237,36 @@ export function UsersPage() {
                     {error}
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
-                    No hay usuarios para mostrar.
-                  </div>
+                  <EmptyState
+                    icon={Users}
+                    title={
+                      hasActiveSearch
+                        ? "No se encontraron usuarios"
+                        : "Aún no hay usuarios"
+                    }
+                    description={
+                      hasActiveSearch
+                        ? "Prueba con otro nombre, email o rol, o limpia la búsqueda actual."
+                        : canManage
+                        ? "Crea el primer usuario para comenzar a administrar accesos."
+                        : "Todavía no hay usuarios disponibles para mostrar en este tenant."
+                    }
+                    actionLabel={
+                      hasActiveSearch
+                        ? "Limpiar búsqueda"
+                        : canManage
+                        ? "Nuevo usuario"
+                        : undefined
+                    }
+                    onAction={
+                      hasActiveSearch
+                        ? () => setSearch("")
+                        : canManage
+                        ? handleCreate
+                        : undefined
+                    }
+                    className="py-12"
+                  />
                 ) : (
                   <div className="rounded-lg border border-border">
                     <Table>
@@ -308,6 +372,61 @@ export function UsersPage() {
             setUserToToggle(null);
           }}
         />
+
+        <Dialog open={passwordDialogOpen} onOpenChange={(open) => !open && closePasswordDialog()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Restablecer contraseña</DialogTitle>
+              <DialogDescription>
+                {userToResetPassword
+                  ? `Ingresa una nueva contraseña para ${userToResetPassword.fullName}.`
+                  : "Ingresa una nueva contraseña."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-2 py-2">
+              <Label htmlFor="reset-user-password">Nueva contraseña</Label>
+              <Input
+                id="reset-user-password"
+                type="password"
+                autoComplete="new-password"
+                minLength={6}
+                value={newPassword}
+                onChange={(event) => {
+                  setNewPassword(event.target.value);
+                  if (passwordError) {
+                    setPasswordError(null);
+                  }
+                }}
+                disabled={resetLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Debe tener al menos 6 caracteres.
+              </p>
+              {passwordError ? (
+                <p className="text-sm text-destructive">{passwordError}</p>
+              ) : null}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => closePasswordDialog()}
+                disabled={resetLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void confirmResetPassword()}
+                disabled={resetLoading}
+              >
+                {resetLoading ? "Restableciendo..." : "Restablecer contraseña"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DashboardLayout>
     </PageTransition>
   );
