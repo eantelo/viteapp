@@ -52,7 +52,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/shared";
+import { ConfirmDialog, EmptyState } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface TransferItemForm {
@@ -174,6 +174,11 @@ export function WarehouseTransfersPage() {
   ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / pageSize));
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    statusFilter !== "all" ||
+    sourceWarehouseFilter !== "all" ||
+    destinationWarehouseFilter !== "all";
 
   const paginatedTransfers = useMemo(() => {
     const start = pageIndex * pageSize;
@@ -573,26 +578,46 @@ export function WarehouseTransfersPage() {
             ) : error ? (
               <div className="px-4 py-6 text-sm text-error">{error}</div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Folio</TableHead>
-                    <TableHead>Origen / Destino</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden md:table-cell">Items</TableHead>
-                    <TableHead className="hidden lg:table-cell">Fecha</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTransfers.length === 0 ? (
+              filteredTransfers.length === 0 ? (
+                <EmptyState
+                  icon={Truck}
+                  title={
+                    hasActiveFilters
+                      ? "No hay traslados para los filtros seleccionados"
+                      : "Aún no hay traslados entre almacenes"
+                  }
+                  description={
+                    hasActiveFilters
+                      ? "Ajusta origen, destino o estado, o limpia los filtros para ver más resultados."
+                      : "Crea tu primer traslado para mover stock entre almacenes."
+                  }
+                  actionLabel={hasActiveFilters ? "Limpiar filtros" : "Nuevo traslado"}
+                  onAction={
+                    hasActiveFilters
+                      ? () => {
+                          setSearchTerm("");
+                          setStatusFilter("all");
+                          setSourceWarehouseFilter("all");
+                          setDestinationWarehouseFilter("all");
+                        }
+                      : () => setCreateDialogOpen(true)
+                  }
+                  className="m-4 py-12"
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                        No hay traslados para los filtros seleccionados.
-                      </TableCell>
+                      <TableHead>Folio</TableHead>
+                      <TableHead>Origen / Destino</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="hidden md:table-cell">Items</TableHead>
+                      <TableHead className="hidden lg:table-cell">Fecha</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ) : (
-                    paginatedTransfers.map((transfer) => (
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedTransfers.map((transfer) => (
                       <TableRow key={transfer.id}>
                         <TableCell className="font-medium">
                           {transfer.transferNumber}
@@ -665,10 +690,10 @@ export function WarehouseTransfersPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
             )}
           </div>
 

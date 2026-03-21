@@ -55,7 +55,7 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, EmptyState, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface PurchaseItemForm {
@@ -143,6 +143,8 @@ export function PurchasesPage() {
       );
     });
   }, [orders, search, statusFilter]);
+
+  const hasActiveFilters = search.trim().length > 0 || statusFilter !== "all";
 
   const createTotal = useMemo(() => {
     const subtotal = createForm.items
@@ -480,27 +482,45 @@ export function PurchasesPage() {
             ) : error ? (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">{error}</div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Folio</TableHead>
-                    <TableHead>Proveedor</TableHead>
-                    <TableHead className="hidden md:table-cell">Fecha</TableHead>
-                    <TableHead className="hidden lg:table-cell">Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="hidden lg:table-cell">Pago</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.length === 0 ? (
+              filteredOrders.length === 0 ? (
+                <EmptyState
+                  icon={ShoppingCart}
+                  title={
+                    hasActiveFilters
+                      ? "No se encontraron órdenes de compra"
+                      : "Aún no hay órdenes de compra"
+                  }
+                  description={
+                    hasActiveFilters
+                      ? "Prueba con otro folio, proveedor o estado, o limpia los filtros actuales."
+                      : "Crea tu primera orden para empezar a registrar compras y recepciones."
+                  }
+                  actionLabel={hasActiveFilters ? "Limpiar filtros" : "Nueva compra"}
+                  onAction={
+                    hasActiveFilters
+                      ? () => {
+                          setSearch("");
+                          setStatusFilter("all");
+                        }
+                      : () => setCreateDialogOpen(true)
+                  }
+                  className="m-4 py-12"
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
-                        No se encontraron órdenes de compra.
-                      </TableCell>
+                      <TableHead>Folio</TableHead>
+                      <TableHead>Proveedor</TableHead>
+                      <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                      <TableHead className="hidden lg:table-cell">Total</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="hidden lg:table-cell">Pago</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredOrders.map((order) => (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">PO-{order.purchaseOrderNumber}</TableCell>
                         <TableCell>{order.supplierName}</TableCell>
@@ -590,10 +610,10 @@ export function PurchasesPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
             )}
           </div>
         </div>

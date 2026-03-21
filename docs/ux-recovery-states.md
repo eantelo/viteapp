@@ -18,6 +18,9 @@ Reducir fricción en flujos administrativos reemplazando confirmaciones nativas 
 - `Usuarios`, `Proveedores` y `Almacenes` ya no muestran tablas vacías pasivas:
   - limpiar búsqueda si no hubo coincidencias
   - crear registro si aún no existe ninguno
+- `Compras` y `Traslados` ahora muestran recuperación contextual:
+  - limpiar filtros cuando el resultado es cero por búsqueda o estado
+  - crear el primer registro cuando todavía no existe historial
 - Al mover un lead a `Ganado`, el CRM ya no usa `confirm()` del navegador:
   - `Crear cliente y mover`
   - `Mover sin crear cliente`
