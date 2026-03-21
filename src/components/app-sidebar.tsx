@@ -1,13 +1,10 @@
 import * as React from "react";
-import { useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-  ChartBar,
   SquaresFour,
   Kanban,
   Package,
-  FileText,
   AddressBook,
-  Receipt,
   CircleNotch,
   CashRegister,
   Coffee,
@@ -31,16 +28,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarGroup,
-  SidebarGroupLabel,
 } from "@/components/ui/sidebar";
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -50,7 +40,7 @@ const data = {
     {
       title: "Ventas",
       url: "/sales",
-      icon: Receipt,
+      icon: ShoppingCart,
     },
     {
       title: "Punto de Venta",
@@ -108,28 +98,10 @@ const data = {
       icon: Coffee,
     },
   ],
-  navReports: [
-    {
-      title: "Ventas Mensuales",
-      url: "/reports/sales-monthly",
-      icon: ChartBar,
-    },
-    {
-      title: "Inventario",
-      url: "/reports/inventario",
-      icon: FileText,
-    },
-    {
-      title: "Clientes",
-      url: "/reports/clientes",
-      icon: FileText,
-    },
-  ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { auth, hasPermission } = useAuth();
-  const location = useLocation();
+  const { auth, hasPermission, logout } = useAuth();
   const tenantName = auth?.tenantName || "Mi Empresa";
 
   const filteredNavItems = data.navMain.filter((item) => {
@@ -153,37 +125,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
-                  <CircleNotch className="size-5!" weight="duotone" />
+              <Link to="/dashboard">
+                <CircleNotch className="size-5!" weight="duotone" />
                 <span className="sidebar-text-lg font-semibold">{tenantName}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={filteredNavItems} />
-        <SidebarGroup>
-          <SidebarGroupLabel>Reportes</SidebarGroupLabel>
-          <SidebarMenu>
-            {data.navReports.map((item) => {
-              const isActive = location.pathname === item.url || location.pathname.startsWith(item.url + '/');
-              return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive}>
-                    <a href={item.url}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser
+          email={auth?.email}
+          role={auth?.role}
+          onLogout={logout}
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

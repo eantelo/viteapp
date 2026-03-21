@@ -11,33 +11,33 @@ import {
 const features = [
   {
     icon: ChartBar,
-    title: "Advanced Analytics",
-    description: "Gain deep insights into your business performance with real-time dashboards and customizable reports."
+    title: "Analítica avanzada",
+    description: "Visualiza métricas clave con tableros en tiempo real y reportes listos para operar."
   },
   {
     icon: Users,
-    title: "Customer Management",
-    description: "Track customer interactions, purchase history, and preferences to build stronger relationships."
+    title: "Gestión de clientes",
+    description: "Consulta historial, preferencias y seguimiento comercial desde un solo lugar."
   },
   {
     icon: ShoppingCart,
-    title: "Inventory Control",
-    description: "Manage stock levels, track movements, and automate reordering to prevent stockouts."
+    title: "Control de inventario",
+    description: "Administra existencias, movimientos y reposición para reducir quiebres de stock."
   },
   {
     icon: Lightning,
-    title: "Lightning Fast",
-    description: "Built on modern technology for instant page loads and seamless interactions."
+    title: "Operación ágil",
+    description: "Interfaz ligera y rápida para registrar ventas y navegar módulos sin fricción."
   },
   {
     icon: ShieldCheck,
-    title: "Enterprise Security",
-    description: "Bank-grade encryption and role-based access control to keep your data safe."
+    title: "Seguridad empresarial",
+    description: "Acceso por roles y protección de sesión para trabajar con datos sensibles con confianza."
   },
   {
     icon: DeviceMobile,
-    title: "Mobile Ready",
-    description: "Access your ERP from anywhere, on any device, with our fully responsive design."
+    title: "Listo para móvil",
+    description: "Accede al sistema desde escritorio o móvil con una experiencia adaptada al contexto."
   }
 ];
 
@@ -46,9 +46,9 @@ export function Features() {
     <section id="features" className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need to grow</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Todo lo que necesitas para crecer</h2>
           <p className="text-lg text-muted-foreground">
-            Powerful tools designed to help you manage every aspect of your business from a single platform.
+            Herramientas pensadas para centralizar la operación comercial, administrativa y de inventario.
           </p>
         </div>
 

@@ -111,8 +111,8 @@ export function Header({ breadcrumbs }: HeaderProps) {
               <div key={index} className="flex items-center gap-2">
                 <BreadcrumbItem className="hidden md:block">
                   {item.href ? (
-                    <BreadcrumbLink href={item.href}>
-                      {item.label}
+                    <BreadcrumbLink asChild>
+                      <Link to={item.href}>{item.label}</Link>
                     </BreadcrumbLink>
                   ) : (
                     <span>{item.label}</span>

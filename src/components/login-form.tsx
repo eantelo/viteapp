@@ -136,7 +136,7 @@ export function LoginForm({
       </form>
       
       <div className="text-center text-xs text-muted-foreground">
-        Protegido por reCAPTCHA y sujeto a la <a href="#" className="underline hover:text-primary">Política de Privacidad</a> y <a href="#" className="underline hover:text-primary">Términos del Servicio</a>.
+        Protegido por reCAPTCHA y sujeto a la Política de Privacidad y los Términos del Servicio.
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ import { KanbanColumn } from "./KanbanColumn";
 import { updateLeadStatus } from "@/api/leadsApi";
 import type { PipelineListConfig } from "@/lib/crmPipelineLists";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/shared";
+import { SlidersHorizontal } from "@phosphor-icons/react";
 
 interface KanbanBoardProps {
   leads: LeadDto[];
@@ -33,6 +35,7 @@ interface KanbanBoardProps {
   sendingToTrelloIds: Set<string>;
   selectedLeadIds: Set<string>;
   onToggleLeadSelection: (lead: LeadDto, isSelected: boolean) => void;
+  onConfigureLists: () => void;
 }
 
 const STATUSES: LeadStatus[] = [
@@ -58,6 +61,7 @@ export function KanbanBoard({
   sendingToTrelloIds,
   selectedLeadIds,
   onToggleLeadSelection,
+  onConfigureLists,
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
@@ -201,11 +205,14 @@ export function KanbanBoard({
 
   if (visibleListConfigs.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/30 p-4 text-center">
-        <p className="text-sm text-muted-foreground">
-          No hay listas visibles. Activa al menos una lista en “Configurar listas”.
-        </p>
-      </div>
+      <EmptyState
+        icon={SlidersHorizontal}
+        title="No hay listas visibles"
+        description="Activa al menos una lista en la configuración del pipeline para volver a mostrar el tablero."
+        actionLabel="Configurar listas"
+        onAction={onConfigureLists}
+        className="h-64 border-border/70"
+      />
     );
   }
 

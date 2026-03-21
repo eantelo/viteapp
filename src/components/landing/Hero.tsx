@@ -24,7 +24,7 @@ export function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              New Generation ERP System
+              ERP multitenant para ventas, inventario y clientes
             </span>
           </motion.div>
 
@@ -34,8 +34,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground/80 to-foreground/40"
           >
-            Manage your business with <br />
-            <span className="text-primary">Intelligence & Speed</span>
+            Controla tu operación <br />
+            <span className="text-primary">sin perder velocidad</span>
           </motion.h1>
 
           <motion.p
@@ -44,7 +44,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl leading-relaxed"
           >
-            Streamline your operations, boost sales, and gain actionable insights with our all-in-one cloud ERP solution designed for modern businesses.
+            Centraliza ventas, inventario, compras y clientes en una sola interfaz preparada para equipos multitenant.
           </motion.p>
 
           <motion.div
@@ -55,14 +55,14 @@ export function Hero() {
           >
             <Link to="/register">
               <Button size="lg" className="h-12 px-8 text-base rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
-                Start Free Trial <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
+                Crear cuenta <ArrowRight className="ml-2 w-4 h-4" weight="bold" />
               </Button>
             </Link>
-            <Link to="/demo">
-              <Button variant="outline" size="lg" className="h-12 px-8 text-base rounded-full">
-                View Live Demo
-              </Button>
-            </Link>
+            <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base rounded-full">
+              <a href="#features">
+                Ver funcionalidades
+              </a>
+            </Button>
           </motion.div>
 
           {/* Floating Cards Preview */}

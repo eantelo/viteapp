@@ -78,10 +78,17 @@ import {
 } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { PageHeader } from "@/components/shared";
+import { ConfirmDialog, EmptyState, PageHeader } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function SalesPage() {
+  type PendingSaleAction =
+    | { type: "sendToTrello"; sale: SaleDto }
+    | { type: "refund"; sale: SaleDto }
+    | { type: "close"; sale: SaleDto }
+    | { type: "delete"; sale: SaleDto }
+    | null;
+
   useDocumentTitle("Gestión de Ventas");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -116,6 +123,9 @@ export function SalesPage() {
   const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
     new Set()
   );
+  const [pendingSaleAction, setPendingSaleAction] =
+    useState<PendingSaleAction>(null);
+  const [confirmActionLoading, setConfirmActionLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedMobileActions, setExpandedMobileActions] = useState<string | null>(null);
   const isMobile = useIsMobile();
@@ -223,6 +233,16 @@ export function SalesPage() {
     () => filteredSales.filter((sale) => sale.status !== "Refunded"),
     [filteredSales]
   );
+  const hasActiveSalesFilters =
+    search.trim().length > 0 ||
+    status !== "all" ||
+    customerId !== "" ||
+    paymentMethod !== undefined ||
+    minAmount !== "" ||
+    maxAmount !== "" ||
+    datePreset !== "today" ||
+    dateFrom !== "" ||
+    dateTo !== "";
 
   const excludedRefundedSalesCount = filteredSales.length - reportSales.length;
 
@@ -325,100 +345,86 @@ export function SalesPage() {
     }
   };
 
-  const handleSendToTrello = async (sale: SaleDto) => {
-    if (
-      !confirm(
-        `¿Enviar la venta #${sale.saleNumber} a Trello con los datos del cliente y el detalle de la orden?`
-      )
-    ) {
-      return;
-    }
-
+  const handleSendToTrello = (sale: SaleDto) => {
     if (sendingToTrelloIds.has(sale.id)) {
       return;
     }
+    setPendingSaleAction({ type: "sendToTrello", sale });
+  };
 
-    setSendingToTrelloIds((prev) => {
-      const next = new Set(prev);
-      next.add(sale.id);
-      return next;
-    });
+  const handleRefund = (sale: SaleDto) => {
+    setPendingSaleAction({ type: "refund", sale });
+  };
 
+  const handleClose = (sale: SaleDto) => {
+    setPendingSaleAction({ type: "close", sale });
+  };
+
+  const handleDelete = (sale: SaleDto) => {
+    setPendingSaleAction({ type: "delete", sale });
+  };
+
+  const handleConfirmSaleAction = async () => {
+    if (!pendingSaleAction) {
+      return;
+    }
+
+    const { sale, type } = pendingSaleAction;
+    setConfirmActionLoading(true);
     try {
-      await sendSaleToTrello(sale.id);
-      toast.success("Venta enviada a Trello", {
-        description: `Orden #${sale.saleNumber}`,
-      });
+      switch (type) {
+        case "sendToTrello": {
+          setSendingToTrelloIds((prev) => {
+            const next = new Set(prev);
+            next.add(sale.id);
+            return next;
+          });
+
+          try {
+            await sendSaleToTrello(sale.id);
+            toast.success("Venta enviada a Trello", {
+              description: `Orden #${sale.saleNumber}`,
+            });
+          } finally {
+            setSendingToTrelloIds((prev) => {
+              const next = new Set(prev);
+              next.delete(sale.id);
+              return next;
+            });
+          }
+          break;
+        }
+        case "refund":
+          await refundSale(sale.id);
+          toast.success("Venta reembolsada correctamente");
+          await loadData();
+          break;
+        case "close":
+          await closeSale(sale.id);
+          toast.success("Venta cerrada correctamente");
+          await loadData();
+          break;
+        case "delete":
+          await deleteSale(sale.id);
+          toast.success("Venta eliminada correctamente");
+          await loadData();
+          break;
+      }
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Error al enviar la venta a Trello"
+        err instanceof Error
+          ? err.message
+          : type === "sendToTrello"
+            ? "Error al enviar la venta a Trello"
+            : type === "refund"
+              ? "Error al reembolsar la venta"
+              : type === "close"
+                ? "Error al cerrar la venta"
+                : "Error al eliminar la venta"
       );
     } finally {
-      setSendingToTrelloIds((prev) => {
-        const next = new Set(prev);
-        next.delete(sale.id);
-        return next;
-      });
-    }
-  };
-
-  const handleRefund = async (sale: SaleDto) => {
-    if (
-      !confirm(
-        `¿Estás seguro de reembolsar la venta #${sale.saleNumber}?\n\nEl stock será devuelto al inventario. Esta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await refundSale(sale.id);
-      toast.success("Venta reembolsada correctamente");
-      loadData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Error al reembolsar la venta"
-      );
-    }
-  };
-
-  const handleClose = async (sale: SaleDto) => {
-    if (
-      !confirm(
-        `¿Cerrar contablemente la venta #${sale.saleNumber}?\n\nUna vez cerrada, no podrá ser modificada ni reembolsada.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await closeSale(sale.id);
-      toast.success("Venta cerrada correctamente");
-      loadData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Error al cerrar la venta"
-      );
-    }
-  };
-
-  const handleDelete = async (sale: SaleDto) => {
-    if (
-      !confirm(
-        `¿Eliminar permanentemente la venta #${sale.saleNumber}?\n\nEsta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deleteSale(sale.id);
-      toast.success("Venta eliminada correctamente");
-      loadData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Error al eliminar la venta"
-      );
+      setConfirmActionLoading(false);
+      setPendingSaleAction(null);
     }
   };
 
@@ -712,11 +718,16 @@ export function SalesPage() {
               <div className="flex items-center justify-center py-10">
                 <SpinnerGap size={36} weight="bold" className="animate-spin text-primary" />
               </div>
-            ) : salesByItemByDate.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                No hay datos para el reporte con los filtros actuales.
-              </div>
-            ) : (
+              ) : salesByItemByDate.length === 0 ? (
+                <EmptyState
+                  icon={Funnel}
+                  title="Sin datos para el reporte"
+                  description="Ajusta el periodo o limpia los filtros para volver a generar el resumen por producto."
+                  actionLabel="Limpiar filtros"
+                  onAction={handleClearFilters}
+                  className="border-0 bg-transparent py-10"
+                />
+              ) : (
               <>
                 <div className="mb-3 text-xs text-muted-foreground">
                   {salesByItemByDate.length} {salesByItemByDate.length === 1 ? "registro" : "registros"}
@@ -1011,11 +1022,28 @@ export function SalesPage() {
                 </div>
               ) : error ? (
                 <div className="text-center py-12 text-destructive">{error}</div>
-              ) : filteredSales.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No se encontraron ventas con los filtros aplicados
-                </div>
-              ) : (
+                ) : filteredSales.length === 0 ? (
+                  <EmptyState
+                    icon={Receipt}
+                    title={
+                      hasActiveSalesFilters
+                        ? "No se encontraron ventas"
+                        : "Aún no hay ventas registradas"
+                    }
+                    description={
+                      hasActiveSalesFilters
+                        ? "Prueba con otro rango de fechas o limpia los filtros para ver más resultados."
+                        : "Crea tu primera venta para comenzar a poblar el historial y los reportes."
+                    }
+                    actionLabel={
+                      hasActiveSalesFilters ? "Limpiar filtros" : "Nueva venta"
+                    }
+                    onAction={
+                      hasActiveSalesFilters ? handleClearFilters : handleCreate
+                    }
+                    className="border-0 bg-transparent py-12"
+                  />
+                ) : (
                 <>
                   {/* ===== Vista móvil: tarjetas ===== */}
                   <div className="space-y-3 md:hidden">
@@ -1510,6 +1538,75 @@ export function SalesPage() {
           }}
           onSendToTrello={handleSendToTrello}
           isSendingToTrello={selectedSale ? sendingToTrelloIds.has(selectedSale.id) : false}
+        />
+        <ConfirmDialog
+          open={!!pendingSaleAction}
+          title={
+            pendingSaleAction?.type === "sendToTrello"
+              ? "¿Enviar venta a Trello?"
+              : pendingSaleAction?.type === "refund"
+                ? "¿Reembolsar venta?"
+                : pendingSaleAction?.type === "close"
+                  ? "¿Cerrar venta?"
+                  : "¿Eliminar venta?"
+          }
+          description={
+            pendingSaleAction?.type === "sendToTrello" ? (
+              <>
+                Se enviará la venta{" "}
+                <span className="font-semibold text-foreground">
+                  #{pendingSaleAction.sale.saleNumber}
+                </span>{" "}
+                a Trello con los datos del cliente y el detalle de la orden.
+              </>
+            ) : pendingSaleAction?.type === "refund" ? (
+              <>
+                Se reembolsará la venta{" "}
+                <span className="font-semibold text-foreground">
+                  #{pendingSaleAction.sale.saleNumber}
+                </span>{" "}
+                y el stock volverá al inventario.
+              </>
+            ) : pendingSaleAction?.type === "close" ? (
+              <>
+                La venta{" "}
+                <span className="font-semibold text-foreground">
+                  #{pendingSaleAction.sale.saleNumber}
+                </span>{" "}
+                quedará cerrada contablemente y no podrá modificarse ni reembolsarse.
+              </>
+            ) : (
+              <>
+                Se eliminará permanentemente la venta{" "}
+                <span className="font-semibold text-foreground">
+                  #{pendingSaleAction?.sale.saleNumber}
+                </span>
+                .
+              </>
+            )
+          }
+          confirmLabel={
+            pendingSaleAction?.type === "sendToTrello"
+              ? "Enviar a Trello"
+              : pendingSaleAction?.type === "refund"
+                ? "Reembolsar"
+                : pendingSaleAction?.type === "close"
+                  ? "Cerrar venta"
+                  : "Eliminar venta"
+          }
+          tone={
+            pendingSaleAction?.type === "sendToTrello" ||
+            pendingSaleAction?.type === "close"
+              ? "default"
+              : "destructive"
+          }
+          isLoading={confirmActionLoading}
+          onConfirm={handleConfirmSaleAction}
+          onCancel={() => {
+            if (!confirmActionLoading) {
+              setPendingSaleAction(null);
+            }
+          }}
         />
       </DashboardLayout>
     </PageTransition>

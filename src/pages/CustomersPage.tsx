@@ -30,7 +30,12 @@ import type { CustomerDto } from "@/api/customersApi";
 import { deleteCustomer, getCustomers } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { PageHeader, SearchInput } from "@/components/shared";
+import {
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  SearchInput,
+} from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function CustomersPage() {
@@ -59,6 +64,10 @@ export function CustomersPage() {
   const [pendingHighlightId, setPendingHighlightId] = useState<string | null>(
     null
   );
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerDto | null>(
+    null
+  );
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -180,20 +189,31 @@ export function CustomersPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (customer: CustomerDto) => {
-    if (!confirm(`Eliminar al cliente "${customer.name}"?`)) {
+  const handleDelete = (customer: CustomerDto) => {
+    setCustomerToDelete(customer);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) {
       return;
     }
 
+    setDeleteLoading(true);
     try {
-      await deleteCustomer(customer.id);
+      await deleteCustomer(customerToDelete.id);
       await loadCustomers();
+      toast.success("Cliente eliminado", {
+        description: customerToDelete.name,
+      });
     } catch (deleteError) {
-      alert(
+      toast.error(
         deleteError instanceof Error
           ? deleteError.message
           : "Error al eliminar cliente"
       );
+    } finally {
+      setDeleteLoading(false);
+      setCustomerToDelete(null);
     }
   };
 
@@ -257,11 +277,28 @@ export function CustomersPage() {
                     {error}
                   </div>
                 ) : filteredCustomers.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground">
-                    {customers.length === 0
-                      ? "No hay clientes registrados todavía."
-                      : "Ningún cliente coincide con la búsqueda."}
-                  </div>
+                  <EmptyState
+                    icon={AddressBook}
+                    title={
+                      customers.length === 0
+                        ? "No hay clientes registrados"
+                        : "No hubo coincidencias"
+                    }
+                    description={
+                      customers.length === 0
+                        ? "Crea tu primer cliente para comenzar a registrar ventas y seguimiento."
+                        : "Prueba con otro término o limpia la búsqueda para ver todos los clientes."
+                    }
+                    actionLabel={
+                      customers.length === 0 ? "Nuevo cliente" : "Limpiar búsqueda"
+                    }
+                    onAction={
+                      customers.length === 0
+                        ? handleCreate
+                        : () => setSearch("")
+                    }
+                    className="border-0 bg-transparent py-10"
+                  />
                 ) : (
                   <div className="rounded-lg border border-border">
                     {/* ── Mobile card list (< md) ─────────────────────────── */}
@@ -435,6 +472,28 @@ export function CustomersPage() {
           customer={editingCustomer}
           prefillData={prefillData}
           onClose={handleDialogClose}
+        />
+        <ConfirmDialog
+          open={!!customerToDelete}
+          title="¿Eliminar cliente?"
+          description={
+            <>
+              Esta acción eliminará permanentemente a{" "}
+              <span className="font-semibold text-foreground">
+                {customerToDelete?.name}
+              </span>
+              {" "}del sistema.
+            </>
+          }
+          confirmLabel="Eliminar cliente"
+          tone="destructive"
+          isLoading={deleteLoading}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            if (!deleteLoading) {
+              setCustomerToDelete(null);
+            }
+          }}
         />
       </DashboardLayout>
     </PageTransition>

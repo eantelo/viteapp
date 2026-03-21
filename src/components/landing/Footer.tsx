@@ -1,4 +1,4 @@
-import { FacebookLogo, TwitterLogo, InstagramLogo, LinkedinLogo } from "@phosphor-icons/react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -13,58 +13,43 @@ export function Footer() {
               <span className="font-bold text-xl tracking-tight">SalesNet</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              The complete ERP solution for modern businesses. Manage sales, inventory, and customers in one place.
+              La plataforma para operar ventas, inventario, compras y clientes desde una sola aplicación.
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Product</h4>
+            <h4 className="font-semibold mb-4">Producto</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Changelog</a></li>
+              <li><a href="#features" className="hover:text-primary transition-colors">Funcionalidades</a></li>
+              <li><Link to="/register" className="hover:text-primary transition-colors">Crear cuenta</Link></li>
+              <li><Link to="/login" className="hover:text-primary transition-colors">Iniciar sesión</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Company</h4>
+            <h4 className="font-semibold mb-4">Acceso</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              <li><Link to="/forgot-password" className="hover:text-primary transition-colors">Recuperar contraseña</Link></li>
+              <li><Link to="/login" className="hover:text-primary transition-colors">Entrar al sistema</Link></li>
+              <li><Link to="/register" className="hover:text-primary transition-colors">Solicitar acceso</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Cookie Policy</a></li>
-            </ul>
+            <h4 className="font-semibold mb-4">Disponibilidad</h4>
+            <p className="text-sm text-muted-foreground">
+              Mostramos solo accesos y rutas operativas. Las secciones de demo, precios y reportes públicos se habilitarán cuando exista contenido real.
+            </p>
           </div>
         </div>
 
         <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} SalesNet. All rights reserved.
+            © {new Date().getFullYear()} SalesNet. Todos los derechos reservados.
           </p>
-          <div className="flex items-center gap-4">
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <FacebookLogo className="w-5 h-5" weight="duotone" />
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <TwitterLogo className="w-5 h-5" weight="duotone" />
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <InstagramLogo className="w-5 h-5" weight="duotone" />
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <LinkedinLogo className="w-5 h-5" weight="duotone" />
-            </a>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Acceso web para equipos comerciales y operativos.
+          </p>
         </div>
       </div>
     </footer>

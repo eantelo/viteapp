@@ -1,8 +1,7 @@
-import { PlusCircle, Envelope, type IconProps } from "@phosphor-icons/react";
+import { PlusCircle, type IconProps } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -28,20 +27,15 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
+              asChild
               tooltip="Quick Create"
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear sidebar-text"
             >
+              <Link to="/sales/new">
                 <PlusCircle weight="fill" />
-              <span>Quick Create</span>
+                <span>Nueva venta</span>
+              </Link>
             </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <Envelope />
-              <span className="sr-only">Inbox</span>
-            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
@@ -55,10 +49,10 @@ export function NavMain({
                   isActive={isActive}
                   className="sidebar-text"
                 >
-                  <a href={item.url}>
+                  <Link to={item.url}>
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

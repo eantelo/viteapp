@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadFormDialog } from "@/components/crm/LeadFormDialog";
 import { PipelineListsDialog } from "@/components/crm/PipelineListsDialog";
-import { PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import {
   getDefaultPipelineListConfigs,
@@ -24,6 +24,11 @@ import {
 } from "@/lib/crmPipelineLists";
 
 export function CrmPage() {
+  type PendingLeadAction =
+    | { type: "delete"; lead: LeadDto }
+    | { type: "sendToTrello"; lead: LeadDto }
+    | null;
+
   useDocumentTitle("CRM - Leads");
   const isMobile = useIsMobile();
   const compactStorageKey = "salesnet.crm.pipeline.compact";
@@ -65,6 +70,9 @@ export function CrmPage() {
   const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
     () => new Set()
   );
+  const [pendingLeadAction, setPendingLeadAction] =
+    useState<PendingLeadAction>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(
     () => new Set()
   );
@@ -201,20 +209,60 @@ export function CrmPage() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (lead: LeadDto) => {
-    if (!confirm(`Eliminar el lead "${lead.name}"?`)) return;
+  const handleDelete = (lead: LeadDto) => {
+    setPendingLeadAction({ type: "delete", lead });
+  };
 
+  const handleConfirmLeadAction = async () => {
+    if (!pendingLeadAction) {
+      return;
+    }
+
+    const { lead, type } = pendingLeadAction;
+    setConfirmLoading(true);
     try {
-      await deleteLead(lead.id);
-      // Optimistic delete
-      setLeads((prev) => prev.filter((l) => l.id !== lead.id));
-      toast.success("Lead eliminado");
-    } catch (deleteError) {
+      if (type === "delete") {
+        await deleteLead(lead.id);
+        setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+        toast.success("Lead eliminado", {
+          description: lead.name,
+        });
+        return;
+      }
+
+      if (sendingToTrelloIds.has(lead.id)) {
+        return;
+      }
+
+      setSendingToTrelloIds((prev) => {
+        const next = new Set(prev);
+        next.add(lead.id);
+        return next;
+      });
+
+      try {
+        await sendLeadToTrello(lead.id);
+        toast.success("Tarjeta enviada a Trello", {
+          description: `Lead: ${lead.name}`,
+        });
+      } finally {
+        setSendingToTrelloIds((prev) => {
+          const next = new Set(prev);
+          next.delete(lead.id);
+          return next;
+        });
+      }
+    } catch (actionError) {
       toast.error(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Error al eliminar lead"
+        actionError instanceof Error
+          ? actionError.message
+          : type === "delete"
+            ? "Error al eliminar lead"
+            : "Error al enviar la tarjeta a Trello"
       );
+    } finally {
+      setConfirmLoading(false);
+      setPendingLeadAction(null);
     }
   };
 
@@ -243,43 +291,11 @@ export function CrmPage() {
     setSelectedLeadIds(new Set());
   }, []);
 
-  const handleSendToTrello = async (lead: LeadDto) => {
-    if (
-      !confirm(
-        `¿Enviar el lead "${lead.name}" como tarjeta a Trello?`
-      )
-    ) {
-      return;
-    }
-
+  const handleSendToTrello = (lead: LeadDto) => {
     if (sendingToTrelloIds.has(lead.id)) {
       return;
     }
-
-    setSendingToTrelloIds((prev) => {
-      const next = new Set(prev);
-      next.add(lead.id);
-      return next;
-    });
-
-    try {
-      await sendLeadToTrello(lead.id);
-      toast.success("Tarjeta enviada a Trello", {
-        description: `Lead: ${lead.name}`,
-      });
-    } catch (sendError) {
-      toast.error(
-        sendError instanceof Error
-          ? sendError.message
-          : "Error al enviar la tarjeta a Trello"
-      );
-    } finally {
-      setSendingToTrelloIds((prev) => {
-        const next = new Set(prev);
-        next.delete(lead.id);
-        return next;
-      });
-    }
+    setPendingLeadAction({ type: "sendToTrello", lead });
   };
 
   const handleDialogClose = (saved: boolean) => {
@@ -484,6 +500,7 @@ export function CrmPage() {
                 sendingToTrelloIds={sendingToTrelloIds}
                 selectedLeadIds={selectedLeadIds}
                 onToggleLeadSelection={handleToggleLeadSelection}
+                onConfigureLists={() => setListsDialogOpen(true)}
               />
             )}
           </div>
@@ -503,6 +520,46 @@ export function CrmPage() {
           onClose={() => setListsDialogOpen(false)}
           onSave={handleSaveLists}
           onReset={handleResetLists}
+        />
+        <ConfirmDialog
+          open={!!pendingLeadAction}
+          title={
+            pendingLeadAction?.type === "delete"
+              ? "¿Eliminar lead?"
+              : "¿Enviar lead a Trello?"
+          }
+          description={
+            pendingLeadAction?.type === "delete" ? (
+              <>
+                Se eliminará permanentemente el lead{" "}
+                <span className="font-semibold text-foreground">
+                  {pendingLeadAction.lead.name}
+                </span>
+                .
+              </>
+            ) : (
+              <>
+                Se enviará el lead{" "}
+                <span className="font-semibold text-foreground">
+                  {pendingLeadAction?.lead.name}
+                </span>{" "}
+                como tarjeta a Trello con la información disponible.
+              </>
+            )
+          }
+          confirmLabel={
+            pendingLeadAction?.type === "delete"
+              ? "Eliminar lead"
+              : "Enviar a Trello"
+          }
+          tone={pendingLeadAction?.type === "delete" ? "destructive" : "default"}
+          isLoading={confirmLoading}
+          onConfirm={handleConfirmLeadAction}
+          onCancel={() => {
+            if (!confirmLoading) {
+              setPendingLeadAction(null);
+            }
+          }}
         />
       </DashboardLayout>
     </PageTransition>
