@@ -23,7 +23,7 @@ import {
   Users,
   SpinnerGap,
 } from "@phosphor-icons/react";
-import { PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import {
   getUsers,
@@ -46,6 +46,8 @@ export function UsersPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserDto | null>(null);
+  const [userToToggle, setUserToToggle] = useState<UserDto | null>(null);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) {
@@ -99,15 +101,20 @@ export function UsersPage() {
     if (!canManage) {
       return;
     }
+    setUserToToggle(user);
+  };
 
-    const actionLabel = user.isActive ? "desactivar" : "activar";
-    if (!confirm(`¿Deseas ${actionLabel} al usuario ${user.fullName}?`)) {
+  const confirmToggleActive = async () => {
+    if (!userToToggle) {
       return;
     }
 
+    const actionLabel = userToToggle.isActive ? "desactivar" : "activar";
     try {
-      await toggleUserActive(user.id);
+      setToggleLoading(true);
+      await toggleUserActive(userToToggle.id);
       toast.success(`Usuario ${actionLabel}do correctamente`);
+      setUserToToggle(null);
       await loadData();
     } catch (toggleError) {
       toast.error(
@@ -115,6 +122,8 @@ export function UsersPage() {
           ? toggleError.message
           : "No se pudo actualizar el estado del usuario"
       );
+    } finally {
+      setToggleLoading(false);
     }
   };
 
@@ -276,6 +285,27 @@ export function UsersPage() {
             if (saved) {
               void loadData();
             }
+          }}
+        />
+
+        <ConfirmDialog
+          open={Boolean(userToToggle)}
+          title={userToToggle?.isActive ? "Desactivar usuario" : "Activar usuario"}
+          description={
+            userToToggle
+              ? userToToggle.isActive
+                ? `Se desactivará el acceso de ${userToToggle.fullName}. Podrás reactivarlo después.`
+                : `Se activará nuevamente el acceso de ${userToToggle.fullName}.`
+              : ""
+          }
+          confirmLabel={userToToggle?.isActive ? "Desactivar usuario" : "Activar usuario"}
+          cancelLabel="Volver"
+          tone={userToToggle?.isActive ? "destructive" : "default"}
+          isLoading={toggleLoading}
+          onConfirm={() => void confirmToggleActive()}
+          onCancel={() => {
+            if (toggleLoading) return;
+            setUserToToggle(null);
           }}
         />
       </DashboardLayout>

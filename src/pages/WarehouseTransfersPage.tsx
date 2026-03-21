@@ -52,6 +52,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface TransferItemForm {
@@ -100,6 +101,9 @@ export function WarehouseTransfersPage() {
     useState<WarehouseTransferDto | null>(null);
   const [completeNotes, setCompleteNotes] = useState("");
   const [completeItems, setCompleteItems] = useState<CompleteItemForm[]>([]);
+  const [transferToCancel, setTransferToCancel] =
+    useState<WarehouseTransferDto | null>(null);
+  const [canceling, setCanceling] = useState(false);
 
   const productOptionEntries = useMemo(() => {
     return products
@@ -441,13 +445,17 @@ export function WarehouseTransfersPage() {
     }
   };
 
-  const handleCancelTransfer = async (transferId: string) => {
-    const confirmed = window.confirm("¿Deseas cancelar este traslado?");
-    if (!confirmed) return;
+  const handleCancelTransfer = (transfer: WarehouseTransferDto) => {
+    setTransferToCancel(transfer);
+  };
 
+  const confirmCancelTransfer = async () => {
+    if (!transferToCancel) return;
     try {
-      await cancelWarehouseTransfer(transferId);
+      setCanceling(true);
+      await cancelWarehouseTransfer(transferToCancel.id);
       toast.success("Traslado cancelado.");
+      setTransferToCancel(null);
       await loadData();
     } catch (cancelError) {
       const message =
@@ -455,6 +463,8 @@ export function WarehouseTransfersPage() {
           ? cancelError.message
           : "No se pudo cancelar el traslado.";
       toast.error(message);
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -617,7 +627,7 @@ export function WarehouseTransfersPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="gap-1 text-error hover:text-error"
-                                  onClick={() => handleCancelTransfer(transfer.id)}
+                                  onClick={() => handleCancelTransfer(transfer)}
                                 >
                                   <X size={14} weight="bold" />
                                   Cancelar
@@ -640,7 +650,7 @@ export function WarehouseTransfersPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="gap-1 text-error hover:text-error"
-                                  onClick={() => handleCancelTransfer(transfer.id)}
+                                  onClick={() => handleCancelTransfer(transfer)}
                                 >
                                   <X size={14} weight="bold" />
                                   Cancelar
@@ -934,6 +944,25 @@ export function WarehouseTransfersPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={Boolean(transferToCancel)}
+          title="Cancelar traslado"
+          description={
+            transferToCancel
+              ? `Se cancelará el traslado ${transferToCancel.transferNumber} entre ${transferToCancel.sourceWarehouseName} y ${transferToCancel.destinationWarehouseName}.`
+              : ""
+          }
+          confirmLabel="Cancelar traslado"
+          cancelLabel="Volver"
+          tone="destructive"
+          isLoading={canceling}
+          onConfirm={() => void confirmCancelTransfer()}
+          onCancel={() => {
+            if (canceling) return;
+            setTransferToCancel(null);
+          }}
+        />
       </DashboardLayout>
     </PageTransition>
   );

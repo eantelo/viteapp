@@ -21,6 +21,17 @@ import type { PipelineListConfig } from "@/lib/crmPipelineLists";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared";
 import { SlidersHorizontal } from "@phosphor-icons/react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface KanbanBoardProps {
   leads: LeadDto[];
@@ -48,6 +59,13 @@ const STATUSES: LeadStatus[] = [
   LeadStatus.Lost,
 ];
 
+interface PendingLeadMove {
+  lead: LeadDto;
+  targetStatus: LeadStatus;
+  targetIndex: number;
+  previousLeads: LeadDto[];
+}
+
 export function KanbanBoard({
   leads,
   listConfigs,
@@ -65,6 +83,10 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
+  const [pendingLeadMove, setPendingLeadMove] = useState<PendingLeadMove | null>(
+    null
+  );
+  const [isMoveSubmitting, setIsMoveSubmitting] = useState(false);
 
   const orderedListConfigs = [...listConfigs].sort((a, b) => a.order - b.order);
   const visibleListConfigs = orderedListConfigs.filter((item) => item.visible);
@@ -87,6 +109,39 @@ export function KanbanBoard({
     }),
     {} as Record<LeadStatus, LeadDto[]>
   );
+
+  const executeLeadMove = async (
+    pendingMove: PendingLeadMove,
+    convertToCustomer: boolean
+  ) => {
+    const { lead, previousLeads, targetIndex, targetStatus } = pendingMove;
+
+    const updatedLeads = previousLeads.map((currentLead) =>
+      currentLead.id === lead.id
+        ? { ...currentLead, status: targetStatus, position: targetIndex }
+        : currentLead
+    );
+
+    onLeadsChange(updatedLeads);
+
+    try {
+      const updated = await updateLeadStatus(lead.id, {
+        status: targetStatus,
+        position: targetIndex,
+        convertToCustomer,
+      });
+      onLeadsChange(
+        previousLeads.map((currentLead) =>
+          currentLead.id === updated.id ? updated : currentLead
+        )
+      );
+      toast.success(`Lead movido a ${statusLabels[targetStatus] ?? "nueva lista"}`);
+    } catch (error) {
+      console.error("Error updating lead status:", error);
+      onLeadsChange(previousLeads);
+      toast.error("Error al mover el lead");
+    }
+  };
 
   const handleDragStart = (e: DragStartEvent) => {
     const leadId = e.active.id;
@@ -162,36 +217,43 @@ export function KanbanBoard({
 
     const shouldOfferConversion =
       targetStatus === LeadStatus.Won && !currentDraggedLead.customerId;
-    const convertToCustomer = shouldOfferConversion
-      ? confirm(
-          `¿Deseas crear un cliente con los datos del lead "${currentDraggedLead.name}"?`
-        )
-      : false;
 
-    // Optimistic update: update local state immediately
-    const updatedLeads = leads.map((lead) =>
-      lead.id === currentDraggedLead.id
-        ? { ...lead, status: targetStatus, position: targetIndex }
-        : lead
-    );
-    onLeadsChange(updatedLeads);
-
-    // Sync with server in background
-    try {
-      const updated = await updateLeadStatus(currentDraggedLead.id, {
-        status: targetStatus,
-        position: targetIndex,
-        convertToCustomer,
+    if (shouldOfferConversion) {
+      setPendingLeadMove({
+        lead: currentDraggedLead,
+        previousLeads: leads,
+        targetStatus,
+        targetIndex,
       });
-      onLeadsChange(
-        leads.map((lead) => (lead.id === updated.id ? updated : lead))
+      return;
+    }
+
+    try {
+      await executeLeadMove(
+        {
+          lead: currentDraggedLead,
+          previousLeads: leads,
+          targetStatus,
+          targetIndex,
+        },
+        false
       );
-      toast.success(`Lead movido a ${statusLabels[targetStatus] ?? "nueva lista"}`);
     } catch (error) {
-      console.error("Error updating lead status:", error);
-      // Revert on error
-      onLeadsChange(leads);
-      toast.error("Error al mover el lead");
+      console.error("Unexpected lead move error:", error);
+    }
+  };
+
+  const handlePendingMoveDecision = async (convertToCustomer: boolean) => {
+    if (!pendingLeadMove || isMoveSubmitting) {
+      return;
+    }
+
+    setIsMoveSubmitting(true);
+    try {
+      await executeLeadMove(pendingLeadMove, convertToCustomer);
+    } finally {
+      setIsMoveSubmitting(false);
+      setPendingLeadMove(null);
     }
   };
 
@@ -269,6 +331,60 @@ export function KanbanBoard({
           </div>
         )}
       </DragOverlay>
+      <AlertDialog
+        open={!!pendingLeadMove}
+        onOpenChange={(open) => {
+          if (!open && !isMoveSubmitting) {
+            setPendingLeadMove(null);
+          }
+        }}
+      >
+        <AlertDialogContent
+          className="max-w-md"
+          onEscapeKeyDown={(event) => event.preventDefault()}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Crear cliente al ganar lead?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                El lead{" "}
+                <span className="font-semibold text-foreground">
+                  {pendingLeadMove?.lead.name}
+                </span>{" "}
+                se moverá a la lista de ganados.
+              </span>
+              <span className="block">
+                Puedes crear también un cliente con sus datos actuales o moverlo sin generar ese registro.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              asChild
+              disabled={isMoveSubmitting}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handlePendingMoveDecision(false)}
+              >
+                Mover sin crear cliente
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              asChild
+              disabled={isMoveSubmitting}
+            >
+              <Button
+                type="button"
+                onClick={() => void handlePendingMoveDecision(true)}
+              >
+                {isMoveSubmitting ? "Procesando..." : "Crear cliente y mover"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DndContext>
   );
 }

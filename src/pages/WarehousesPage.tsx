@@ -41,7 +41,7 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface WarehouseFormState {
@@ -94,6 +94,8 @@ export function WarehousesPage() {
     null
   );
   const [form, setForm] = useState<WarehouseFormState>(initialFormState);
+  const [warehouseToDelete, setWarehouseToDelete] = useState<WarehouseDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const filteredWarehouses = useMemo(() => {
     if (!search.trim()) return warehouses;
@@ -196,15 +198,17 @@ export function WarehousesPage() {
     }
   };
 
-  const handleDeleteWarehouse = async (warehouse: WarehouseDto) => {
-    const confirmed = window.confirm(
-      `¿Eliminar el almacén "${warehouse.name}"? Esta acción no se puede deshacer.`
-    );
-    if (!confirmed) return;
+  const handleDeleteWarehouse = (warehouse: WarehouseDto) => {
+    setWarehouseToDelete(warehouse);
+  };
 
+  const confirmDeleteWarehouse = async () => {
+    if (!warehouseToDelete) return;
     try {
-      await deleteWarehouse(warehouse.id);
+      setDeleteLoading(true);
+      await deleteWarehouse(warehouseToDelete.id);
       toast.success("Almacén eliminado correctamente.");
+      setWarehouseToDelete(null);
       await loadWarehouses();
     } catch (deleteError) {
       const message =
@@ -212,6 +216,8 @@ export function WarehousesPage() {
           ? deleteError.message
           : "No se pudo eliminar el almacén.";
       toast.error(message);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -474,6 +480,25 @@ export function WarehousesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={Boolean(warehouseToDelete)}
+          title="Eliminar almacén"
+          description={
+            warehouseToDelete
+              ? `Se eliminará el almacén "${warehouseToDelete.name}". Esta acción no se puede deshacer.`
+              : ""
+          }
+          confirmLabel="Eliminar almacén"
+          cancelLabel="Volver"
+          tone="destructive"
+          isLoading={deleteLoading}
+          onConfirm={() => void confirmDeleteWarehouse()}
+          onCancel={() => {
+            if (deleteLoading) return;
+            setWarehouseToDelete(null);
+          }}
+        />
       </DashboardLayout>
     </PageTransition>
   );

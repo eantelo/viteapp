@@ -33,7 +33,7 @@ import {
 } from "@/api/suppliersApi";
 import { PencilSimple, Plus, Trash, Factory, SpinnerGap } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface SupplierFormState {
@@ -85,6 +85,8 @@ export function SuppliersPage() {
   const [saving, setSaving] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<SupplierDto | null>(null);
   const [form, setForm] = useState<SupplierFormState>(initialFormState);
+  const [supplierToDelete, setSupplierToDelete] = useState<SupplierDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const filteredSuppliers = useMemo(() => {
     if (!search.trim()) return suppliers;
@@ -191,13 +193,17 @@ export function SuppliersPage() {
     }
   };
 
-  const handleDelete = async (supplier: SupplierDto) => {
-    const confirmed = window.confirm(`¿Eliminar el proveedor \"${supplier.name}\"?`);
-    if (!confirmed) return;
+  const handleDelete = (supplier: SupplierDto) => {
+    setSupplierToDelete(supplier);
+  };
 
+  const confirmDelete = async () => {
+    if (!supplierToDelete) return;
     try {
-      await deleteSupplier(supplier.id);
+      setDeleteLoading(true);
+      await deleteSupplier(supplierToDelete.id);
       toast.success("Proveedor eliminado correctamente.");
+      setSupplierToDelete(null);
       await loadSuppliers();
     } catch (deleteError) {
       toast.error(
@@ -205,6 +211,8 @@ export function SuppliersPage() {
           ? deleteError.message
           : "No se pudo eliminar el proveedor."
       );
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -447,6 +455,25 @@ export function SuppliersPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={Boolean(supplierToDelete)}
+          title="Eliminar proveedor"
+          description={
+            supplierToDelete
+              ? `Se eliminará el proveedor "${supplierToDelete.name}". Esta acción no se puede deshacer.`
+              : ""
+          }
+          confirmLabel="Eliminar proveedor"
+          cancelLabel="Volver"
+          tone="destructive"
+          isLoading={deleteLoading}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => {
+            if (deleteLoading) return;
+            setSupplierToDelete(null);
+          }}
+        />
       </DashboardLayout>
     </PageTransition>
   );

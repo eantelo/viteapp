@@ -55,7 +55,7 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface PurchaseItemForm {
@@ -124,6 +124,8 @@ export function PurchasesPage() {
   const [receiveNotes, setReceiveNotes] = useState("");
   const [receiveItems, setReceiveItems] = useState<ReceiveItemForm[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrderDto | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<PurchaseOrderDto | null>(null);
+  const [canceling, setCanceling] = useState(false);
 
   const filteredOrders = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -281,18 +283,24 @@ export function PurchasesPage() {
     }
   };
 
-  const handleCancel = async (order: PurchaseOrderDto) => {
-    const confirmed = window.confirm(`¿Cancelar la OC #${order.purchaseOrderNumber}?`);
-    if (!confirmed) return;
+  const handleCancel = (order: PurchaseOrderDto) => {
+    setOrderToCancel(order);
+  };
 
+  const confirmCancel = async () => {
+    if (!orderToCancel) return;
     try {
-      await cancelPurchase(order.id);
-      toast.success(`OC #${order.purchaseOrderNumber} cancelada.`);
+      setCanceling(true);
+      await cancelPurchase(orderToCancel.id);
+      toast.success(`OC #${orderToCancel.purchaseOrderNumber} cancelada.`);
+      setOrderToCancel(null);
       await loadData();
     } catch (cancelError) {
       toast.error(
         cancelError instanceof Error ? cancelError.message : "No se pudo cancelar la orden."
       );
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -859,6 +867,25 @@ export function PurchasesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={Boolean(orderToCancel)}
+          title="Cancelar orden de compra"
+          description={
+            orderToCancel
+              ? `Se cancelará la OC #${orderToCancel.purchaseOrderNumber}. Esta acción no se puede deshacer.`
+              : ""
+          }
+          confirmLabel="Cancelar orden"
+          cancelLabel="Volver"
+          tone="destructive"
+          isLoading={canceling}
+          onConfirm={() => void confirmCancel()}
+          onCancel={() => {
+            if (canceling) return;
+            setOrderToCancel(null);
+          }}
+        />
       </DashboardLayout>
     </PageTransition>
   );

@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDialog";
 import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
+import { ConfirmDialog } from "@/components/shared";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { toast } from "sonner";
 import {
@@ -50,6 +51,8 @@ export function ProductDetailPage() {
   // Diálogos de stock
   const [stockAdjustmentOpen, setStockAdjustmentOpen] = useState(false);
   const [stockHistoryOpen, setStockHistoryOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useDocumentTitle(product ? `${product.name} - Producto` : "Producto");
 
@@ -121,18 +124,15 @@ export function ProductDetailPage() {
     navigate(`/products/${id}/edit`);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!product) return;
+    setDeleteDialogOpen(true);
+  };
 
-    if (
-      !confirm(
-        `¿Eliminar el producto "${product.name}"? Esta acción no se puede deshacer.`
-      )
-    ) {
-      return;
-    }
-
+  const confirmDelete = async () => {
+    if (!product) return;
     try {
+      setDeleting(true);
       await deleteProduct(product.id);
       toast.success("Producto eliminado correctamente");
       navigate("/products");
@@ -140,6 +140,8 @@ export function ProductDetailPage() {
       toast.error(
         err instanceof Error ? err.message : "Error al eliminar el producto"
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -543,6 +545,21 @@ export function ProductDetailPage() {
           productId={product.id}
           productName={product.name}
           onClose={() => setStockHistoryOpen(false)}
+        />
+
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          title="Eliminar producto"
+          description={`Se eliminará el producto "${product.name}". Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar producto"
+          cancelLabel="Volver"
+          tone="destructive"
+          isLoading={deleting}
+          onConfirm={() => void confirmDelete()}
+          onCancel={() => {
+            if (deleting) return;
+            setDeleteDialogOpen(false);
+          }}
         />
       </DashboardLayout>
     </PageTransition>
