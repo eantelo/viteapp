@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { formatDateToISO } from "@/utils/dateUtils";
 
 export interface DateRange {
   from: Date;
@@ -35,6 +36,52 @@ export function DateRangeSelector({
 }: DateRangeSelectorProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [preset, setPreset] = React.useState<string>("today");
+
+  React.useEffect(() => {
+    const start = new Date(dateRange.from);
+    const end = new Date(dateRange.to);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const presets: Record<string, DateRange> = {
+      today: {
+        from: today,
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+      },
+      yesterday: {
+        from: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999),
+      },
+      last7: {
+        from: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6),
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+      },
+      last30: {
+        from: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29),
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+      },
+      thisMonth: {
+        from: new Date(now.getFullYear(), now.getMonth(), 1),
+        to: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999),
+      },
+      lastMonth: {
+        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999),
+      },
+    };
+
+    const matchedPreset = Object.entries(presets).find(([, range]) => {
+      return (
+        range.from.getTime() === start.getTime() &&
+        range.to.getTime() === end.getTime()
+      );
+    });
+
+    setPreset(matchedPreset?.[0] ?? "custom");
+  }, [dateRange]);
 
   const handlePresetChange = (value: string) => {
     setPreset(value);
@@ -163,11 +210,9 @@ export function DateRangeSelector({
                     <Label htmlFor="from">Desde</Label>
                     <Input
                       id="from"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="YYYY-MM-DD"
+                      type="date"
                       className="h-8 text-xs"
-                      value={dateRange.from.toISOString().split("T")[0]}
+                      value={formatDateToISO(dateRange.from)}
                       onChange={(e) =>
                         handleCustomDateChange("from", e.target.value)
                       }
@@ -177,11 +222,9 @@ export function DateRangeSelector({
                     <Label htmlFor="to">Hasta</Label>
                     <Input
                       id="to"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="YYYY-MM-DD"
+                      type="date"
                       className="h-8 text-xs"
-                      value={dateRange.to.toISOString().split("T")[0]}
+                      value={formatDateToISO(dateRange.to)}
                       onChange={(e) =>
                         handleCustomDateChange("to", e.target.value)
                       }

@@ -15,7 +15,7 @@ import {
   type SalesStatistics,
   type SaleDto,
 } from "@/api/salesApi";
-import { getTodayRangeUTC } from "@/utils/dateUtils";
+import { dateRangeToUTC, formatDateToISO } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
@@ -46,8 +46,10 @@ export function DashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Usar el rango de hoy en UTC
-        const utcRange = getTodayRangeUTC();
+        const utcRange = dateRangeToUTC(
+          formatDateToISO(dateRange.from),
+          formatDateToISO(dateRange.to)
+        );
 
         const [statsData, historyData] = await Promise.all([
           getSalesStatistics(utcRange.from, utcRange.to),

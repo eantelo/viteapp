@@ -17,7 +17,8 @@ Actualizar `src/pages/DashboardPage.tsx` para ofrecer un panel de análisis de v
 
 ## Comportamiento
 
-- El selector de rango actualiza `dateRange` y recarga estadísticas y ventas recientes.
+- El selector de rango actualiza `dateRange` y recarga estadísticas y ventas recientes usando exactamente el periodo elegido por el usuario.
+- Las fechas personalizadas se capturan como fechas locales (`type="date"`) y se convierten a UTC solo al momento de consultar la API, evitando desfases visuales por zona horaria.
 - Las tarjetas muestran skeletons durante la carga y el layout conserva estabilidad.
 - Los valores numéricos usan tipografía monoespaciada para alineación visual.
 
