@@ -41,7 +41,7 @@ import {
   SpinnerGap,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, EmptyState, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface WarehouseFormState {
@@ -109,6 +109,8 @@ export function WarehousesPage() {
       );
     });
   }, [warehouses, search]);
+
+  const hasActiveSearch = search.trim().length > 0;
 
   useEffect(() => {
     void loadWarehouses();
@@ -259,26 +261,37 @@ export function WarehousesPage() {
             ) : error ? (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">{error}</div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Almacén</TableHead>
-                    <TableHead className="hidden md:table-cell">Código</TableHead>
-                    <TableHead className="hidden lg:table-cell">Ciudad</TableHead>
-                    <TableHead className="hidden lg:table-cell">Contacto</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWarehouses.length === 0 ? (
+              filteredWarehouses.length === 0 ? (
+                <EmptyState
+                  icon={Warehouse}
+                  title={
+                    hasActiveSearch
+                      ? "No se encontraron almacenes"
+                      : "Aún no hay almacenes"
+                  }
+                  description={
+                    hasActiveSearch
+                      ? "Prueba con otro nombre, código o ciudad, o limpia la búsqueda actual."
+                      : "Crea tu primer almacén para empezar a organizar inventario por ubicación."
+                  }
+                  actionLabel={hasActiveSearch ? "Limpiar búsqueda" : "Nuevo almacén"}
+                  onAction={hasActiveSearch ? () => setSearch("") : openCreateDialog}
+                  className="m-4 py-12"
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                        No se encontraron almacenes.
-                      </TableCell>
+                      <TableHead>Almacén</TableHead>
+                      <TableHead className="hidden md:table-cell">Código</TableHead>
+                      <TableHead className="hidden lg:table-cell">Ciudad</TableHead>
+                      <TableHead className="hidden lg:table-cell">Contacto</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredWarehouses.map((warehouse) => (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWarehouses.map((warehouse) => (
                       <TableRow key={warehouse.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -338,10 +351,10 @@ export function WarehousesPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
             )}
           </div>
         </div>

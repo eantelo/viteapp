@@ -33,7 +33,7 @@ import {
 } from "@/api/suppliersApi";
 import { PencilSimple, Plus, Trash, Factory, SpinnerGap } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { ConfirmDialog, PageHeader, SearchInput } from "@/components/shared";
+import { ConfirmDialog, EmptyState, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 interface SupplierFormState {
@@ -104,6 +104,8 @@ export function SuppliersPage() {
         .some((value) => String(value).toLowerCase().includes(term))
     );
   }, [suppliers, search]);
+
+  const hasActiveSearch = search.trim().length > 0;
 
   useEffect(() => {
     void loadSuppliers();
@@ -254,26 +256,37 @@ export function SuppliersPage() {
             ) : error ? (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">{error}</div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Proveedor</TableHead>
-                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
-                    <TableHead className="hidden lg:table-cell">Ciudad</TableHead>
-                    <TableHead className="hidden lg:table-cell">NIT/CI</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSuppliers.length === 0 ? (
+              filteredSuppliers.length === 0 ? (
+                <EmptyState
+                  icon={Factory}
+                  title={
+                    hasActiveSearch
+                      ? "No se encontraron proveedores"
+                      : "Aún no hay proveedores"
+                  }
+                  description={
+                    hasActiveSearch
+                      ? "Prueba con otro nombre, ciudad o dato de contacto, o limpia la búsqueda."
+                      : "Crea tu primer proveedor para registrar compras e inventario."
+                  }
+                  actionLabel={hasActiveSearch ? "Limpiar búsqueda" : "Nuevo proveedor"}
+                  onAction={hasActiveSearch ? () => setSearch("") : openCreateDialog}
+                  className="m-4 py-12"
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                        No se encontraron proveedores.
-                      </TableCell>
+                      <TableHead>Proveedor</TableHead>
+                      <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                      <TableHead className="hidden lg:table-cell">Ciudad</TableHead>
+                      <TableHead className="hidden lg:table-cell">NIT/CI</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredSuppliers.map((supplier) => (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((supplier) => (
                       <TableRow key={supplier.id}>
                         <TableCell>
                           <p className="font-medium">{supplier.name}</p>
@@ -311,10 +324,10 @@ export function SuppliersPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
             )}
           </div>
         </div>

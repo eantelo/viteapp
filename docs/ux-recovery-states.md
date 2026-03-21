@@ -15,6 +15,9 @@ Reducir fricción en flujos administrativos reemplazando confirmaciones nativas 
   - limpiar búsqueda si no hubo coincidencias
 - `Ventas` muestra recuperación directa cuando no hay resultados o no hay datos para el reporte.
 - `CRM` permite volver a configurar listas visibles desde el propio estado vacío del tablero.
+- `Usuarios`, `Proveedores` y `Almacenes` ya no muestran tablas vacías pasivas:
+  - limpiar búsqueda si no hubo coincidencias
+  - crear registro si aún no existe ninguno
 - Al mover un lead a `Ganado`, el CRM ya no usa `confirm()` del navegador:
   - `Crear cliente y mover`
   - `Mover sin crear cliente`
