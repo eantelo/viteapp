@@ -19,6 +19,7 @@ import {
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { useAuth } from "@/context/AuthContext";
+import { FEATURES } from "@/lib/features";
 import {
   Sidebar,
   SidebarContent,
@@ -101,7 +102,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { auth, hasPermission, logout } = useAuth();
+  const { auth, hasPermission, hasFeature, logout } = useAuth();
   const tenantName = auth?.tenantName || "Mi Empresa";
 
   const filteredNavItems = data.navMain.filter((item) => {
@@ -111,6 +112,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     if (item.url === "/settings") {
       return hasPermission("Settings.View");
+    }
+
+    if (item.url === "/categories") {
+      return hasFeature(FEATURES.CATEGORIES);
+    }
+
+    if (item.url === "/suppliers") {
+      return hasFeature(FEATURES.SUPPLIERS);
+    }
+
+    if (item.url === "/purchases") {
+      return hasFeature(FEATURES.PURCHASES);
+    }
+
+    if (item.url === "/crm") {
+      return hasFeature(FEATURES.CRM);
     }
 
     return true;

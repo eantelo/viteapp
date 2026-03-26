@@ -29,6 +29,7 @@ interface RefreshState {
 interface AuthContextValue {
   auth: AuthResponse | null;
   isAuthenticated: boolean;
+  isSuperAdmin: boolean;
   isRefreshing: boolean;
   refreshError: string | null;
   lastRefreshAt: string | null;
@@ -36,6 +37,7 @@ interface AuthContextValue {
   refreshSession: () => Promise<AuthResponse | void>;
   logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
+  hasFeature: (feature: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -163,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuth,
       refreshSession,
       logout,
+      isSuperAdmin: auth?.role?.toLowerCase() === "superadmin",
       hasPermission: (permission: string) => {
         if (!permission) {
           return true;
@@ -171,6 +174,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const permissions = auth?.permissions ?? [];
         return permissions.some(
           (p) => p.toLowerCase() === permission.toLowerCase()
+        );
+      },
+      hasFeature: (feature: string) => {
+        const features = auth?.features;
+        // If no features in the token (backward compat or SuperAdmin), allow all
+        if (!features || features.length === 0) {
+          return true;
+        }
+        return features.some(
+          (f) => f.toLowerCase() === feature.toLowerCase()
         );
       },
       lastRefreshAt: refreshState.lastRefreshAt,

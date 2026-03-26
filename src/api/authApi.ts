@@ -8,6 +8,7 @@ export interface AuthResponse {
   lastName: string;
   role: string;
   permissions: string[];
+  features: string[];
   tenantId: string;
   tenantName: string;
   userId: string;
@@ -50,7 +51,7 @@ async function register(payload: RegisterPayload): Promise<AuthResponse> {
 }
 
 async function refreshToken(
-  payload: RefreshTokenPayload
+  payload: RefreshTokenPayload,
 ): Promise<AuthResponse> {
   return apiClient<AuthResponse>("/api/auth/refresh-token", {
     method: "POST",
@@ -77,7 +78,7 @@ export interface ResetPasswordPayload {
 }
 
 async function forgotPassword(
-  payload: ForgotPasswordPayload
+  payload: ForgotPasswordPayload,
 ): Promise<{ message: string }> {
   return apiClient<{ message: string }>("/api/auth/forgot-password", {
     method: "POST",
@@ -87,7 +88,7 @@ async function forgotPassword(
 }
 
 async function resetPassword(
-  payload: ResetPasswordPayload
+  payload: ResetPasswordPayload,
 ): Promise<{ message: string }> {
   return apiClient<{ message: string }>("/api/auth/reset-password", {
     method: "POST",

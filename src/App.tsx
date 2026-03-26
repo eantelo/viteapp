@@ -1,4 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import React from "react";
+import { useAuth } from "@/context/AuthContext";
+import { FEATURES } from "@/lib/features";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -27,6 +30,14 @@ import { WarehouseTransfersPage } from "@/pages/WarehouseTransfersPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
+function FeatureRoute({ feature, children }: { feature: string; children: React.ReactNode }) {
+  const { hasFeature } = useAuth();
+  if (!hasFeature(feature)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 function App() {
   const location = useLocation();
 
@@ -54,12 +65,12 @@ function App() {
             path="/catalog"
             element={<Navigate to="/products" replace />}
           />
-          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/categories" element={<FeatureRoute feature={FEATURES.CATEGORIES}><CategoriesPage /></FeatureRoute>} />
           <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/suppliers" element={<SuppliersPage />} />
-          <Route path="/purchases" element={<PurchasesPage />} />
+          <Route path="/suppliers" element={<FeatureRoute feature={FEATURES.SUPPLIERS}><SuppliersPage /></FeatureRoute>} />
+          <Route path="/purchases" element={<FeatureRoute feature={FEATURES.PURCHASES}><PurchasesPage /></FeatureRoute>} />
           <Route path="/users" element={<UsersPage />} />
-          <Route path="/crm" element={<CrmPage />} />
+          <Route path="/crm" element={<FeatureRoute feature={FEATURES.CRM}><CrmPage /></FeatureRoute>} />
           <Route path="/warehouses" element={<WarehousesPage />} />
           <Route path="/warehouses/:id" element={<WarehouseDetailPage />} />
           <Route

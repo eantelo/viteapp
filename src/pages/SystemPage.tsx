@@ -19,6 +19,17 @@ import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
 import { Laptop, Shield, Key, Desktop, Database, Globe } from "@phosphor-icons/react";
 import { getSystemInfo, type SystemInfoDto } from "@/api/systemApi";
+import {
+  getTenants,
+  getTenantFeatures,
+  updateTenantFeatures,
+  type TenantItem,
+  type TenantFeatureItem,
+} from "@/api/tenantFeaturesApi";
+import { FEATURES } from "@/lib/features";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Sliders } from "@phosphor-icons/react";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 type StatCard = {
@@ -36,7 +47,7 @@ type TokenDetail = {
 
 export function SystemPage() {
   useDocumentTitle("SalesNet | Sistema");
-  const { auth, refreshSession, isRefreshing, refreshError, lastRefreshAt } =
+  const { auth, refreshSession, isRefreshing, refreshError, lastRefreshAt, isSuperAdmin } =
     useAuth();
   const prefersReducedMotion = useReducedMotion();
   const defaultEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -140,6 +151,63 @@ export function SystemPage() {
     } catch (error) {
       console.error("Manual refresh failed", error);
     }
+  };
+
+  // ── Feature flags (SuperAdmin only) ──────────────────────────────────────
+  const [tenants, setTenants] = useState<TenantItem[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const [tenantFeatures, setTenantFeatures] = useState<TenantFeatureItem[]>([]);
+  const [featuresLoading, setFeaturesLoading] = useState(false);
+  const [featuresSaving, setFeaturesSaving] = useState(false);
+  const [featuresMessage, setFeaturesMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    getTenants()
+      .then((data) => {
+        setTenants(data);
+        if (data.length > 0) setSelectedTenantId(data[0].id);
+      })
+      .catch(() => {/* silently ignore */});
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (!selectedTenantId) return;
+    setFeaturesLoading(true);
+    setFeaturesMessage(null);
+    getTenantFeatures(selectedTenantId)
+      .then(setTenantFeatures)
+      .catch(() => setFeaturesMessage({ type: "error", text: "Error al cargar features" }))
+      .finally(() => setFeaturesLoading(false));
+  }, [selectedTenantId]);
+
+  const handleFeatureToggle = (feature: string, enabled: boolean) => {
+    setTenantFeatures((prev) =>
+      prev.map((f) => (f.feature === feature ? { ...f, isEnabled: enabled } : f))
+    );
+  };
+
+  const handleSaveFeatures = async () => {
+    setFeaturesSaving(true);
+    setFeaturesMessage(null);
+    try {
+      await updateTenantFeatures(selectedTenantId, tenantFeatures);
+      setFeaturesMessage({ type: "success", text: "Cambios guardados correctamente" });
+    } catch {
+      setFeaturesMessage({ type: "error", text: "Error al guardar los cambios" });
+    } finally {
+      setFeaturesSaving(false);
+    }
+  };
+
+  const featureLabels: Record<string, string> = {
+    [FEATURES.CRM]: "CRM",
+    [FEATURES.PURCHASES]: "Compras / Órdenes",
+    [FEATURES.SUPPLIERS]: "Proveedores",
+    [FEATURES.CATEGORIES]: "Categorías",
   };
 
   return (
@@ -390,6 +458,94 @@ export function SystemPage() {
             </CardContent>
           </Card>
         </motion.section>
+
+        {isSuperAdmin && (
+          <motion.section
+            initial={fadeInInitial}
+            animate={fadeInAnimate}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 0.55,
+              ease: defaultEase,
+            }}
+          >
+            <Card className="bg-card shadow-sm">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sliders className="h-5 w-5 text-primary" weight="duotone" />
+                  <CardTitle>Feature Flags por Tenant</CardTitle>
+                </div>
+                <CardDescription>
+                  Habilita o deshabilita módulos del sistema para cada tenant.
+                  Los cambios se aplican en el próximo inicio de sesión del usuario.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Tenant selector */}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="tenant-select" className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Tenant
+                  </Label>
+                  <select
+                    id="tenant-select"
+                    value={selectedTenantId}
+                    onChange={(e) => setSelectedTenantId(e.target.value)}
+                    className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 max-w-xs"
+                  >
+                    {tenants.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({t.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Feature toggles */}
+                {featuresLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Spinner size="md" />
+                  </div>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {tenantFeatures.map((f) => (
+                      <div
+                        key={f.feature}
+                        className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3"
+                      >
+                        <Label htmlFor={`feature-${f.feature}`} className="text-sm font-medium cursor-pointer">
+                          {featureLabels[f.feature] ?? f.feature}
+                        </Label>
+                        <Switch
+                          id={`feature-${f.feature}`}
+                          checked={f.isEnabled}
+                          onCheckedChange={(checked) =>
+                            handleFeatureToggle(f.feature, checked)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {featuresMessage && (
+                  <Alert
+                    variant={featuresMessage.type === "success" ? "success" : "error"}
+                    message={featuresMessage.text}
+                  />
+                )}
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveFeatures}
+                    disabled={featuresSaving || featuresLoading || !selectedTenantId}
+                  >
+                    {featuresSaving && <Spinner size="sm" className="text-current" />}
+                    {featuresSaving ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+        )}
       </DashboardLayout>
     </PageTransition>
   );
