@@ -1,4 +1,5 @@
 import { apiClient } from "@/api/apiClient";
+import type { AccountOnboardingAcceptedResponse } from "@/api/accountOnboardingApi";
 
 export interface AuthResponse {
   token: string;
@@ -42,8 +43,10 @@ async function login(payload: LoginPayload): Promise<AuthResponse> {
   });
 }
 
-async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  return apiClient<AuthResponse>("/api/auth/register", {
+async function register(
+  payload: RegisterPayload,
+): Promise<AccountOnboardingAcceptedResponse> {
+  return apiClient<AccountOnboardingAcceptedResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
     skipAuth: true,
