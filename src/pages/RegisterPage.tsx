@@ -1,10 +1,6 @@
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  getAccountOnboardingStatus,
-  type AccountOnboardingStatusResponse,
-} from "@/api/accountOnboardingApi";
 import { authApi } from "@/api/authApi";
 import type { ApiError } from "@/api/apiClient";
 import { AuthLayout } from "@/components/layout/AuthLayout";
@@ -28,31 +24,8 @@ import { cn } from "@/lib/utils";
 type RegisterField = "tenantCode" | "email" | "password";
 type RegisterFieldErrors = Partial<Record<RegisterField, string>>;
 
-const ACCOUNT_ONBOARDING_POLL_INTERVAL_MS = 1000;
-const ACCOUNT_ONBOARDING_MAX_ATTEMPTS = 90;
-
 function isApiError(error: unknown): error is ApiError {
   return typeof error === "object" && error !== null && "message" in error;
-}
-
-async function waitForAccountProvisioning(
-  onboardingId: string,
-): Promise<AccountOnboardingStatusResponse> {
-  for (let attempt = 0; attempt < ACCOUNT_ONBOARDING_MAX_ATTEMPTS; attempt += 1) {
-    const status = await getAccountOnboardingStatus(onboardingId);
-
-    if (status.status === "Completed" || status.status === "Failed") {
-      return status;
-    }
-
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, ACCOUNT_ONBOARDING_POLL_INTERVAL_MS);
-    });
-  }
-
-  throw new Error(
-    "La cuenta está tardando más de lo esperado en aprovisionarse. Intenta iniciar sesión en unos segundos.",
-  );
 }
 
 export function RegisterPage() {
@@ -110,23 +83,7 @@ export function RegisterPage() {
     }
 
     try {
-      const onboarding = await authApi.register(formState);
-      const onboardingStatus = await waitForAccountProvisioning(
-        onboarding.onboardingId,
-      );
-
-      if (onboardingStatus.status === "Failed") {
-        throw new Error(
-          onboardingStatus.errorMessage ??
-            "No pudimos completar el aprovisionamiento de la cuenta.",
-        );
-      }
-
-      const response = await authApi.login({
-        email: formState.email,
-        password: formState.password,
-      });
-
+      const response = await authApi.register(formState);
       setAuth(response);
       navigate("/dashboard");
     } catch (error) {
@@ -268,7 +225,7 @@ export function RegisterPage() {
 
                     <Button type="submit" className="w-full" disabled={isLoading}>
                         {isLoading && <Spinner size="sm" className="mr-2 text-current" />}
-                      {isLoading ? "Provisionando cuenta..." : "Crear cuenta"}
+                      {isLoading ? "Creando cuenta..." : "Crear cuenta"}
                     </Button>
                 </div>
             </form>
