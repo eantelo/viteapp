@@ -25,6 +25,7 @@ export interface SetupWizardData {
   timezone: string;
   taxName: string;
   taxRate: number;
+  createProductAfterSetup: boolean;
 }
 
 const STEPS = [
@@ -49,6 +50,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
     timezone: "America/New_York",
     taxName: "",
     taxRate: 0,
+    createProductAfterSetup: false,
   });
 
   const progress = ((currentStep - 1) / STEPS.length) * 100;
@@ -88,11 +90,13 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
       }
 
       toast.success("¡Configuración completada!", {
-        description: "Tu negocio está listo para comenzar.",
+        description: data.createProductAfterSetup
+          ? "Tu negocio está listo. Vamos a crear tu primer producto."
+          : "Tu negocio está listo para comenzar.",
       });
 
       onComplete();
-      navigate("/dashboard");
+      navigate(data.createProductAfterSetup ? "/products/new" : "/dashboard");
     } catch (error) {
       toast.error("Error", {
         description: "No se pudo guardar la configuración. Intenta de nuevo.",

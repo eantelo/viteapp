@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { SetupWizardData } from "../SetupWizard";
 import { Receipt } from "@phosphor-icons/react";
@@ -63,6 +64,28 @@ export function TaxConfigStep({ data, onChange }: TaxConfigStepProps) {
             Por ejemplo, en una venta de $100.00, el impuesto sería $
             {((100 * data.taxRate) / 100).toFixed(2)}
           </p>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-lg border bg-card p-4">
+          <Checkbox
+            id="createProductAfterSetup"
+            checked={data.createProductAfterSetup}
+            onCheckedChange={(checked) =>
+              onChange({ createProductAfterSetup: Boolean(checked) })
+            }
+            className="mt-0.5"
+          />
+          <div className="space-y-1">
+            <Label
+              htmlFor="createProductAfterSetup"
+              className="text-sm font-medium"
+            >
+              Al finalizar, llevarme a crear un producto
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Útil si quieres dejar listo tu catálogo apenas termines el onboarding.
+            </p>
+          </div>
         </div>
       </div>
     </div>
