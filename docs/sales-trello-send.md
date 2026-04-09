@@ -7,16 +7,20 @@ En `Gestión de Ventas` ahora hay una acción para **enviar una venta a Trello**
 - Acción disponible en tarjetas móviles, tabla desktop y modal de detalle.
 - En el listado se muestra como botón visible con la etiqueta **Trello**.
 - Solicita confirmación antes de enviar.
+- El diálogo de confirmación incluye un campo **Nota para Trello** opcional.
 - Mientras se procesa, el botón queda deshabilitado y muestra spinner.
 - Al completarse, muestra toast de éxito o error.
 
 ## Endpoint consumido
 - `POST /api/sales/{id}/send-to-trello`
+- Payload opcional: `{ note?: string }`
 
 ## Datos visibles en Trello
 - Número de venta.
 - Cliente y sus datos de contacto.
+- Nota del cliente almacenada en la tabla `Customer` cuando exista.
 - Si la venta está pagada, el asunto del correo agrega `#pagado` para que la tarjeta nazca con la etiqueta `pagado`.
 - Total y estado de la venta.
 - Ítems vendidos.
 - Pagos registrados.
+- Nota adicional escrita por el usuario al momento de enviar.

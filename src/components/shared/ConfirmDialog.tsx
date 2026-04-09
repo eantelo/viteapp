@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description: ReactNode;
+  content?: ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   tone?: "default" | "destructive";
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   open,
   title,
   description,
+  content,
   confirmLabel = "Confirmar",
   cancelLabel = "Cancelar",
   tone = "destructive",
@@ -57,6 +59,7 @@ export function ConfirmDialog({
             {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {content ? <div className="pt-1">{content}</div> : null}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction

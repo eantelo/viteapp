@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -123,6 +124,7 @@ export function SalesPage() {
   const [sendingToTrelloIds, setSendingToTrelloIds] = useState<Set<string>>(
     new Set()
   );
+  const [trelloNote, setTrelloNote] = useState("");
   const [pendingSaleAction, setPendingSaleAction] =
     useState<PendingSaleAction>(null);
   const [confirmActionLoading, setConfirmActionLoading] = useState(false);
@@ -349,6 +351,7 @@ export function SalesPage() {
     if (sendingToTrelloIds.has(sale.id)) {
       return;
     }
+    setTrelloNote("");
     setPendingSaleAction({ type: "sendToTrello", sale });
   };
 
@@ -374,6 +377,7 @@ export function SalesPage() {
     try {
       switch (type) {
         case "sendToTrello": {
+          const note = trelloNote.trim() || undefined;
           setSendingToTrelloIds((prev) => {
             const next = new Set(prev);
             next.add(sale.id);
@@ -381,7 +385,7 @@ export function SalesPage() {
           });
 
           try {
-            await sendSaleToTrello(sale.id);
+            await sendSaleToTrello(sale.id, { note });
             toast.success("Venta enviada a Trello", {
               description: `Orden #${sale.saleNumber}`,
             });
@@ -425,6 +429,7 @@ export function SalesPage() {
     } finally {
       setConfirmActionLoading(false);
       setPendingSaleAction(null);
+      setTrelloNote("");
     }
   };
 
@@ -1557,7 +1562,7 @@ export function SalesPage() {
                 <span className="font-semibold text-foreground">
                   #{pendingSaleAction.sale.saleNumber}
                 </span>{" "}
-                a Trello con los datos del cliente y el detalle de la orden.
+                a Trello con los datos del cliente, el detalle de la orden y una nota opcional.
               </>
             ) : pendingSaleAction?.type === "refund" ? (
               <>
@@ -1585,6 +1590,27 @@ export function SalesPage() {
               </>
             )
           }
+          content={
+            pendingSaleAction?.type === "sendToTrello" ? (
+              <div className="space-y-2">
+                <Label htmlFor="sale-trello-note" className="text-sm font-medium text-foreground">
+                  Nota para Trello (opcional)
+                </Label>
+                <Textarea
+                  id="sale-trello-note"
+                  value={trelloNote}
+                  onChange={(event) => setTrelloNote(event.target.value)}
+                  placeholder="Agrega contexto para la tarjeta: prioridad, entrega, seguimiento, observaciones..."
+                  rows={4}
+                  maxLength={1000}
+                  disabled={confirmActionLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Esta nota se enviará junto con la venta y será visible en la tarjeta creada en Trello.
+                </p>
+              </div>
+            ) : undefined
+          }
           confirmLabel={
             pendingSaleAction?.type === "sendToTrello"
               ? "Enviar a Trello"
@@ -1605,6 +1631,7 @@ export function SalesPage() {
           onCancel={() => {
             if (!confirmActionLoading) {
               setPendingSaleAction(null);
+              setTrelloNote("");
             }
           }}
         />

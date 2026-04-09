@@ -46,6 +46,10 @@ export interface SaleDto {
   payments: PaymentDto[];
 }
 
+export interface SendSaleToTrelloRequest {
+  note?: string;
+}
+
 export interface SaleCreateDto {
   date: string;
   customerId: string | null;
@@ -147,9 +151,13 @@ export async function refundSale(id: string): Promise<void> {
   });
 }
 
-export async function sendSaleToTrello(id: string): Promise<void> {
+export async function sendSaleToTrello(
+  id: string,
+  payload: SendSaleToTrelloRequest = {},
+): Promise<void> {
   return apiClient<void>(`/api/sales/${id}/send-to-trello`, {
     method: "POST",
+    body: JSON.stringify(payload),
   });
 }
 
