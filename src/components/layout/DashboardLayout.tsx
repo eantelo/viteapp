@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Header } from "@/components/layout/Header";
@@ -5,6 +6,7 @@ import { ChatWidget } from "@/components/chat/ChatWidget";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { ChatDockProvider, useChatDock } from "@/contexts/ChatDockContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface BreadcrumbItem {
   label: string;
@@ -32,6 +34,17 @@ function DashboardLayoutContent({
   className,
 }: DashboardLayoutProps) {
   const { isChatVisibleAndDocked, chatWidth } = useChatDock();
+  const isMobile = useIsMobile();
+  const mainRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!mainRef.current) {
+      return;
+    }
+
+    mainRef.current.style.paddingRight =
+      !isMobile && isChatVisibleAndDocked ? `${chatWidth + 16}px` : "";
+  }, [chatWidth, isChatVisibleAndDocked, isMobile]);
 
   return (
     <SidebarProvider>
@@ -43,15 +56,11 @@ function DashboardLayoutContent({
         <Header breadcrumbs={breadcrumbs} />
         {/* Main content area adjusts for docked chat */}
         <main
+          ref={mainRef}
           className={cn(
             "flex-1 flex flex-col gap-4 p-4 overflow-auto transition-all duration-300",
             className
           )}
-          style={{
-            paddingRight: isChatVisibleAndDocked
-              ? `${chatWidth + 16}px`
-              : undefined,
-          }}
         >
           {children}
         </main>

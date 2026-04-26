@@ -11,14 +11,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  CaretDown,
+  CaretUp,
   ChatCircle,
-  PaperPlaneTilt,
-  SpinnerGap,
   DotsSixVertical,
   PencilSimple,
+  PaperPlaneTilt,
+  SpinnerGap,
+  X,
 } from "@phosphor-icons/react";
 import { chatService } from "@/services/chat-service";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useChatDock, type Message } from "@/contexts/ChatDockContext";
@@ -59,6 +63,8 @@ const CONVERSATION_SUGGESTIONS = [
   },
 ];
 
+type MobileChatSnap = "collapsed" | "mid" | "full";
+
 export function ChatWidget() {
   const navigate = useNavigate();
   const {
@@ -66,6 +72,7 @@ export function ChatWidget() {
     isOpen,
     chatWidth,
     setChatWidth,
+    setIsEnabled,
     minChatWidth,
     maxChatWidth,
     messages,
@@ -83,14 +90,44 @@ export function ChatWidget() {
     cancelAction,
     isExecuting,
   } = useInterfaceAgent();
+  const isMobile = useIsMobile();
 
   const [isResizing, setIsResizing] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mobileSnap, setMobileSnap] = useState<MobileChatSnap>("collapsed");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatPanelRef = useRef<HTMLDivElement>(null);
   const scrollAreaDockedRef = useRef<HTMLDivElement>(null);
   const inputDockedRef = useRef<HTMLInputElement>(null);
   const lastMessageCountRef = useRef<number>(0);
+  const mobileSheetGestureRef = useRef<{
+    startY: number;
+    startTime: number;
+  } | null>(null);
+  const isMobileExpanded = isMobile && mobileSnap !== "collapsed";
+
+  const getNextSnapUp = useCallback((current: MobileChatSnap): MobileChatSnap => {
+    if (current === "collapsed") return "mid";
+    if (current === "mid") return "full";
+    return "full";
+  }, []);
+
+  const getNextSnapDown = useCallback(
+    (current: MobileChatSnap): MobileChatSnap => {
+      if (current === "full") return "mid";
+      if (current === "mid") return "collapsed";
+      return "collapsed";
+    },
+    []
+  );
+
+  const mobileSnapClass =
+    mobileSnap === "full"
+      ? "translate-y-0"
+      : mobileSnap === "mid"
+      ? "translate-y-[calc(100%-26rem)]"
+      : "translate-y-[calc(100%-5.25rem)]";
 
   // Helper para parsear timestamp (puede ser string ISO o Date)
   const parseTimestamp = (timestamp: string | Date): Date => {
@@ -146,10 +183,34 @@ export function ChatWidget() {
     }
   }, [isLoading, isOpen, messages.length, scrollToBottom]);
 
+  useEffect(() => {
+    if (!chatPanelRef.current || isMobile) {
+      return;
+    }
+
+    chatPanelRef.current.style.width = `${chatWidth}px`;
+  }, [chatWidth, isMobile]);
+
+  useEffect(() => {
+    if (!isEnabled || !isOpen) {
+      setMobileSnap("collapsed");
+      return;
+    }
+
+    if (isMobile) {
+      setMobileSnap("mid");
+    }
+  }, [isEnabled, isMobile, isOpen]);
+
   const handleNewConversation = () => {
     resetConversation();
     setInputValue("");
   };
+
+  const handleHideAssistant = useCallback(() => {
+    setMobileSnap("collapsed");
+    setIsEnabled(false);
+  }, [setIsEnabled]);
 
   // Función auxiliar para enviar un mensaje directamente
   const sendMessageDirect = async (messageContent: string) => {
@@ -268,6 +329,48 @@ export function ChatWidget() {
     setIsResizing(true);
   }, []);
 
+  const handleMobileSheetTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const touch = event.touches[0];
+      if (!touch) {
+        return;
+      }
+
+      mobileSheetGestureRef.current = {
+        startY: touch.clientY,
+        startTime: Date.now(),
+      };
+    },
+    []
+  );
+
+  const handleMobileSheetTouchEnd = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const gesture = mobileSheetGestureRef.current;
+      const touch = event.changedTouches[0];
+
+      if (!gesture || !touch) {
+        return;
+      }
+
+      const deltaY = touch.clientY - gesture.startY;
+      const elapsed = Math.max(Date.now() - gesture.startTime, 1);
+      const speed = Math.abs(deltaY) / elapsed;
+
+      const isSwipeUp = deltaY <= -36 || (deltaY < 0 && speed >= 0.55);
+      const isSwipeDown = deltaY >= 36 || (deltaY > 0 && speed >= 0.55);
+
+      if (isSwipeUp) {
+        setMobileSnap((prev) => getNextSnapUp(prev));
+      } else if (isSwipeDown) {
+        setMobileSnap((prev) => getNextSnapDown(prev));
+      }
+
+      mobileSheetGestureRef.current = null;
+    },
+    [getNextSnapDown, getNextSnapUp]
+  );
+
   useEffect(() => {
     if (!isResizing) return;
 
@@ -301,10 +404,302 @@ export function ChatWidget() {
     return null;
   }
 
+  const chatBody = (
+    <>
+      <CardContent className="flex-1 overflow-hidden bg-muted/30 p-0 dark:bg-muted/10">
+        <ScrollArea className="h-full p-4" ref={scrollAreaDockedRef}>
+          <div className="flex flex-col gap-3">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={cn(
+                  "flex w-fit max-w-[85%] flex-col gap-1 overflow-hidden rounded-lg px-3 py-2 text-sm",
+                  msg.role === "user"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-card text-card-foreground shadow-sm dark:border-border border"
+                )}
+              >
+                {msg.role === "system" ? (
+                  <div className="prose prose-sm max-w-none dark:prose-invert [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                    {msg.chartData && (
+                      <div className="-mx-1 mb-3">
+                        <ChatChart chartData={msg.chartData} />
+                      </div>
+                    )}
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        table: ({ node, ...props }) => (
+                          <table
+                            className="my-2 w-full border-collapse text-sm"
+                            {...props}
+                          />
+                        ),
+                        thead: ({ node, ...props }) => (
+                          <thead
+                            className="bg-muted/50 dark:bg-muted/30"
+                            {...props}
+                          />
+                        ),
+                        tbody: ({ node, ...props }) => <tbody {...props} />,
+                        tr: ({ node, ...props }) => (
+                          <tr className="border-b border-border" {...props} />
+                        ),
+                        th: ({ node, ...props }) => (
+                          <th
+                            className="border-b border-border p-2 text-left font-medium"
+                            {...props}
+                          />
+                        ),
+                        td: ({ node, ...props }) => (
+                          <td className="border-b border-border p-2" {...props} />
+                        ),
+                        a: ({ node, href, children, ...props }) => {
+                          if (href && href.startsWith("/")) {
+                            return (
+                              <button
+                                onClick={() => {
+                                  const productMatch = href.match(
+                                    /^\/products\/([a-f0-9-]+)$/i
+                                  );
+                                  if (productMatch) {
+                                    const productId = productMatch[1];
+                                    navigate(href);
+                                    setTimeout(() => {
+                                      emitProductUpdated({
+                                        productId,
+                                        updateType: "updated",
+                                        message:
+                                          "Navegación desde chat - forzar recarga",
+                                      });
+                                    }, 100);
+                                  } else {
+                                    navigate(href);
+                                  }
+                                }}
+                                className="cursor-pointer border-none bg-transparent p-0 font-medium text-primary hover:underline"
+                                type="button"
+                              >
+                                {children}
+                              </button>
+                            );
+                          }
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                              {...props}
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p>{msg.content}</p>
+                )}
+                <span
+                  className={cn(
+                    "text-[10px] opacity-70",
+                    msg.role === "user"
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {parseTimestamp(msg.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            ))}
+
+            {messages.length === 1 &&
+              messages[0]?.id === "welcome" &&
+              !isLoading && (
+                <div className="mt-4 flex flex-col items-center gap-3 py-6">
+                  <p className="text-center text-sm text-muted-foreground">
+                    Selecciona una sugerencia o escribe tu pregunta
+                  </p>
+                  <div className="flex w-full max-w-[320px] flex-col gap-2">
+                    {CONVERSATION_SUGGESTIONS.map((suggestion) => (
+                      <Button
+                        key={suggestion.id}
+                        variant="outline"
+                        className="h-auto w-full justify-start px-4 py-3 text-left text-sm font-normal transition-colors hover:border-primary/50 hover:bg-primary/5"
+                        onClick={() => handleSuggestionClick(suggestion.text)}
+                      >
+                        {suggestion.text}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {isLoading && (
+              <div className="flex w-max max-w-[80%] flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm text-card-foreground shadow-sm dark:border-border">
+                <div className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]"></span>
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]"></span>
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60"></span>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} className="h-1" />
+          </div>
+        </ScrollArea>
+      </CardContent>
+      <CardFooter className="border-t bg-card p-4 dark:bg-card md:pb-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <div className="flex w-full items-center gap-2">
+          <Input
+            ref={inputDockedRef}
+            placeholder="Escribe un mensaje..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 focus-visible:ring-1"
+            disabled={isLoading}
+            autoFocus
+          />
+          <Button
+            size="icon"
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isLoading}
+            className="h-9 w-9 shrink-0"
+          >
+            {isLoading ? (
+              <SpinnerGap className="h-4 w-4 animate-spin" weight="bold" />
+            ) : (
+              <PaperPlaneTilt className="h-4 w-4" weight="bold" />
+            )}
+          </Button>
+        </div>
+      </CardFooter>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        {isMobileExpanded && (
+          <div
+            className="fixed inset-0 z-30 bg-black/20 md:hidden"
+            onClick={() => setMobileSnap("collapsed")}
+            aria-label="Contraer asistente virtual"
+          />
+        )}
+
+        <div
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-40 flex h-[calc(100dvh-4rem)] flex-col rounded-t-2xl border-t bg-background shadow-2xl transition-transform duration-300 ease-out will-change-transform md:hidden",
+            mobileSnapClass
+          )}
+        >
+          <Card className="flex h-full flex-col overflow-hidden rounded-t-2xl border-0 bg-background">
+            <div
+              className="border-b bg-primary px-4 pb-3 pt-2 text-primary-foreground"
+              onTouchStart={handleMobileSheetTouchStart}
+              onTouchEnd={handleMobileSheetTouchEnd}
+            >
+              <button
+                type="button"
+                className="mb-3 flex w-full justify-center touch-none"
+                onClick={() =>
+                  setMobileSnap((prev) =>
+                    prev === "full" ? "collapsed" : getNextSnapUp(prev)
+                  )
+                }
+                aria-label="Cambiar nivel del asistente"
+                title="Cambiar nivel del asistente"
+              >
+                <span className="h-1.5 w-12 rounded-full bg-primary-foreground/40" />
+              </button>
+
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <ChatCircle className="h-5 w-5 shrink-0" weight="bold" />
+                    <p className="truncate text-sm font-semibold">
+                      Asistente Virtual
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-primary-foreground/80">
+                    {mobileSnap === "collapsed"
+                      ? "Toca la barra para abrirlo"
+                      : "Desliza o usa los controles para expandir o contraer"}
+                  </p>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
+                  onClick={handleNewConversation}
+                  title="Nueva conversación"
+                  aria-label="Nueva conversación"
+                  disabled={isLoading}
+                >
+                  <PencilSimple className="h-4 w-4" weight="bold" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20 disabled:opacity-40"
+                  onClick={() => setMobileSnap((prev) => getNextSnapDown(prev))}
+                  title="Contraer asistente"
+                  aria-label="Contraer asistente"
+                  disabled={mobileSnap === "collapsed"}
+                >
+                  <CaretDown className="h-4 w-4" weight="bold" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20 disabled:opacity-40"
+                  onClick={() => setMobileSnap((prev) => getNextSnapUp(prev))}
+                  title="Expandir asistente"
+                  aria-label="Expandir asistente"
+                  disabled={mobileSnap === "full"}
+                >
+                  <CaretUp className="h-4 w-4" weight="bold" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-primary-foreground hover:bg-primary-foreground/20"
+                  onClick={handleHideAssistant}
+                  title="Ocultar asistente"
+                  aria-label="Ocultar asistente"
+                >
+                  <X className="h-4 w-4" weight="bold" />
+                </Button>
+              </div>
+            </div>
+            {chatBody}
+          </Card>
+        </div>
+
+        <ConfirmActionDialog
+          confirmation={pendingConfirmation}
+          onConfirm={confirmAction}
+          onCancel={cancelAction}
+          isLoading={isExecuting}
+        />
+      </>
+    );
+  }
+
   return (
     <div
+      ref={chatPanelRef}
       className="fixed top-16 right-0 z-40 h-[calc(100vh-4rem)] shadow-2xl group-has-data-[collapsible=icon]/sidebar-wrapper:top-12 group-has-data-[collapsible=icon]/sidebar-wrapper:h-[calc(100vh-3rem)]"
-      style={{ width: `${chatWidth}px` }}
     >
       {/* Resize Handle */}
       <div
@@ -333,202 +728,31 @@ export function ChatWidget() {
               Asistente Virtual
             </CardTitle>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
-            onClick={handleNewConversation}
-            title="Nueva conversación"
-            disabled={isLoading}
-          >
-            <PencilSimple className="h-4 w-4" weight="bold" />
-          </Button>
-        </CardHeader>
-        <CardContent className="flex-1 p-0 overflow-hidden bg-muted/30 dark:bg-muted/10">
-          <ScrollArea className="h-full p-4" ref={scrollAreaDockedRef}>
-            <div className="flex flex-col gap-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex w-fit max-w-[85%] flex-col gap-1 rounded-lg px-3 py-2 text-sm overflow-hidden",
-                    msg.role === "user"
-                      ? "ml-auto bg-primary text-primary-foreground"
-                      : "bg-card border shadow-sm text-card-foreground dark:border-border"
-                  )}
-                >
-                  {msg.role === "system" ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                      {/* Renderizar gráfico si existe */}
-                      {msg.chartData && (
-                        <div className="mb-3 -mx-1">
-                          <ChatChart chartData={msg.chartData} />
-                        </div>
-                      )}
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          table: ({ node, ...props }) => (
-                            <table
-                              className="w-full text-sm border-collapse my-2"
-                              {...props}
-                            />
-                          ),
-                          thead: ({ node, ...props }) => (
-                            <thead
-                              className="bg-muted/50 dark:bg-muted/30"
-                              {...props}
-                            />
-                          ),
-                          tbody: ({ node, ...props }) => <tbody {...props} />,
-                          tr: ({ node, ...props }) => (
-                            <tr className="border-b border-border" {...props} />
-                          ),
-                          th: ({ node, ...props }) => (
-                            <th
-                              className="border-b border-border p-2 text-left font-medium"
-                              {...props}
-                            />
-                          ),
-                          td: ({ node, ...props }) => (
-                            <td
-                              className="border-b border-border p-2"
-                              {...props}
-                            />
-                          ),
-                          a: ({ node, href, children, ...props }) => {
-                            // Si es un enlace interno (empieza con /), usar button que navega
-                            if (href && href.startsWith("/")) {
-                              return (
-                                <button
-                                  onClick={() => {
-                                    // Si es un enlace a productos, emitir evento de actualización
-                                    // después de la navegación para forzar recarga de datos
-                                    const productMatch = href.match(
-                                      /^\/products\/([a-f0-9-]+)$/i
-                                    );
-                                    if (productMatch) {
-                                      const productId = productMatch[1];
-                                      // Navegar primero
-                                      navigate(href);
-                                      // Emitir evento después de un pequeño delay para
-                                      // asegurar que la página se monte y reciba el evento
-                                      setTimeout(() => {
-                                        emitProductUpdated({
-                                          productId,
-                                          updateType: "updated",
-                                          message:
-                                            "Navegación desde chat - forzar recarga",
-                                        });
-                                      }, 100);
-                                    } else {
-                                      navigate(href);
-                                    }
-                                  }}
-                                  className="text-primary hover:underline font-medium cursor-pointer bg-transparent border-none p-0"
-                                  type="button"
-                                >
-                                  {children}
-                                </button>
-                              );
-                            }
-                            // Para enlaces externos, usar <a> normal con target blank
-                            return (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                                {...props}
-                              >
-                                {children}
-                              </a>
-                            );
-                          },
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p>{msg.content}</p>
-                  )}
-                  <span
-                    className={cn(
-                      "text-[10px] opacity-70",
-                      msg.role === "user"
-                        ? "text-primary-foreground/80"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {parseTimestamp(msg.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              ))}
-              {/* Sugerencias de conversación cuando es una nueva conversación (solo mensaje de bienvenida) */}
-              {messages.length === 1 &&
-                messages[0]?.id === "welcome" &&
-                !isLoading && (
-                  <div className="flex flex-col items-center gap-3 py-6 mt-4">
-                    <p className="text-sm text-muted-foreground text-center">
-                      Selecciona una sugerencia o escribe tu pregunta
-                    </p>
-                    <div className="flex flex-col gap-2 w-full max-w-[280px]">
-                      {CONVERSATION_SUGGESTIONS.map((suggestion) => (
-                        <Button
-                          key={suggestion.id}
-                          variant="outline"
-                          className="w-full justify-start text-left h-auto py-3 px-4 text-sm font-normal hover:bg-primary/5 hover:border-primary/50 transition-colors"
-                          onClick={() => handleSuggestionClick(suggestion.text)}
-                        >
-                          {suggestion.text}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              {isLoading && (
-                <div className="flex w-max max-w-[80%] flex-col gap-1 rounded-lg px-3 py-2 text-sm bg-card border dark:border-border shadow-sm text-card-foreground">
-                  <div className="flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]"></span>
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]"></span>
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/60"></span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} className="h-1" />
-            </div>
-          </ScrollArea>
-        </CardContent>
-        <CardFooter className="p-4 border-t bg-card dark:bg-card">
-          <div className="flex w-full items-center gap-2">
-            <Input
-              ref={inputDockedRef}
-              placeholder="Escribe un mensaje..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 focus-visible:ring-1"
-              disabled={isLoading}
-              autoFocus
-            />
+          <div className="flex items-center gap-1">
             <Button
+              variant="ghost"
               size="icon"
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isLoading}
-              className="h-9 w-9 shrink-0"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={handleNewConversation}
+              title="Nueva conversación"
+              aria-label="Nueva conversación"
+              disabled={isLoading}
             >
-              {isLoading ? (
-                <SpinnerGap className="h-4 w-4 animate-spin" weight="bold" />
-              ) : (
-                <PaperPlaneTilt className="h-4 w-4" weight="bold" />
-              )}
+              <PencilSimple className="h-4 w-4" weight="bold" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={handleHideAssistant}
+              title="Ocultar asistente"
+              aria-label="Ocultar asistente"
+            >
+              <X className="h-4 w-4" weight="bold" />
             </Button>
           </div>
-        </CardFooter>
+        </CardHeader>
+        {chatBody}
       </Card>
 
       {/* Confirmation dialog for destructive actions */}

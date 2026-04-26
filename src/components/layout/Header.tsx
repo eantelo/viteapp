@@ -150,8 +150,27 @@ export function Header({ breadcrumbs }: HeaderProps) {
         {/* Theme Toggle */}
         <ModeToggle />
 
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-9 w-9 md:hidden ${
+            isEnabled
+              ? "bg-primary/10 text-primary hover:bg-primary/15"
+              : "text-muted-foreground"
+          }`}
+          onClick={() => setIsEnabled(!isEnabled)}
+          aria-label={
+            isEnabled ? "Ocultar asistente virtual" : "Mostrar asistente virtual"
+          }
+          title={
+            isEnabled ? "Ocultar asistente virtual" : "Mostrar asistente virtual"
+          }
+        >
+          <Robot className="h-4 w-4" weight="bold" />
+        </Button>
+
         {/* Assistant Toggle */}
-        <div className="hidden sm:flex items-center gap-2 px-2">
+        <div className="hidden md:flex items-center gap-2 px-2">
           <Robot
             className={`h-4 w-4 ${
               isChatVisibleAndDocked ? "text-primary" : "text-muted-foreground"
