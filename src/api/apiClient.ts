@@ -11,13 +11,13 @@ export interface ApiRequestOptions extends Omit<RequestInit, "headers"> {
   skipAuth?: boolean;
 }
 
-const baseUrl =
+export const apiBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
   DEFAULT_BASE_URL;
 
 function buildHeaders(
   skipAuth: boolean | undefined,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): Record<string, string> {
   const authHeaders: Record<string, string> = {};
   if (!skipAuth) {
@@ -43,9 +43,9 @@ function buildHeaders(
 
 export async function apiClient<TResponse>(
   path: string,
-  { skipAuth, headers, body, method = "GET", ...rest }: ApiRequestOptions = {}
+  { skipAuth, headers, body, method = "GET", ...rest }: ApiRequestOptions = {},
 ): Promise<TResponse> {
-  const url = `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = `${apiBaseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
 
   const response = await fetch(url, {
     method,
@@ -69,7 +69,7 @@ export async function apiClient<TResponse>(
     console.error("Error parsing JSON response:", parseError, text);
     if (!response.ok) {
       const error: ApiError = new Error(
-        text || `HTTP ${response.status}: ${response.statusText}`
+        text || `HTTP ${response.status}: ${response.statusText}`,
       );
       error.status = response.status;
       error.details = text;
@@ -82,7 +82,7 @@ export async function apiClient<TResponse>(
   if (!response.ok) {
     const error: ApiError = new Error(
       (payload as { message?: string } | undefined)?.message ??
-        `HTTP ${response.status}: ${response.statusText}`
+        `HTTP ${response.status}: ${response.statusText}`,
     );
     error.status = response.status;
     error.details = payload;

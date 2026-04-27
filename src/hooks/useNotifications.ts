@@ -8,6 +8,11 @@ import {
   markAllNotificationsAsRead,
   deleteNotification,
 } from "@/api/notificationsApi";
+import {
+  createNotificationsConnection,
+  NOTIFICATION_CREATED_EVENT,
+} from "@/lib/notificationsRealtime";
+import type { HubConnection } from "@microsoft/signalr";
 
 const POLLING_INTERVAL = 30000; // 30 seconds
 
@@ -48,12 +53,13 @@ export function useNotifications(
     limit = 20,
   } = options;
 
-  const { isAuthenticated } = useAuth();
+  const { auth, isAuthenticated, hasPermission } = useAuth();
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const connectionRef = useRef<HubConnection | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) {
@@ -122,6 +128,79 @@ export function useNotifications(
   const refresh = useCallback(async () => {
     await fetchNotifications();
   }, [fetchNotifications]);
+
+  const handleRealtimeNotification = useCallback(
+    (notification: NotificationDto) => {
+      let shouldIncrementUnread = false;
+
+      setNotifications((prev) => {
+        const existing = prev.find((item) => item.id === notification.id);
+        shouldIncrementUnread = Boolean(
+          !notification.isRead && (!existing || existing.isRead),
+        );
+
+        const next = [
+          notification,
+          ...prev.filter((item) => item.id !== notification.id),
+        ];
+        return next.slice(0, limit);
+      });
+
+      if (shouldIncrementUnread) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    },
+    [limit],
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated || !auth?.token || !hasPermission("Dashboard.View")) {
+      if (connectionRef.current) {
+        void connectionRef.current.stop().catch((err) => {
+          console.error(
+            "Failed to stop notifications realtime connection:",
+            err,
+          );
+        });
+        connectionRef.current = null;
+      }
+      return;
+    }
+
+    const connection = createNotificationsConnection(() => auth.token);
+    connectionRef.current = connection;
+
+    connection.on(
+      NOTIFICATION_CREATED_EVENT,
+      (notification: NotificationDto) => {
+        handleRealtimeNotification(notification);
+      },
+    );
+
+    connection.onreconnected(() => fetchNotifications());
+
+    void connection.start().catch((err) => {
+      console.error("Failed to start notifications realtime connection:", err);
+    });
+
+    return () => {
+      connection.off(NOTIFICATION_CREATED_EVENT);
+
+      if (connectionRef.current === connection) {
+        connectionRef.current = null;
+      }
+
+      void connection.stop().catch((err) => {
+        console.error("Failed to stop notifications realtime connection:", err);
+      });
+    };
+  }, [
+    auth?.token,
+    fetchNotifications,
+    handleRealtimeNotification,
+    hasPermission,
+    isAuthenticated,
+  ]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {
