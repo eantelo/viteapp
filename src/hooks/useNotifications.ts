@@ -66,10 +66,12 @@ export function useNotifications(
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const connectionRef = useRef<HubConnection | null>(null);
+  const notificationsRef = useRef<NotificationDto[]>([]);
   const toastedNotificationIdsRef = useRef<Set<string>>(new Set());
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) {
+      notificationsRef.current = [];
       setNotifications([]);
       setUnreadCount(0);
       return;
@@ -89,6 +91,7 @@ export function useNotifications(
         getNotifications({ limit, signal: abortControllerRef.current.signal }),
         getNotificationSummary({ signal: abortControllerRef.current.signal }),
       ]);
+      notificationsRef.current = notifs;
       setNotifications(notifs);
       setUnreadCount(summary.unreadCount);
     } catch (err) {
@@ -178,14 +181,6 @@ export function useNotifications(
 
   const handleRealtimeProductSideEffects = useCallback(
     (notification: NotificationDto) => {
-      const isProductEntity =
-        notification.entityName?.toLowerCase() === "product" &&
-        notification.entityId;
-
-      if (!isProductEntity) {
-        return;
-      }
-
       if (notification.type === NotificationType.ProductCreated) {
         emitProductUpdated({
           productId: notification.entityId ?? undefined,
@@ -220,32 +215,33 @@ export function useNotifications(
 
   const handleRealtimeNotification = useCallback(
     (notification: NotificationDto) => {
-      let shouldIncrementUnread = false;
-      let shouldShowToast = false;
-
-      setNotifications((prev) => {
-        const existing = prev.find((item) => item.id === notification.id);
-        shouldIncrementUnread = Boolean(
-          !notification.isRead && (!existing || existing.isRead),
-        );
-        shouldShowToast = !existing;
-
-        const next = [
-          notification,
-          ...prev.filter((item) => item.id !== notification.id),
-        ];
-        return next.slice(0, limit);
-      });
-
-      if (shouldIncrementUnread) {
-        setUnreadCount((prev) => prev + 1);
-      }
+      const existing = notificationsRef.current.find(
+        (item) => item.id === notification.id,
+      );
+      const shouldIncrementUnread = Boolean(
+        !notification.isRead && (!existing || existing.isRead),
+      );
+      const shouldShowToast = !existing;
 
       if (shouldShowToast) {
         showRealtimeToast(notification);
       }
 
       handleRealtimeProductSideEffects(notification);
+
+      setNotifications((prev) => {
+        const next = [
+          notification,
+          ...prev.filter((item) => item.id !== notification.id),
+        ];
+        const sliced = next.slice(0, limit);
+        notificationsRef.current = sliced;
+        return sliced;
+      });
+
+      if (shouldIncrementUnread) {
+        setUnreadCount((prev) => prev + 1);
+      }
     },
     [handleRealtimeProductSideEffects, limit, showRealtimeToast],
   );
@@ -302,13 +298,15 @@ export function useNotifications(
   const markAsRead = useCallback(async (id: string) => {
     try {
       await markNotificationAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) =>
+      setNotifications((prev) => {
+        const next = prev.map((n) =>
           n.id === id
             ? { ...n, isRead: true, readAt: new Date().toISOString() }
             : n,
-        ),
-      );
+        );
+        notificationsRef.current = next;
+        return next;
+      });
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
@@ -319,13 +317,15 @@ export function useNotifications(
   const markAllAsRead = useCallback(async () => {
     try {
       await markAllNotificationsAsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({
+      setNotifications((prev) => {
+        const next = prev.map((n) => ({
           ...n,
           isRead: true,
           readAt: new Date().toISOString(),
-        })),
-      );
+        }));
+        notificationsRef.current = next;
+        return next;
+      });
       setUnreadCount(0);
     } catch (err) {
       console.error("Failed to mark all notifications as read:", err);
@@ -341,7 +341,9 @@ export function useNotifications(
         if (notification && !notification.isRead) {
           setUnreadCount((count) => Math.max(0, count - 1));
         }
-        return prev.filter((n) => n.id !== id);
+        const next = prev.filter((n) => n.id !== id);
+        notificationsRef.current = next;
+        return next;
       });
     } catch (err) {
       console.error("Failed to delete notification:", err);
