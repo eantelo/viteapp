@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import type { NotificationDto } from "@/api/notificationsApi";
+import {
+  NotificationPriority,
+  NotificationType,
+  type NotificationDto,
+} from "@/api/notificationsApi";
 import {
   getNotifications,
   getNotificationSummary,
@@ -12,7 +16,9 @@ import {
   createNotificationsConnection,
   NOTIFICATION_CREATED_EVENT,
 } from "@/lib/notificationsRealtime";
+import { emitProductUpdated } from "@/lib/product-events";
 import type { HubConnection } from "@microsoft/signalr";
+import { toast } from "sonner";
 
 const POLLING_INTERVAL = 30000; // 30 seconds
 
@@ -60,6 +66,7 @@ export function useNotifications(
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const connectionRef = useRef<HubConnection | null>(null);
+  const toastedNotificationIdsRef = useRef<Set<string>>(new Set());
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) {
@@ -129,15 +136,99 @@ export function useNotifications(
     await fetchNotifications();
   }, [fetchNotifications]);
 
+  const showRealtimeToast = useCallback((notification: NotificationDto) => {
+    if (toastedNotificationIdsRef.current.has(notification.id)) {
+      return;
+    }
+
+    toastedNotificationIdsRef.current.add(notification.id);
+
+    const toastOptions = {
+      id: `notification:${notification.id}`,
+      description: notification.message,
+    };
+
+    if (
+      notification.type === NotificationType.OutOfStock ||
+      notification.priority === NotificationPriority.Critical
+    ) {
+      toast.error(notification.title, toastOptions);
+      return;
+    }
+
+    if (
+      notification.type === NotificationType.LowStock ||
+      notification.type === NotificationType.HeldOrderExpiring ||
+      notification.priority === NotificationPriority.High
+    ) {
+      toast.warning(notification.title, toastOptions);
+      return;
+    }
+
+    if (
+      notification.type === NotificationType.SystemAlert ||
+      notification.type === NotificationType.SaleCancelled
+    ) {
+      toast.info(notification.title, toastOptions);
+      return;
+    }
+
+    toast.success(notification.title, toastOptions);
+  }, []);
+
+  const handleRealtimeProductSideEffects = useCallback(
+    (notification: NotificationDto) => {
+      const isProductEntity =
+        notification.entityName?.toLowerCase() === "product" &&
+        notification.entityId;
+
+      if (!isProductEntity) {
+        return;
+      }
+
+      if (notification.type === NotificationType.ProductCreated) {
+        emitProductUpdated({
+          productId: notification.entityId ?? undefined,
+          updateType: "created",
+          message: notification.message,
+        });
+        return;
+      }
+
+      if (notification.type === NotificationType.ProductUpdated) {
+        emitProductUpdated({
+          productId: notification.entityId ?? undefined,
+          updateType: "updated",
+          message: notification.message,
+        });
+        return;
+      }
+
+      if (
+        notification.type === NotificationType.LowStock ||
+        notification.type === NotificationType.OutOfStock
+      ) {
+        emitProductUpdated({
+          productId: notification.entityId ?? undefined,
+          updateType: "stock",
+          message: notification.message,
+        });
+      }
+    },
+    [],
+  );
+
   const handleRealtimeNotification = useCallback(
     (notification: NotificationDto) => {
       let shouldIncrementUnread = false;
+      let shouldShowToast = false;
 
       setNotifications((prev) => {
         const existing = prev.find((item) => item.id === notification.id);
         shouldIncrementUnread = Boolean(
           !notification.isRead && (!existing || existing.isRead),
         );
+        shouldShowToast = !existing;
 
         const next = [
           notification,
@@ -149,8 +240,14 @@ export function useNotifications(
       if (shouldIncrementUnread) {
         setUnreadCount((prev) => prev + 1);
       }
+
+      if (shouldShowToast) {
+        showRealtimeToast(notification);
+      }
+
+      handleRealtimeProductSideEffects(notification);
     },
-    [limit],
+    [handleRealtimeProductSideEffects, limit, showRealtimeToast],
   );
 
   useEffect(() => {
