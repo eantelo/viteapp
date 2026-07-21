@@ -403,7 +403,7 @@ export function PointOfSalePage() {
   };
 
   // Configurar atajos de teclado globales
-  const { allShortcuts } = useKeyboardShortcuts([
+  useKeyboardShortcuts([
     {
       key: "F1",
       label: "F1",
@@ -1198,7 +1198,6 @@ export function PointOfSalePage() {
       <KeyboardShortcutsModal
         open={isShortcutsHelpOpen}
         onOpenChange={setIsShortcutsHelpOpen}
-        shortcuts={allShortcuts}
       />
     </PageTransition>
   );

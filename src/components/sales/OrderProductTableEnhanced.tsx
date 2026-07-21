@@ -73,7 +73,7 @@ export function OrderProductTableEnhanced({
   } | null>(null);
   const [editValue, setEditValue] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
-  const [recentlyAdded, setRecentlyAdded] = useState<string | null>(null);
+  const recentlyAdded = items.at(-1)?.productId ?? null;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const getProductDetails = (productId: string) => {
@@ -87,16 +87,6 @@ export function OrderProductTableEnhanced({
       inputRef.current.select();
     }
   }, [editingCell]);
-
-  // Detectar nuevos items
-  useEffect(() => {
-    if (items.length > 0) {
-      const lastItem = items[items.length - 1];
-      setRecentlyAdded(lastItem.productId);
-      const timer = setTimeout(() => setRecentlyAdded(null), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [items.length]);
 
   const handleIncrement = (index: number, currentQuantity: number) => {
     if (readOnly || !onItemChange) return;

@@ -4,6 +4,18 @@ const AUTH_STORAGE_KEY = "salesnet.auth";
 export interface ApiError extends Error {
   status?: number;
   details?: unknown;
+  traceId?: string;
+}
+
+export interface ProblemDetails {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  instance?: string;
+  traceId?: string;
+  errors?: Record<string, string[]>;
+  message?: string;
 }
 
 export interface ApiRequestOptions extends Omit<RequestInit, "headers"> {
@@ -14,6 +26,24 @@ export interface ApiRequestOptions extends Omit<RequestInit, "headers"> {
 export const apiBaseUrl =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
   DEFAULT_BASE_URL;
+
+function getApiErrorMessage(payload: unknown, fallback: string): string {
+  if (!payload || typeof payload !== "object") {
+    return fallback;
+  }
+
+  const problem = payload as ProblemDetails;
+  if (problem.message?.trim()) return problem.message;
+  if (problem.detail?.trim()) return problem.detail;
+
+  const validationMessage = problem.errors
+    ? Object.values(problem.errors).flat().find((message) => message.trim())
+    : undefined;
+  if (validationMessage) return validationMessage;
+  if (problem.title?.trim()) return problem.title;
+
+  return fallback;
+}
 
 function buildHeaders(
   skipAuth: boolean | undefined,
@@ -80,12 +110,13 @@ export async function apiClient<TResponse>(
   }
 
   if (!response.ok) {
-    const error: ApiError = new Error(
-      (payload as { message?: string } | undefined)?.message ??
-        `HTTP ${response.status}: ${response.statusText}`,
-    );
+    const error: ApiError = new Error(getApiErrorMessage(
+      payload,
+      `HTTP ${response.status}: ${response.statusText}`,
+    ));
     error.status = response.status;
     error.details = payload;
+    error.traceId = (payload as ProblemDetails | undefined)?.traceId;
     throw error;
   }
 

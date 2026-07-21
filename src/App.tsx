@@ -1,34 +1,34 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { FEATURES } from "@/lib/features";
-import { DashboardPage } from "@/pages/DashboardPage";
 import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { ProductCatalogPage } from "@/pages/ProductCatalogPage";
-import { ProductDetailPage } from "@/pages/ProductDetailPage";
-import { ProductUpsertPage } from "@/pages/ProductUpsertPage";
-import { CategoriesPage } from "@/pages/CategoriesPage";
-import { CustomersPage } from "@/pages/CustomersPage";
-import { SuppliersPage } from "@/pages/SuppliersPage";
-import { SalesPage } from "@/pages/SalesPage";
-import { SaleUpsertPage } from "@/pages/SaleUpsertPage";
-import { PurchasesPage } from "@/pages/PurchasesPage";
-
-import { PointOfSalePage } from "@/pages/PointOfSalePage";
-import { RestaurantPosPage } from "@/pages/RestaurantPosPage";
-import { CrmPage } from "@/pages/CrmPage";
-import { UsersPage } from "@/pages/UsersPage";
-import { TenantSettingsPage } from "@/pages/settings/TenantSettingsPage";
-import { SystemPage } from "@/pages/SystemPage";
-import { WarehousesPage } from "@/pages/WarehousesPage";
-import { WarehouseDetailPage } from "@/pages/WarehouseDetailPage";
-import { WarehouseTransfersPage } from "@/pages/WarehouseTransfersPage";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
+
+const DashboardPage = lazy(() => import("@/pages/DashboardPage").then((module) => ({ default: module.DashboardPage })));
+const ProductCatalogPage = lazy(() => import("@/pages/ProductCatalogPage").then((module) => ({ default: module.ProductCatalogPage })));
+const ProductDetailPage = lazy(() => import("@/pages/ProductDetailPage").then((module) => ({ default: module.ProductDetailPage })));
+const ProductUpsertPage = lazy(() => import("@/pages/ProductUpsertPage").then((module) => ({ default: module.ProductUpsertPage })));
+const CategoriesPage = lazy(() => import("@/pages/CategoriesPage").then((module) => ({ default: module.CategoriesPage })));
+const CustomersPage = lazy(() => import("@/pages/CustomersPage").then((module) => ({ default: module.CustomersPage })));
+const SuppliersPage = lazy(() => import("@/pages/SuppliersPage").then((module) => ({ default: module.SuppliersPage })));
+const SalesPage = lazy(() => import("@/pages/SalesPage").then((module) => ({ default: module.SalesPage })));
+const SaleUpsertPage = lazy(() => import("@/pages/SaleUpsertPage").then((module) => ({ default: module.SaleUpsertPage })));
+const PurchasesPage = lazy(() => import("@/pages/PurchasesPage").then((module) => ({ default: module.PurchasesPage })));
+const PointOfSalePage = lazy(() => import("@/pages/PointOfSalePage").then((module) => ({ default: module.PointOfSalePage })));
+const RestaurantPosPage = lazy(() => import("@/pages/RestaurantPosPage").then((module) => ({ default: module.RestaurantPosPage })));
+const CrmPage = lazy(() => import("@/pages/CrmPage").then((module) => ({ default: module.CrmPage })));
+const UsersPage = lazy(() => import("@/pages/UsersPage").then((module) => ({ default: module.UsersPage })));
+const TenantSettingsPage = lazy(() => import("@/pages/settings/TenantSettingsPage").then((module) => ({ default: module.TenantSettingsPage })));
+const SystemPage = lazy(() => import("@/pages/SystemPage").then((module) => ({ default: module.SystemPage })));
+const WarehousesPage = lazy(() => import("@/pages/WarehousesPage").then((module) => ({ default: module.WarehousesPage })));
+const WarehouseDetailPage = lazy(() => import("@/pages/WarehouseDetailPage").then((module) => ({ default: module.WarehouseDetailPage })));
+const WarehouseTransfersPage = lazy(() => import("@/pages/WarehouseTransfersPage").then((module) => ({ default: module.WarehouseTransfersPage })));
 
 function FeatureRoute({ feature, children }: { feature: string; children: React.ReactNode }) {
   const { hasFeature } = useAuth();
@@ -43,6 +43,7 @@ function App() {
 
   return (
     <>
+      <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -82,6 +83,7 @@ function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       <Toaster />
     </>
   );

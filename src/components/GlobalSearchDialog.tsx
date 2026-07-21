@@ -108,9 +108,16 @@ export function GlobalSearchDialog({
   // Use controlled or internal state
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
-  const setOpen = isControlled
-    ? (value: boolean) => controlledOnOpenChange?.(value)
-    : setInternalOpen;
+  const setOpen = useCallback(
+    (value: boolean) => {
+      if (isControlled) {
+        controlledOnOpenChange?.(value);
+      } else {
+        setInternalOpen(value);
+      }
+    },
+    [controlledOnOpenChange, isControlled],
+  );
 
   const navigate = useNavigate();
   const {

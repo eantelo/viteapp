@@ -178,7 +178,7 @@ export function CustomerFormDialog({
         error: undefined,
       },
     };
-  }, [name, email, phone, address, city, taxId, note, gps, touched]);
+  }, [name, email, phone, touched]);
 
   const isFormValid = validations.name.isValid && validations.email.isValid;
 

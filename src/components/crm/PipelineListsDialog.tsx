@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowsClockwise, CaretDown, CaretUp, ListChecks } from "@phosphor-icons/react";
 import {
   Dialog,
@@ -29,7 +29,15 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   return copy;
 }
 
-export function PipelineListsDialog({
+export function PipelineListsDialog(props: PipelineListsDialogProps) {
+  if (!props.open) {
+    return null;
+  }
+
+  return <PipelineListsDialogContent {...props} />;
+}
+
+function PipelineListsDialogContent({
   open,
   configs,
   onClose,
@@ -38,13 +46,6 @@ export function PipelineListsDialog({
 }: PipelineListsDialogProps) {
   const [draft, setDraft] = useState<PipelineListConfig[]>(configs);
   const [showOnlyVisible, setShowOnlyVisible] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setDraft(configs.map((item) => ({ ...item })));
-      setShowOnlyVisible(false);
-    }
-  }, [open, configs]);
 
   const hasEmptyLabels = useMemo(
     () => draft.some((item) => item.label.trim().length === 0),

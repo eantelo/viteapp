@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -36,13 +36,7 @@ export function StockHistoryDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open && productId) {
-      loadHistory();
-    }
-  }, [open, productId, warehouseId]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -59,7 +53,13 @@ export function StockHistoryDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId, warehouseId]);
+
+  useEffect(() => {
+    if (open && productId) {
+      void loadHistory();
+    }
+  }, [loadHistory, open, productId]);
 
   const getTransactionTypeName = (type: StockTransactionType) => {
     switch (type) {

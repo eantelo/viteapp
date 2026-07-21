@@ -52,11 +52,6 @@ export function ProductSearchSelector({
     );
   }, [products, search]);
 
-  // Reset selectedIndex cuando cambia la búsqueda
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [search]);
-
   // Scroll al elemento seleccionado
   useEffect(() => {
     if (open && listRef.current) {
@@ -151,6 +146,7 @@ export function ProductSearchSelector({
               placeholder="Buscar producto por nombre o SKU..."
               value={search}
               onChange={(e) => {
+                setSelectedIndex(0);
                 setSearch(e.target.value);
                 if (!open) setOpen(true);
               }}

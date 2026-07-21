@@ -214,6 +214,8 @@ export function SalesPage() {
 
   useEffect(() => {
     loadData();
+    // Other filters are applied explicitly; this automatic refresh follows preset changes only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datePreset]);
 
   // Filtrar ventas por búsqueda

@@ -26,7 +26,7 @@ export function TenantSettingsPage() {
       setLoading(true);
       const data = await getTenantSettings();
       setSettings(data);
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "Failed to load tenant settings",
       });
@@ -43,7 +43,7 @@ export function TenantSettingsPage() {
       toast.success("Success", {
         description: "Settings updated successfully",
       });
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "Failed to update settings",
       });

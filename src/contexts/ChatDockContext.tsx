@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- The context hook is coupled to this provider. */
 import {
   createContext,
   useContext,
@@ -126,11 +127,15 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
 
   const [isDocked, setIsDocked] = useState(() => {
     const saved = localStorage.getItem("chatWidgetDocked");
-    return saved ? JSON.parse(saved) : false;
+    return saved ? JSON.parse(saved) : isEnabled;
   });
 
   // Cargar estado persistido desde sessionStorage
-  const [chatState, setChatState] = useState<ChatState>(loadChatState);
+  const [chatState, setChatState] = useState<ChatState>(() => ({
+    ...loadChatState(),
+    isOpen: isEnabled,
+    isMinimized: false,
+  }));
   const [messages, setMessagesState] = useState<Message[]>(loadMessages);
 
   const isOpen = chatState.isOpen;
@@ -228,25 +233,6 @@ export function ChatDockProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem("chatWidgetWidth", chatWidth.toString());
   }, [chatWidth]);
-
-  // Al iniciar, verificar el estado guardado del toggle y aplicarlo
-  useEffect(() => {
-    const saved = localStorage.getItem(CHAT_ENABLED_KEY);
-    if (saved !== null) {
-      const enabledState = JSON.parse(saved);
-      setIsEnabledState(enabledState);
-      // Aplicar el estado al chatState
-      setChatState((prev) => ({
-        ...prev,
-        isOpen: enabledState,
-        isMinimized: false,
-      }));
-      // Si está habilitado, forzar modo docked
-      if (enabledState) {
-        setIsDocked(true);
-      }
-    }
-  }, []); // Solo ejecutar una vez al montar
 
   return (
     <ChatDockContext.Provider

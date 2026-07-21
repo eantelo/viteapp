@@ -70,7 +70,7 @@ export function PaymentDialog({
       setAmountReceived(0);
       setPaymentReference("");
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       // Error handling is done in the parent component
     }
   };

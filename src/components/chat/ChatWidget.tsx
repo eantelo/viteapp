@@ -429,32 +429,32 @@ export function ChatWidget() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        table: ({ node, ...props }) => (
+                        table: ({ node: _node, ...props }) => (
                           <table
                             className="my-2 w-full border-collapse text-sm"
                             {...props}
                           />
                         ),
-                        thead: ({ node, ...props }) => (
+                        thead: ({ node: _node, ...props }) => (
                           <thead
                             className="bg-muted/50 dark:bg-muted/30"
                             {...props}
                           />
                         ),
-                        tbody: ({ node, ...props }) => <tbody {...props} />,
-                        tr: ({ node, ...props }) => (
+                        tbody: ({ node: _node, ...props }) => <tbody {...props} />,
+                        tr: ({ node: _node, ...props }) => (
                           <tr className="border-b border-border" {...props} />
                         ),
-                        th: ({ node, ...props }) => (
+                        th: ({ node: _node, ...props }) => (
                           <th
                             className="border-b border-border p-2 text-left font-medium"
                             {...props}
                           />
                         ),
-                        td: ({ node, ...props }) => (
+                        td: ({ node: _node, ...props }) => (
                           <td className="border-b border-border p-2" {...props} />
                         ),
-                        a: ({ node, href, children, ...props }) => {
+                        a: ({ node: _node, href, children, ...props }) => {
                           if (href && href.startsWith("/")) {
                             return (
                               <button

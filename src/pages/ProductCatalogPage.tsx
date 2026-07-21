@@ -420,7 +420,7 @@ export function ProductCatalogPage() {
     });
 
     return unsubscribe;
-  }, []);
+  }, [loadProducts]);
 
   // Aplicar filtros cuando cambien
   useEffect(() => {

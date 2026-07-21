@@ -7,25 +7,16 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { KeyboardShortcutKey } from "@/hooks/useKeyboardShortcuts";
 import { Keyboard } from "@phosphor-icons/react";
-
-interface ShortcutInfo {
-  key: KeyboardShortcutKey;
-  label: string;
-  description: string;
-}
 
 interface KeyboardShortcutsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  shortcuts: ShortcutInfo[];
 }
 
 export function KeyboardShortcutsModal({
   open,
   onOpenChange,
-  shortcuts: _shortcuts,
 }: KeyboardShortcutsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

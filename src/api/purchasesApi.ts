@@ -63,7 +63,7 @@ export interface PurchaseOrderCreateDto {
   items: PurchaseOrderItemCreateDto[];
 }
 
-export interface PurchaseOrderUpdateDto extends PurchaseOrderCreateDto {}
+export type PurchaseOrderUpdateDto = PurchaseOrderCreateDto;
 
 export interface PurchaseReceiveItemDto {
   purchaseOrderItemId: string;

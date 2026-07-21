@@ -106,11 +106,6 @@ export function ProductAutoComplete({
   // Track keyboard navigation state
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Reset selected index when results change
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [results]);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -191,7 +186,10 @@ export function ProductAutoComplete({
             ref={inputRef}
             type="text"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              setSelectedIndex(-1);
+              onChange(e.target.value);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="pl-11"

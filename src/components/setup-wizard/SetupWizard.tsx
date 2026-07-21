@@ -97,7 +97,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
 
       onComplete();
       navigate(data.createProductAfterSetup ? "/products/new" : "/dashboard");
-    } catch (error) {
+    } catch {
       toast.error("Error", {
         description: "No se pudo guardar la configuración. Intenta de nuevo.",
       });

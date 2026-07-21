@@ -21,87 +21,12 @@ export interface KeyboardShortcut {
   enabled?: boolean;
 }
 
-interface ShortcutConfig extends KeyboardShortcut {
-  code?: string;
-}
-
-const SHORTCUTS_CONFIG: Record<
-  KeyboardShortcutKey,
-  Omit<ShortcutConfig, "handler">
-> = {
-  F1: {
-    key: "F1",
-    label: "F1",
-    description: "Mostrar ayuda de atajos",
-    code: "F1",
-  },
-  F2: {
-    key: "F2",
-    label: "F2",
-    description: "Focus en búsqueda de productos",
-    code: "F2",
-  },
-  F3: {
-    key: "F3",
-    label: "F3",
-    description: "Buscar/Crear cliente",
-    code: "F3",
-  },
-  F4: {
-    key: "F4",
-    label: "F4",
-    description: "Aplicar descuento",
-    code: "F4",
-  },
-  F5: {
-    key: "F5",
-    label: "F5",
-    description: "Ver historial de ventas",
-    code: "F5",
-  },
-  F8: {
-    key: "F8",
-    label: "F8",
-    description: "Poner orden en espera",
-    code: "F8",
-  },
-  F9: {
-    key: "F9",
-    label: "F9",
-    description: "Proceder a cobrar",
-    code: "F9",
-  },
-  F12: {
-    key: "F12",
-    label: "F12",
-    description: "Abrir cajón",
-    code: "F12",
-  },
-  Escape: {
-    key: "Escape",
-    label: "ESC",
-    description: "Cancelar/Limpiar orden actual",
-    code: "Escape",
-  },
-  "Ctrl+N": {
-    key: "Ctrl+N",
-    label: "Ctrl+N",
-    description: "Nueva venta",
-  },
-  "Ctrl+H": {
-    key: "Ctrl+H",
-    label: "Ctrl+H",
-    description: "Ver historial",
-  },
-};
-
 /**
  * Hook para manejar atajos de teclado globales
  * Previene conflictos con atajos del navegador
  */
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   const shortcutsRef = useRef<Map<string, KeyboardShortcut>>(new Map());
-  const lastPressedKeyRef = useRef<string>("");
 
   // Normalizar la tecla para detectar Ctrl+N, Ctrl+H
   const getNormalizedKey = useCallback((event: KeyboardEvent): string => {
@@ -159,13 +84,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
         event.preventDefault();
       }
 
-      lastPressedKeyRef.current = normalizedKey;
       shortcut.handler();
-
-      // Limpiar la tecla presionada después de 100ms
-      setTimeout(() => {
-        lastPressedKeyRef.current = "";
-      }, 100);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -175,13 +94,4 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
     };
   }, [getNormalizedKey]);
 
-  return {
-    lastPressedKey: lastPressedKeyRef.current,
-    getShortcutConfig: (key: KeyboardShortcutKey) => SHORTCUTS_CONFIG[key],
-    allShortcuts: Object.values(SHORTCUTS_CONFIG) as Array<{
-      key: KeyboardShortcutKey;
-      label: string;
-      description: string;
-    }>,
-  };
 }

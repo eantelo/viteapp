@@ -130,13 +130,6 @@ const AccessibleActionDropdown = ({
     }
   }, [isOpen]);
 
-  // Resetear índice al abrir
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedIndex(0);
-    }
-  }, [isOpen]);
-
   if (actions.length === 0) return null;
 
   return (
@@ -145,7 +138,10 @@ const AccessibleActionDropdown = ({
         ref={buttonRef}
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setSelectedIndex(0);
+          setIsOpen(!isOpen);
+        }}
         className="opacity-0 hover:opacity-100 transition-opacity focus-visible:opacity-100"
         aria-label="Opciones del cliente"
         aria-expanded={isOpen}
