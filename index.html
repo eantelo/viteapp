@@ -1,26 +1,22 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="es" class="dark">
   <head>
     <meta charset="UTF-8" />
     <script>
-      // Aplicar tema antes de que React se cargue para evitar flash
-      (function() {
+      // Aplicar el tema antes de que React se cargue para evitar parpadeos.
+      (function () {
         const storageKey = 'vite-ui-theme';
-        const theme = localStorage.getItem(storageKey);
         const root = document.documentElement;
-        
-        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          root.classList.add('dark');
-        } else if (theme === 'light') {
-          root.classList.remove('dark');
-        } else {
-          // system theme
-          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            root.classList.add('dark');
-          } else {
-            root.classList.remove('dark');
-          }
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        let theme = null;
+
+        try {
+          theme = localStorage.getItem(storageKey);
+        } catch {
+          // El almacenamiento puede estar bloqueado por la configuración del navegador.
         }
+
+        root.classList.toggle('dark', theme === 'dark' || (theme !== 'light' && prefersDark));
       })();
     </script>
     <style>
@@ -38,14 +34,31 @@
         margin: 0;
       }
     </style>
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="SalesNet" />
+    <meta
+      name="description"
+      content="SalesNet centraliza ventas, inventario, compras, clientes y almacenes para equipos comerciales y operativos."
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_BO" />
+    <meta property="og:title" content="SalesNet | Gestión comercial e inventario" />
+    <meta
+      property="og:description"
+      content="Gestiona ventas, productos, clientes, compras y almacenes desde una sola aplicación."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237c3aed'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Arial,sans-serif' font-size='34' font-weight='700' fill='white'%3ES%3C/text%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap"
       rel="stylesheet" />
-    <title>viteapp</title>
+    <title>SalesNet | Gestión comercial e inventario</title>
   </head>
   <body>
     <div id="root"></div>

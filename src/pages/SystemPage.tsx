@@ -15,7 +15,6 @@ import {
 import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { cn } from "@/lib/utils";
 import { motion, useReducedMotion } from "framer-motion";
 import { Laptop, Shield, Key, Desktop, Database, Globe } from "@phosphor-icons/react";
 import { getSystemInfo, type SystemInfoDto } from "@/api/systemApi";
@@ -37,12 +36,6 @@ type StatCard = {
   value: ReactNode;
   helper?: string;
   icon?: ReactNode;
-};
-
-type TokenDetail = {
-  label: string;
-  value?: string | null;
-  isSecret?: boolean;
 };
 
 export function SystemPage() {
@@ -134,13 +127,6 @@ export function SystemPage() {
     },
   ];
 
-  const tokenDetails: TokenDetail[] = [
-    { label: "Tenant ID", value: auth?.tenantId },
-    { label: "User ID", value: auth?.userId },
-    { label: "Access token", value: auth?.token, isSecret: true },
-    { label: "Refresh token", value: auth?.refreshToken, isSecret: true },
-  ];
-
   const handleManualRefresh = async () => {
     setManualMessage(null);
     try {
@@ -176,12 +162,29 @@ export function SystemPage() {
 
   useEffect(() => {
     if (!selectedTenantId) return;
-    setFeaturesLoading(true);
-    setFeaturesMessage(null);
-    getTenantFeatures(selectedTenantId)
-      .then(setTenantFeatures)
-      .catch(() => setFeaturesMessage({ type: "error", text: "Error al cargar features" }))
-      .finally(() => setFeaturesLoading(false));
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setFeaturesLoading(true);
+      setFeaturesMessage(null);
+      getTenantFeatures(selectedTenantId)
+        .then((features) => {
+          if (!cancelled) setTenantFeatures(features);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setFeaturesMessage({ type: "error", text: "Error al cargar features" });
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setFeaturesLoading(false);
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedTenantId]);
 
   const handleFeatureToggle = (feature: string, enabled: boolean) => {
@@ -268,8 +271,7 @@ export function SystemPage() {
                 <Badge variant={statusVariant}>{statusLabel}</Badge>
               </div>
               <CardDescription>
-                Tokens generados por Sales.Api tras el flujo de login o
-                registro.
+                Estado de renovación de la sesión emitida por Sales.Api.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -295,33 +297,12 @@ export function SystemPage() {
                   {isRefreshing ? "Renovando..." : "Renovar ahora"}
                 </Button>
               </div>
-              <dl className="grid gap-4 md:grid-cols-2">
-                {tokenDetails.map((detail) => (
-                  <div
-                    key={detail.label}
-                    className="rounded-xl border border-border bg-muted/50 p-4"
-                  >
-                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {detail.label}
-                    </dt>
-                    <dd
-                      className={cn(
-                        "text-sm font-mono text-card-foreground",
-                        detail.isSecret &&
-                          "break-all text-xs text-muted-foreground sm:text-[13px]"
-                      )}
-                    >
-                      {detail.value ?? "—"}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
               <div className="rounded-xl border border-dashed border-primary/40 bg-primary/10 px-4 py-3 text-sm text-foreground">
                 <p className="font-semibold">
-                  Buenas prácticas para tokens
+                  Protección de la sesión
                 </p>
                 <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-                  <li>Persistir tokens en almacenamiento seguro.</li>
+                  <li>Las credenciales de sesión no se muestran en esta pantalla.</li>
                   <li>
                     Invocar <code>/api/auth/refresh-token</code> antes de la
                     expiración.
@@ -363,7 +344,7 @@ export function SystemPage() {
               <div className="rounded-lg border border-border p-3">
                 <p className="text-xs uppercase text-muted-foreground">Pro tips</p>
                 <ul className="mt-2 list-disc space-y-1 pl-4 text-xs">
-                  <li>Copia los tokens solo en entornos seguros.</li>
+                  <li>No compartas credenciales ni capturas de datos de sesión.</li>
                   <li>Monitorea fallos de refresh en tus logs.</li>
                   <li>Audita accesos sospechosos por tenant.</li>
                 </ul>

@@ -33,7 +33,7 @@ interface SearchInputProps {
  * <SearchInput
  *   value={search}
  *   onChange={setSearch}
- *   placeholder="Buscar por nombre, email..."
+ *   placeholder="Buscar por nombre o correo…"
  *   resultCount={filteredItems.length}
  *   totalCount={items.length}
  * />
@@ -41,7 +41,7 @@ interface SearchInputProps {
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Buscar...",
+  placeholder = "Buscar…",
   resultCount,
   totalCount,
   className,
@@ -62,7 +62,7 @@ export function SearchInput({
     >
       <div className="relative">
         <span className="pointer-events-none absolute inset-y-0 left-3 inline-flex items-center text-muted-foreground">
-          <MagnifyingGlass size={18} weight="bold" />
+          <MagnifyingGlass size={18} weight="bold" aria-hidden="true" />
         </span>
         <Input
           value={value}

@@ -1158,7 +1158,7 @@ export function SaleUpsertPage() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Información principal */}
-            <main className="space-y-4 min-w-0 md:col-span-2">
+            <div className="space-y-4 min-w-0 md:col-span-2">
               {/* Datos de la orden */}
               <Card>
                 <CardHeader>
@@ -1273,7 +1273,7 @@ export function SaleUpsertPage() {
                   )}
                 </CardContent>
               </Card>
-            </main>
+            </div>
 
             {/* Panel lateral - Resumen (desktop/tablet) */}
             {!isMobile && (

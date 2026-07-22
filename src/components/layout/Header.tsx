@@ -5,19 +5,17 @@ import {
   Robot,
   Check,
   CaretDown,
-  Question,
   Laptop,
   MagnifyingGlass,
   Gear,
   Trash,
-  User,
 } from "@phosphor-icons/react";
 import { useGlobalSearchShortcut } from "@/hooks/useGlobalSearchShortcut";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useChatDock } from "@/contexts/ChatDockContext";
 import { useNotifications } from "@/hooks/useNotifications";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -97,7 +95,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 shadow-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-background/90 px-2 shadow-sm backdrop-blur-md transition-[width,height] supports-[backdrop-filter]:bg-background/75 sm:h-16 sm:gap-4 sm:px-4 group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
       {/* Left Section: Sidebar Trigger + Breadcrumbs */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <SidebarTrigger className="-ml-1" />
@@ -131,13 +129,19 @@ export function Header({ breadcrumbs }: HeaderProps) {
       {/* Center Section: Search Button (hidden on mobile) */}
       <div className="hidden lg:flex items-center flex-1 max-w-md">
         <button
+          type="button"
           onClick={handleSearchClick}
-          className="relative w-full flex items-center gap-2 h-9 px-3 text-sm text-muted-foreground bg-muted/50 border border-input rounded-md hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="relative flex h-9 w-full items-center gap-2 rounded-md border border-input bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label="Abrir búsqueda global"
         >
-          <MagnifyingGlass className="h-4 w-4" weight="bold" />
-          <span className="flex-1 text-left">Buscar...</span>
+          <MagnifyingGlass
+            className="h-4 w-4"
+            weight="bold"
+            aria-hidden="true"
+          />
+          <span className="flex-1 text-left">Buscar…</span>
           <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-            <span className="text-xs">⌘</span>K
+            Ctrl K
           </kbd>
         </button>
       </div>
@@ -147,6 +151,21 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
       {/* Right Section: Notifications + Help + User Menu */}
       <div className="flex items-center gap-2 flex-1 justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 lg:hidden"
+          onClick={handleSearchClick}
+          aria-label="Abrir búsqueda global"
+          title="Buscar"
+        >
+          <MagnifyingGlass
+            className="h-4 w-4"
+            weight="bold"
+            aria-hidden="true"
+          />
+        </Button>
+
         {/* Theme Toggle */}
         <ModeToggle />
 
@@ -166,7 +185,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
             isEnabled ? "Ocultar asistente virtual" : "Mostrar asistente virtual"
           }
         >
-          <Robot className="h-4 w-4" weight="bold" />
+          <Robot
+            className="h-4 w-4"
+            weight="bold"
+            aria-hidden="true"
+          />
         </Button>
 
         {/* Assistant Toggle */}
@@ -176,27 +199,47 @@ export function Header({ breadcrumbs }: HeaderProps) {
               isChatVisibleAndDocked ? "text-primary" : "text-muted-foreground"
             }`}
             weight="bold"
+            aria-hidden="true"
           />
           <Switch
             checked={isEnabled}
             onCheckedChange={setIsEnabled}
-            aria-label="Mostrar/Ocultar Asistente Virtual"
+            aria-label="Mostrar u ocultar el asistente virtual"
           />
         </div>
 
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-9 w-9">
-              <Bell className="h-4 w-4 text-muted-foreground" weight="bold" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-9 w-9"
+              aria-label={
+                unreadCount > 0
+                  ? `Notificaciones, ${unreadCount} sin leer`
+                  : "Notificaciones"
+              }
+            >
+              <Bell
+                className="h-4 w-4 text-muted-foreground"
+                weight="bold"
+                aria-hidden="true"
+              />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                <span
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+                  aria-hidden="true"
+                >
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent
+            align="end"
+            className="w-[min(22rem,calc(100vw-1rem))]"
+          >
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notificaciones</span>
               <div className="flex items-center gap-2">
@@ -210,7 +253,11 @@ export function Header({ breadcrumbs }: HeaderProps) {
                       markAllAsRead();
                     }}
                   >
-                    <Check className="h-3 w-3 mr-1" weight="bold" />
+                    <Check
+                      className="h-3 w-3 mr-1"
+                      weight="bold"
+                      aria-hidden="true"
+                    />
                     Marcar todas
                   </Button>
                 )}
@@ -220,8 +267,15 @@ export function Header({ breadcrumbs }: HeaderProps) {
             <DropdownMenuSeparator />
             <div className="max-h-[300px] overflow-y-auto">
               {isLoadingNotifications && notifications.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
+                <div
+                  className="flex items-center justify-center gap-2 py-8"
+                  role="status"
+                  aria-live="polite"
+                >
                   <Spinner size="sm" className="text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Cargando…
+                  </span>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -231,70 +285,79 @@ export function Header({ breadcrumbs }: HeaderProps) {
                   </p>
                 </div>
               ) : (
-                notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`flex flex-col items-start gap-1 p-3 hover:bg-accent cursor-pointer ${
-                      !notification.isRead ? "bg-accent/50" : ""
-                    }`}
-                    onClick={() => {
-                      if (!notification.isRead) {
-                        markAsRead(notification.id);
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          notification.colorClass === "blue"
-                            ? "bg-blue-500"
-                            : notification.colorClass === "green"
-                            ? "bg-green-500"
-                            : notification.colorClass === "yellow"
-                            ? "bg-yellow-500"
-                            : notification.colorClass === "red"
-                            ? "bg-red-500"
-                            : notification.colorClass === "purple"
-                            ? "bg-purple-500"
-                            : "bg-gray-500"
-                        }`}
-                      />
-                      <span className="font-medium text-sm flex-1 truncate">
-                        {notification.title}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {notification.timeAgo}
-                      </span>
+                notifications.map((notification) => {
+                  const content = (
+                    <>
+                      <div className="flex w-full items-center gap-2 pr-8">
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${
+                            notification.colorClass === "blue"
+                              ? "bg-blue-500"
+                              : notification.colorClass === "green"
+                                ? "bg-green-500"
+                                : notification.colorClass === "yellow"
+                                  ? "bg-yellow-500"
+                                  : notification.colorClass === "red"
+                                    ? "bg-red-500"
+                                    : notification.colorClass === "purple"
+                                      ? "bg-purple-500"
+                                      : "bg-gray-500"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {notification.title}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {notification.timeAgo}
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 pl-4 pr-8 text-xs text-muted-foreground">
+                        {notification.message}
+                      </p>
+                    </>
+                  );
+
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`group relative flex items-start gap-1 p-3 transition-colors hover:bg-accent ${
+                        !notification.isRead ? "bg-accent/50" : ""
+                      }`}
+                    >
+                      {notification.isRead ? (
+                        <div className="min-w-0 flex-1">{content}</div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                          onClick={() => markAsRead(notification.id)}
+                          aria-label={`Marcar como leída: ${notification.title}`}
+                        >
+                          {content}
+                        </button>
+                      )}
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          remove(notification.id);
-                        }}
+                        className="absolute top-2 right-2 h-7 w-7 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                        onClick={() => remove(notification.id)}
+                        aria-label={`Eliminar notificación: ${notification.title}`}
                       >
-                        <Trash className="h-3 w-3 text-muted-foreground" weight="bold" />
+                        <Trash
+                          className="h-3.5 w-3.5 text-muted-foreground"
+                          weight="bold"
+                          aria-hidden="true"
+                        />
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground pl-4 line-clamp-2">
-                      {notification.message}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-sm text-primary">
-              Ver todas las notificaciones
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Help */}
-        <Button variant="ghost" size="icon" className="h-9 w-9">
-          <Question className="h-4 w-4 text-muted-foreground" weight="bold" />
-        </Button>
 
         {/* User Menu */}
         <DropdownMenu>
@@ -302,9 +365,9 @@ export function Header({ breadcrumbs }: HeaderProps) {
             <Button
               variant="ghost"
               className="flex items-center gap-2 h-9 px-2 hover:bg-accent hover:text-accent-foreground"
+              aria-label="Abrir menú de usuario"
             >
               <Avatar className="h-7 w-7">
-                <AvatarImage src="" alt={auth?.email || "User"} />
                 <AvatarFallback className="bg-linear-to-br from-blue-500 to-purple-600 text-white text-xs font-semibold">
                   {getUserInitials()}
                 </AvatarFallback>
@@ -338,10 +401,6 @@ export function Header({ breadcrumbs }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" weight="bold" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center">
                   <Gear className="mr-2 h-4 w-4" weight="bold" />
@@ -365,7 +424,7 @@ export function Header({ breadcrumbs }: HeaderProps) {
                 <Spinner size="sm" className="mr-2 text-current" />
               )}
               <span>
-                {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+                {isLoggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
               </span>
             </DropdownMenuItem>
           </DropdownMenuContent>

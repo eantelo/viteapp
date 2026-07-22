@@ -47,36 +47,38 @@ export function PageHeader({
   return (
     <motion.header
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-4 border-b border-border/60 pb-4 sm:flex-row sm:items-end sm:justify-between lg:pb-5",
         className
       )}
       variants={staggerContainer}
       {...motionProps}
     >
-      <motion.div className="flex items-center gap-3" variants={staggerItem}>
+      <motion.div className="flex min-w-0 items-start gap-3" variants={staggerItem}>
         {Icon && (
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-primary shadow-sm">
-            <Icon size={20} weight="duotone" />
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
+            <Icon size={20} weight="duotone" aria-hidden="true" />
           </span>
         )}
-        <div className="space-y-0.5">
+        <div className="min-w-0 space-y-1">
           {sectionLabel && (
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               {sectionLabel}
             </p>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              {description}
+            </p>
           )}
         </div>
       </motion.div>
 
       {actions && (
         <motion.div
-          className="flex flex-wrap items-center gap-2"
+          className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end"
           variants={staggerItem}
         >
           {actions}

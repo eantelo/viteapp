@@ -52,7 +52,7 @@ function buildHeaders(
   const authHeaders: Record<string, string> = {};
   if (!skipAuth) {
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as { token?: string };
         if (parsed.token) {
@@ -66,6 +66,7 @@ function buildHeaders(
 
   return {
     "Content-Type": "application/json",
+    "X-Sales-Client": "Browser",
     ...headers,
     ...authHeaders,
   };
@@ -81,6 +82,7 @@ export async function apiClient<TResponse>(
     method,
     headers: buildHeaders(skipAuth, headers),
     body,
+    credentials: "include",
     ...rest,
   });
 
@@ -124,15 +126,18 @@ export async function apiClient<TResponse>(
 }
 
 export function persistAuthState(payload: unknown): void {
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
 }
 
 export function clearAuthState(): void {
   localStorage.removeItem(AUTH_STORAGE_KEY);
+  sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
 export function readAuthState<T>(): T | null {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
   if (!raw) {
     return null;
   }

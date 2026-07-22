@@ -281,7 +281,7 @@ export function RestaurantPosPage() {
         </aside>
 
         {/* Main Content - Products */}
-        <main className="relative flex min-h-[45vh] flex-1 flex-col bg-muted/50 md:min-h-0">
+        <div className="relative flex min-h-[45vh] flex-1 flex-col bg-muted/50 md:min-h-0">
           {/* Search Bar */}
           <div className="flex flex-col gap-3 border-b bg-card p-4 sm:flex-row">
             <div className="relative w-full sm:max-w-md">
@@ -346,7 +346,7 @@ export function RestaurantPosPage() {
               </div>
             )}
           </ScrollArea>
-        </main>
+        </div>
 
         {/* Right Panel - Order Summary */}
         <aside

@@ -46,6 +46,7 @@ export function EmptyState({
 
   return (
     <motion.div
+      role="status"
       className={cn(
         "flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-16 text-center",
         className
@@ -54,10 +55,10 @@ export function EmptyState({
       {...motionProps}
     >
       <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Icon size={24} weight="duotone" />
+        <Icon size={24} weight="duotone" aria-hidden="true" />
       </span>
       <div className="space-y-1">
-        <p className="text-sm font-medium text-foreground">{title}</p>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
         {description && (
           <p className="max-w-sm text-sm text-muted-foreground">
             {description}

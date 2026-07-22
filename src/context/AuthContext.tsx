@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setAuth]);
 
   const logout = useCallback(async () => {
-    if (!auth?.refreshToken) {
+    if (!auth) {
       clearSession();
       return;
     }
@@ -83,10 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearSession();
     }
-  }, [auth?.refreshToken, clearSession]);
+  }, [auth, clearSession]);
 
   const refreshSession = useCallback(async () => {
-    if (!auth?.refreshToken) {
+    if (!auth) {
       logout();
       return;
     }
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await authApi.refreshToken({
-        refreshToken: auth.refreshToken,
+        refreshToken: auth.refreshToken ?? "",
       });
       setAuth(response);
       setRefreshState({
@@ -121,18 +121,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await logout();
       throw apiError;
     }
-  }, [auth?.refreshToken, logout, refreshState.isRefreshing, setAuth]);
+  }, [auth, logout, refreshState.isRefreshing, setAuth]);
 
   useEffect(() => {
-    if (!auth?.token || !auth.refreshToken) {
+    if (!auth?.token) {
       return undefined;
     }
 
     if (isTokenExpired(auth.token, REFRESH_MARGIN_MS)) {
-      refreshSession()?.catch((error) => {
-        console.error("Failed to refresh session", error);
+      let cancelled = false;
+      queueMicrotask(() => {
+        if (cancelled) return;
+        refreshSession()?.catch((error) => {
+          console.error("Failed to refresh session", error);
+        });
       });
-      return undefined;
+      return () => {
+        cancelled = true;
+      };
     }
 
     const expiration = getTokenExpiration(auth.token);
@@ -154,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [auth?.token, auth?.refreshToken, refreshSession]);
+  }, [auth?.token, refreshSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

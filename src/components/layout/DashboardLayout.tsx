@@ -48,6 +48,9 @@ function DashboardLayoutContent({
 
   return (
     <SidebarProvider>
+      <a href="#contenido-principal" className="skip-link">
+        Saltar al contenido principal
+      </a>
       <AppSidebar />
       <SidebarInset
         className={cn("flex flex-col bg-background")}
@@ -57,8 +60,10 @@ function DashboardLayoutContent({
         {/* Main content area adjusts for docked chat */}
         <main
           ref={mainRef}
+          id="contenido-principal"
+          tabIndex={-1}
           className={cn(
-            "flex-1 flex flex-col gap-4 p-4 overflow-auto transition-all duration-300",
+            "flex-1 flex flex-col gap-4 overflow-auto p-4 transition-[padding-right] duration-300 motion-reduce:transition-none",
             className
           )}
         >
