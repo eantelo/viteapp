@@ -69,6 +69,7 @@ export function ProductUpsertPage() {
 
   // Estado del formulario
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Sugerencias de marca y categoría
@@ -250,6 +251,7 @@ export function ProductUpsertPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingRef.current) return;
 
     // Validaciones
     if (!name.trim()) {
@@ -289,6 +291,7 @@ export function ProductUpsertPage() {
       return;
     }
 
+    savingRef.current = true;
     setSaving(true);
     setFormError(null);
 
@@ -332,6 +335,7 @@ export function ProductUpsertPage() {
         err instanceof Error ? err.message : "Error al guardar el producto"
       );
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };
@@ -341,9 +345,9 @@ export function ProductUpsertPage() {
   };
 
   const formatPrice = (value: number) => {
-    return new Intl.NumberFormat("es-MX", {
+    return new Intl.NumberFormat("es-BO", {
       style: "currency",
-      currency: "MXN",
+      currency: "BOB",
     }).format(value);
   };
 
@@ -443,10 +447,8 @@ export function ProductUpsertPage() {
       >
         <form onSubmit={handleSubmit} className="w-full max-w-[1320px]">
           {/* Header */}
-          <div
-            className="flex items-center justify-between mb-6"
-          >
-            <div className="flex items-center gap-4">
+          <div className="mb-6 grid gap-4 sm:flex sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-start gap-2 sm:items-center sm:gap-4">
               <Button
                 type="button"
                 variant="ghost"
@@ -455,11 +457,11 @@ export function ProductUpsertPage() {
               >
                 <ArrowLeft size={20} weight="bold" />
               </Button>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-tight break-words md:text-3xl">
                   {isEditing ? "Editar Producto" : "Nuevo Producto"}
                 </h1>
-                <p className="text-muted-foreground mt-1">
+                <p className="mt-1 text-sm text-muted-foreground sm:text-base">
                   {isEditing
                     ? "Modifica los datos del producto"
                     : "Completa la información del nuevo producto"}
@@ -467,7 +469,7 @@ export function ProductUpsertPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <Button
                 type="button"
                 variant="outline"
@@ -476,11 +478,11 @@ export function ProductUpsertPage() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} aria-busy={saving}>
                 {saving ? (
                   <>
                     <SpinnerGap size={20} className="mr-2 animate-spin" />
-                    Guardando...
+                    {isEditing ? "Guardando cambios…" : "Creando producto…"}
                   </>
                 ) : (
                   <>
@@ -657,7 +659,7 @@ export function ProductUpsertPage() {
                         <Checkbox
                           id="isActive"
                           checked={isActive}
-                          onCheckedChange={(checked) =>
+                        onCheckedChange={(checked: boolean) =>
                             setIsActive(checked === true)
                           }
                         />

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { WarningCircle, Check } from "@phosphor-icons/react";
+import { WarningCircle, Check, Crosshair } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +26,7 @@ interface CustomerFormDialogProps {
   open: boolean;
   customer: CustomerDto | null;
   prefillData?: CustomerPrefillData | null;
-  onClose: (saved: boolean) => void;
+  onClose: (saved: boolean, savedCustomer?: CustomerDto) => void;
 }
 
 interface FieldValidation {
@@ -124,12 +124,23 @@ export function CustomerFormDialog({
     const emailValid =
       trimmedEmail.length === 0 ||
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
-    const phoneValid = phone.trim().length === 0 || phone.trim().length >= 10;
+    const compactPhone = phone.replace(/[\s().-]/g, "").replace(/^00591/, "+591").replace(/^591/, "+591");
+    const phoneValid =
+      phone.trim().length === 0 || /^\+591[67]\d{7}$/.test(compactPhone);
     const addressValid = true; // Optional field
     const cityValid = true; // Optional field
     const taxIdValid = true; // Optional field
     const noteValid = true; // Optional field
-    const gpsValid = true; // Optional field
+    const gpsParts = gps.split(",").map((part) => Number(part.trim()));
+    const gpsValid =
+      gps.trim().length === 0 ||
+      (gpsParts.length === 2 &&
+        Number.isFinite(gpsParts[0]) &&
+        Number.isFinite(gpsParts[1]) &&
+        gpsParts[0] >= -90 &&
+        gpsParts[0] <= 90 &&
+        gpsParts[1] >= -180 &&
+        gpsParts[1] <= 180);
 
     return {
       name: {
@@ -149,13 +160,16 @@ export function CustomerFormDialog({
         isTouched: touched.phone,
         error:
           touched.phone && !phoneValid
-            ? "El teléfono debe tener al menos 10 dígitos"
+            ? "Usa un celular boliviano con +591, por ejemplo +591 70000000"
             : undefined,
       },
       address: {
         isValid: addressValid,
         isTouched: touched.address,
-        error: undefined,
+        error:
+          touched.gps && !gpsValid
+            ? "Ingresa latitud,longitud válidas"
+            : undefined,
       },
       city: {
         isValid: cityValid,
@@ -178,9 +192,13 @@ export function CustomerFormDialog({
         error: undefined,
       },
     };
-  }, [name, email, phone, touched]);
+  }, [name, email, phone, gps, touched]);
 
-  const isFormValid = validations.name.isValid && validations.email.isValid;
+  const isFormValid =
+    validations.name.isValid &&
+    validations.email.isValid &&
+    validations.phone.isValid &&
+    validations.gps.isValid;
 
   const normalizeOptional = (value: string) => {
     const trimmed = value.trim();
@@ -189,8 +207,17 @@ export function CustomerFormDialog({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
+    setTouched((current) =>
+      Object.fromEntries(Object.keys(current).map((key) => [key, true])) as typeof current
+    );
+
+    if (!isFormValid) {
+      setError("Revisa los campos marcados antes de guardar.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const trimmedName = name.trim();
@@ -219,12 +246,12 @@ export function CustomerFormDialog({
       if (isEditing && customer) {
         const dto: CustomerUpdateDto = { ...baseDto, isActive };
         await updateCustomer(customer.id, dto);
+        onClose(true, { ...customer, ...dto });
       } else {
         const dto: CustomerCreateDto = baseDto;
-        await createCustomer(dto);
+        const createdCustomer = await createCustomer(dto);
+        onClose(true, createdCustomer);
       }
-
-      onClose(true);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -234,6 +261,23 @@ export function CustomerFormDialog({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Este navegador no permite obtener la ubicación actual.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setGps(`${coords.latitude.toFixed(6)},${coords.longitude.toFixed(6)}`);
+        setTouched((current) => ({ ...current, gps: true }));
+        setError(null);
+      },
+      () => setError("No se pudo obtener la ubicación. Revisa el permiso del navegador."),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleCancel = () => {
@@ -256,7 +300,7 @@ export function CustomerFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[760px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>
@@ -265,11 +309,11 @@ export function CustomerFormDialog({
             <DialogDescription>
               {isEditing
                 ? "Actualiza los datos del cliente."
-                : "Captura la informacion del nuevo cliente."}
+                : "Captura la información del nuevo cliente."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             {error && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
                 <WarningCircle className="size-4 shrink-0" weight="duotone" />
@@ -277,8 +321,9 @@ export function CustomerFormDialog({
               </div>
             )}
 
-            {/* Nombre */}
-            <div className="grid gap-2">
+            <fieldset className="grid gap-4 md:grid-cols-2">
+              <legend className="col-span-full mb-1 text-sm font-semibold">Información principal</legend>
+            <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="customer-name">
                 Nombre <span className="text-destructive">*</span>
               </Label>
@@ -288,7 +333,7 @@ export function CustomerFormDialog({
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   onBlur={() => handleFieldBlur("name")}
-                  placeholder="Ej: Comercializadora ABC"
+                  placeholder="Ej: María Pérez"
                   maxLength={200}
                   required
                   className={cn("pr-9", getFieldClasses(validations.name))}
@@ -304,7 +349,6 @@ export function CustomerFormDialog({
               )}
             </div>
 
-            {/* Email */}
             <div className="grid gap-2">
               <Label htmlFor="customer-email">
                 Email
@@ -331,7 +375,6 @@ export function CustomerFormDialog({
               )}
             </div>
 
-            {/* Teléfono */}
             <div className="grid gap-2">
               <Label htmlFor="customer-phone">Teléfono</Label>
               <div className="relative">
@@ -341,7 +384,7 @@ export function CustomerFormDialog({
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   onBlur={() => handleFieldBlur("phone")}
-                  placeholder="+52 55 0000 0000"
+                  placeholder="+591 70000000"
                   maxLength={30}
                   className={cn("pr-9", getFieldClasses(validations.phone))}
                 />
@@ -357,21 +400,22 @@ export function CustomerFormDialog({
                 </p>
               )}
             </div>
+            </fieldset>
 
-            {/* Dirección */}
-            <div className="grid gap-2">
+            <fieldset className="grid gap-4 md:grid-cols-2">
+              <legend className="col-span-full mb-1 text-sm font-semibold">Ubicación</legend>
+            <div className="grid gap-2 md:col-span-2">
               <Label htmlFor="customer-address">Dirección</Label>
               <Input
                 id="customer-address"
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
                 onBlur={() => handleFieldBlur("address")}
-                placeholder="Calle, numero, ciudad"
+                placeholder="Calle, número y zona"
                 maxLength={250}
               />
             </div>
 
-            {/* Ciudad */}
             <div className="grid gap-2">
               <Label htmlFor="customer-city">Ciudad</Label>
               <Input
@@ -379,25 +423,59 @@ export function CustomerFormDialog({
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
                 onBlur={() => handleFieldBlur("city")}
-                placeholder="Ej: Ciudad de México"
+                placeholder="Ej: Santa Cruz de la Sierra"
                 maxLength={120}
               />
             </div>
 
-            {/* RFC / Tax ID */}
             <div className="grid gap-2">
-              <Label htmlFor="customer-tax-id">RFC / Tax ID</Label>
+              <Label htmlFor="customer-gps">Ubicación GPS</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="customer-gps"
+                  value={gps}
+                  onChange={(event) => setGps(event.target.value)}
+                  onBlur={() => handleFieldBlur("gps")}
+                  placeholder="-17.7833,-63.1821"
+                  maxLength={120}
+                  className={getFieldClasses(validations.gps)}
+                />
+                <Button type="button" variant="outline" onClick={handleUseCurrentLocation} className="gap-2 whitespace-nowrap">
+                  <Crosshair size={16} />
+                  Usar ubicación actual
+                </Button>
+              </div>
+              {validations.gps.error && <p className="text-xs text-destructive">{validations.gps.error}</p>}
+              {gps.trim() && validations.gps.isValid && (
+                <a
+                  href={`https://www.google.com/maps?q=${encodeURIComponent(gps)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary underline-offset-4 hover:underline"
+                >
+                  Vista previa en el mapa
+                </a>
+              )}
+            </div>
+            </fieldset>
+
+            <fieldset className="grid gap-4">
+              <legend className="mb-1 text-sm font-semibold">Información fiscal</legend>
+            <div className="grid gap-2">
+              <Label htmlFor="customer-tax-id">NIT / documento tributario</Label>
               <Input
                 id="customer-tax-id"
                 value={taxId}
                 onChange={(event) => setTaxId(event.target.value)}
                 onBlur={() => handleFieldBlur("taxId")}
-                placeholder="XAXX010101000"
+                placeholder="Ej: 1020304050"
                 maxLength={30}
               />
             </div>
+            </fieldset>
 
-            {/* Nota */}
+            <fieldset className="grid gap-4">
+              <legend className="mb-1 text-sm font-semibold">Información interna</legend>
             <div className="grid gap-2">
               <Label htmlFor="customer-note">Nota</Label>
               <Textarea
@@ -407,19 +485,6 @@ export function CustomerFormDialog({
                 onBlur={() => handleFieldBlur("note")}
                 placeholder="Información adicional del cliente"
                 maxLength={1000}
-              />
-            </div>
-
-            {/* GPS */}
-            <div className="grid gap-2">
-              <Label htmlFor="customer-gps">GPS</Label>
-              <Input
-                id="customer-gps"
-                value={gps}
-                onChange={(event) => setGps(event.target.value)}
-                onBlur={() => handleFieldBlur("gps")}
-                placeholder="Ej: 19.4326,-99.1332"
-                maxLength={120}
               />
             </div>
 
@@ -438,6 +503,7 @@ export function CustomerFormDialog({
                 </Label>
               </div>
             )}
+            </fieldset>
           </div>
 
           <DialogFooter>

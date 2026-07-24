@@ -18,6 +18,9 @@ import {
   CaretDoubleLeft,
   CaretDoubleRight,
   ShoppingCart,
+  Eye,
+  ArrowsClockwise,
+  ClockCounterClockwise,
   Funnel,
   SpinnerGap,
   Package,
@@ -31,6 +34,8 @@ import {
 } from "@/api/productsApi";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { DeleteProductDialog } from "@/components/products/DeleteProductDialog";
+import { StockAdjustmentDialog } from "@/components/products/StockAdjustmentDialog";
+import { StockHistoryDialog } from "@/components/products/StockHistoryDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,7 +102,7 @@ function FilterContent({
             </div>
             <Input
               className="rounded-l-none border-l-0 bg-muted h-full focus-visible:ring-0 focus-visible:ring-offset-0"
-              placeholder="Search products..."
+              placeholder="Buscar productos..."
               value={search}
               onChange={handleSearchChange}
             />
@@ -261,15 +266,20 @@ function FilterContent({
       </div>
 
       {/* Clear Filters Button */}
+      {(search.trim() ||
+        selectedFilters.category.length > 0 ||
+        selectedFilters.brand.length > 0 ||
+        selectedFilters.status.length > 0) && (
       <div className="pt-3 border-t border-border mt-2">
         <Button
           variant="ghost"
           className="w-full text-primary hover:bg-primary/10"
           onClick={clearAllFilters}
         >
-          Limpiar Filtros
+          Limpiar filtros
         </Button>
       </div>
+      )}
     </div>
   );
 }
@@ -300,6 +310,10 @@ export function ProductCatalogPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductDto | null>(
     null
   );
+  const [stockAdjustmentProduct, setStockAdjustmentProduct] =
+    useState<ProductDto | null>(null);
+  const [stockHistoryProduct, setStockHistoryProduct] =
+    useState<ProductDto | null>(null);
   const [deletingProduct, setDeletingProduct] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -797,7 +811,7 @@ export function ProductCatalogPage() {
             }
           />
 
-          <div className="flex flex-col lg:flex-row gap-3 lg:gap-6 mt-2">
+          <div className="flex flex-col lg:flex-row gap-3 lg:gap-4 mt-2">
           {/* Mobile Filter Button + Inline Search */}
           <div className="lg:hidden sticky top-0 z-10 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 -mx-3 px-3 md:-mx-4 md:px-4 pb-3 pt-1 border-b border-border/50 flex gap-2">
             {/* Inline search bar for mobile */}
@@ -876,7 +890,7 @@ export function ProductCatalogPage() {
           </div>
 
           {/* Desktop Filters Sidebar */}
-          <aside className="hidden lg:block w-72 shrink-0">
+          <aside className="hidden lg:block w-56 shrink-0">
             <FilterContent
               search={search}
               handleSearchChange={handleSearchChange}
@@ -901,41 +915,35 @@ export function ProductCatalogPage() {
                 <div className="text-center py-12 text-destructive">{error}</div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-muted-foreground">
+                  <div className="overflow-x-hidden">
+                    <table className="w-full table-fixed text-sm text-left text-muted-foreground">
                       <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
                         <tr>
-                          <th scope="col" className="px-3 md:px-4 py-2">
+                          <th scope="col" className="w-[32%] px-3 py-2">
                             Producto
                           </th>
                           <th
                             scope="col"
-                            className="hidden sm:table-cell px-3 md:px-4 py-2"
+                            className="hidden sm:table-cell w-[16%] px-3 py-2"
                           >
                             SKU
                           </th>
-                          <th
-                            scope="col"
-                            className="hidden md:table-cell px-3 md:px-4 py-2"
-                          >
-                            Marca
-                          </th>
-                          <th scope="col" className="px-3 md:px-4 py-2">
+                          <th scope="col" className="w-[14%] px-3 py-2">
                             Precio
                           </th>
                           <th
                             scope="col"
-                            className="hidden lg:table-cell px-3 md:px-4 py-2"
+                            className="hidden lg:table-cell w-[16%] px-3 py-2"
                           >
                             Stock
                           </th>
                           <th
                             scope="col"
-                            className="hidden sm:table-cell px-3 md:px-4 py-2"
+                            className="hidden sm:table-cell w-[13%] px-3 py-2"
                           >
                             Estatus
                           </th>
-                          <th scope="col" className="px-3 md:px-4 py-2">
+                          <th scope="col" className="sticky right-0 z-10 w-14 bg-muted px-2 py-2">
                             <span className="sr-only">Acciones</span>
                           </th>
                         </tr>
@@ -944,7 +952,7 @@ export function ProductCatalogPage() {
                         {paginatedProducts.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={7}
+                              colSpan={6}
                               className="text-center py-8 text-muted-foreground"
                             >
                               No se encontraron productos
@@ -967,7 +975,7 @@ export function ProductCatalogPage() {
                                 }
                               }}
                               tabIndex={0}
-                              className={`border-b border-border hover:bg-muted/50 active:bg-muted/70 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
+                              className={`group border-b border-border hover:bg-muted/50 active:bg-muted/70 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 ${
                                 highlightedProductId === product.id
                                   ? "bg-primary/10! dark:bg-primary/20! animate-pulse ring-2 ring-primary/50"
                                   : ""
@@ -976,15 +984,20 @@ export function ProductCatalogPage() {
                             >
                               <th
                                 scope="row"
-                                className="px-3 md:px-4 py-3 md:py-2 font-medium text-foreground"
+                                className="px-3 py-3 md:py-2 font-medium text-foreground"
                               >
                                 <div>
-                                  <p className="text-sm md:text-base">
+                                  <p className="truncate text-sm md:text-base" title={product.name}>
                                     {product.name}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
                                     {product.category}
                                   </p>
+                                  {product.brand && (
+                                    <p className="truncate text-xs text-muted-foreground" title={product.brand}>
+                                      {product.brand}
+                                    </p>
+                                  )}
                                   {/* Mostrar SKU en mobile cuando la columna está oculta */}
                                   <p className="text-xs text-muted-foreground/70 sm:hidden mt-0.5">
                                     {product.sku}
@@ -1003,11 +1016,8 @@ export function ProductCatalogPage() {
                                   </span>
                                 </div>
                               </th>
-                              <td className="hidden sm:table-cell px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm">
-                                {product.sku}
-                              </td>
-                              <td className="hidden md:table-cell px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm">
-                                {product.brand}
+                              <td className="hidden sm:table-cell px-3 py-3 md:py-2 text-xs md:text-sm">
+                                <span className="block truncate" title={product.sku}>{product.sku}</span>
                               </td>
                               <td className="px-3 md:px-4 py-3 md:py-2 text-xs md:text-sm font-medium">
                                 {formatPrice(product.price)}
@@ -1021,9 +1031,11 @@ export function ProductCatalogPage() {
                                     : ""
                                 }`}
                               >
-                                {product.stock} unidades
+                                <span title="Se considera bajo stock cuando quedan 10 unidades o menos">
+                                  {product.stock} unidades
+                                </span>
                                 {product.stock <= 10 && product.stock > 0 && (
-                                  <span className="ml-1">(Bajo)</span>
+                                  <span className="ml-1 font-medium">⚠ Bajo stock: 10 unidades</span>
                                 )}
                               </td>
                               <td className="hidden sm:table-cell px-3 md:px-4 py-3 md:py-2">
@@ -1040,7 +1052,7 @@ export function ProductCatalogPage() {
                                 </span>
                               </td>
                               <td
-                                className="px-3 md:px-4 py-3 md:py-2 text-right"
+                                className="sticky right-0 z-10 bg-card px-2 py-3 text-right group-hover:bg-muted"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <DropdownMenu>
@@ -1059,6 +1071,28 @@ export function ProductCatalogPage() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewDetail(product)}
+                                      className="cursor-pointer"
+                                    >
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      Ver detalle
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setStockAdjustmentProduct(product)}
+                                      className="cursor-pointer"
+                                    >
+                                      <ArrowsClockwise className="mr-2 h-4 w-4" />
+                                      Ajustar stock
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setStockHistoryProduct(product)}
+                                      className="cursor-pointer"
+                                    >
+                                      <ClockCounterClockwise className="mr-2 h-4 w-4" />
+                                      Ver movimientos
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                       onClick={() => handleQuickSale(product)}
                                       className="cursor-pointer"
@@ -1101,28 +1135,11 @@ export function ProductCatalogPage() {
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 md:p-3 border-t border-border">
                     {/* Summary */}
                     <div className="text-xs md:text-sm font-normal text-muted-foreground">
-                      Mostrando{" "}
-                      <span className="font-semibold text-foreground">
-                        {pageIndex * pageSize + 1}
-                      </span>
-                      {" - "}
-                      <span className="font-semibold text-foreground">
-                        {Math.min(
-                          (pageIndex + 1) * pageSize,
-                          filteredProducts.length
-                        )}
-                      </span>
-                      {" de "}
                       <span className="font-semibold text-foreground">
                         {filteredProducts.length}
-                      </span>{" "}
-                      {filteredProducts.length === 1 ? "producto" : "productos"}
-                      {products.length !== filteredProducts.length && (
-                        <span className="text-muted-foreground/70">
-                          {" ("}
-                          {products.length} totales{")"}
-                        </span>
-                      )}
+                      </span>{" coincidencias · "}
+                      <span className="font-semibold text-foreground">{products.length}</span>
+                      {" productos totales"}
                     </div>
 
                     {/* Pagination Controls */}
@@ -1137,7 +1154,7 @@ export function ProductCatalogPage() {
                         </Label>
                         <Select
                           value={`${pageSize}`}
-                          onValueChange={(value) => {
+                          onValueChange={(value: string) => {
                             setPageSize(Number(value));
                             setPageIndex(0);
                           }}
@@ -1244,6 +1261,26 @@ export function ProductCatalogPage() {
           loading={deletingProduct}
           error={deleteError}
         />
+        {stockAdjustmentProduct && (
+          <StockAdjustmentDialog
+            open
+            productId={stockAdjustmentProduct.id}
+            productName={stockAdjustmentProduct.name}
+            currentStock={stockAdjustmentProduct.stock}
+            onClose={(adjusted) => {
+              setStockAdjustmentProduct(null);
+              if (adjusted) void loadProducts();
+            }}
+          />
+        )}
+        {stockHistoryProduct && (
+          <StockHistoryDialog
+            open
+            productId={stockHistoryProduct.id}
+            productName={stockHistoryProduct.name}
+            onClose={() => setStockHistoryProduct(null)}
+          />
+        )}
       </DashboardLayout>
     </PageTransition>
   );

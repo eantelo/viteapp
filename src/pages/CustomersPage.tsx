@@ -3,6 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -21,13 +29,15 @@ import {
   PencilSimple,
   Plus,
   Trash,
+  DotsThreeVertical,
+  UserMinus,
   CaretLeft,
   CaretRight,
   AddressBook,
   SpinnerGap,
 } from "@phosphor-icons/react";
 import type { CustomerDto } from "@/api/customersApi";
-import { deleteCustomer, getCustomers } from "@/api/customersApi";
+import { deleteCustomer, getCustomers, updateCustomer } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -53,7 +63,10 @@ export function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">(
+    () => (searchParams.get("status") as "active" | "inactive") ?? "all"
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<CustomerDto | null>(
     null
@@ -68,27 +81,30 @@ export function CustomersPage() {
     null
   );
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = Number(searchParams.get("page"));
+    return Number.isInteger(page) && page > 0 ? page : 1;
+  });
   const itemsPerPage = 10;
 
   const filteredCustomers = useMemo(() => {
-    if (!search.trim()) {
-      return customers;
-    }
-
     const term = search.trim().toLowerCase();
     return customers.filter((customer) => {
-      return (
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" ? customer.isActive : !customer.isActive);
+      const matchesSearch =
+        !term ||
         customer.name.toLowerCase().includes(term) ||
         (customer.email ?? "").toLowerCase().includes(term) ||
         (customer.phone ?? "").toLowerCase().includes(term) ||
         (customer.taxId ?? "").toLowerCase().includes(term) ||
         (customer.city ?? "").toLowerCase().includes(term) ||
         (customer.note ?? "").toLowerCase().includes(term) ||
-        (customer.gps ?? "").toLowerCase().includes(term)
-      );
+        (customer.gps ?? "").toLowerCase().includes(term);
+      return matchesStatus && matchesSearch;
     });
-  }, [customers, search]);
+  }, [customers, search, statusFilter]);
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
   const paginatedCustomers = useMemo(() => {
@@ -97,10 +113,14 @@ export function CustomersPage() {
     return filteredCustomers.slice(startIndex, endIndex);
   }, [filteredCustomers, currentPage]);
 
-  // Reset to first page when search changes
+  // Conservar búsqueda, estado y página en la URL para volver al mismo contexto.
   useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
+    const next = new URLSearchParams();
+    if (search.trim()) next.set("q", search);
+    if (statusFilter !== "all") next.set("status", statusFilter);
+    if (currentPage > 1) next.set("page", String(currentPage));
+    setSearchParams(next, { replace: true });
+  }, [search, statusFilter, currentPage, setSearchParams]);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -193,6 +213,42 @@ export function CustomersPage() {
     setCustomerToDelete(customer);
   };
 
+  const handleDeactivate = async (customer: CustomerDto) => {
+    try {
+      await updateCustomer(customer.id, { ...customer, isActive: false });
+      setCustomers((current) =>
+        current.map((item) =>
+          item.id === customer.id ? { ...item, isActive: false } : item
+        )
+      );
+      toast.success(`Cliente “${customer.name}” desactivado.`, {
+        duration: 8000,
+        action: {
+          label: "Deshacer",
+          onClick: () => {
+            void updateCustomer(customer.id, { ...customer, isActive: true })
+              .then(() =>
+                setCustomers((current) =>
+                  current.map((item) =>
+                    item.id === customer.id ? { ...item, isActive: true } : item
+                  )
+                )
+              )
+              .catch((undoError) =>
+                toast.error(undoError instanceof Error ? undoError.message : "No se pudo reactivar el cliente")
+              );
+          },
+        },
+      });
+    } catch (deactivateError) {
+      toast.error(
+        deactivateError instanceof Error
+          ? deactivateError.message
+          : "No se pudo desactivar el cliente"
+      );
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!customerToDelete) {
       return;
@@ -217,12 +273,21 @@ export function CustomersPage() {
     }
   };
 
-  const handleDialogClose = (saved: boolean) => {
+  const handleDialogClose = (saved: boolean, savedCustomer?: CustomerDto) => {
+    const wasEditing = editingCustomer !== null;
     setDialogOpen(false);
     setEditingCustomer(null);
     setPrefillData(null);
     if (saved) {
-      void loadCustomers();
+      void loadCustomers().then(() => {
+        if (savedCustomer) {
+          setHighlightedCustomerId(savedCustomer.id);
+          window.setTimeout(() => setHighlightedCustomerId(null), 3500);
+          toast.success(
+            `Cliente “${savedCustomer.name}” ${wasEditing ? "actualizado" : "creado"} correctamente.`
+          );
+        }
+      });
     }
   };
 
@@ -259,12 +324,38 @@ export function CustomersPage() {
 
           <SearchInput
             value={search}
-            onChange={setSearch}
-            placeholder="Nombre, email, teléfono, ciudad, RFC, nota o GPS"
+            onChange={(value) => {
+              setSearch(value);
+              setCurrentPage(1);
+            }}
+            placeholder="Buscar clientes…"
             resultCount={filteredCustomers.length}
             totalCount={customers.length}
             onKeyDown={handleSearchKeyDown}
           />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-2" role="group" aria-label="Filtrar por estado">
+              {([
+                ["all", "Todos"],
+                ["active", "Activos"],
+                ["inactive", "Inactivos"],
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === value ? "default" : "outline"}
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">Nombre, teléfono, correo, ciudad o NIT</p>
+          </div>
 
           <div className="rounded-lg border border-border bg-card">
             <div className="flex flex-col gap-4 p-4">
@@ -333,6 +424,9 @@ export function CustomersPage() {
                                 {customer.email}
                               </p>
                             )}
+                            <Badge variant={customer.isActive ? "default" : "secondary"} className="mt-2">
+                              {customer.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
                           </div>
                           {/* Touch-friendly action buttons */}
                           <div className="flex shrink-0 items-center gap-1">
@@ -346,16 +440,12 @@ export function CustomersPage() {
                             >
                               <PencilSimple size={18} weight="bold" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-11 w-11 p-0 text-destructive hover:text-destructive/90 active:scale-95"
-                              onClick={() => handleDelete(customer)}
-                              aria-label={`Eliminar ${customer.name}`}
-                              title={`Eliminar ${customer.name}`}
-                            >
-                              <Trash size={18} weight="bold" />
-                            </Button>
+                            <CustomerActions
+                              customer={customer}
+                              onEdit={handleEdit}
+                              onDeactivate={handleDeactivate}
+                              onDelete={handleDelete}
+                            />
                           </div>
                         </li>
                       ))}
@@ -369,6 +459,7 @@ export function CustomersPage() {
                           <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Email</TableHead>
                           <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Teléfono</TableHead>
                           <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Ciudad</TableHead>
+                          <TableHead className="text-xs uppercase tracking-wide text-muted-foreground">Estado</TableHead>
                           <TableHead className="text-right text-xs uppercase tracking-wide text-muted-foreground">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -394,6 +485,11 @@ export function CustomersPage() {
                             <TableCell className="text-muted-foreground">
                               {customer.city || "-"}
                             </TableCell>
+                            <TableCell>
+                              <Badge variant={customer.isActive ? "default" : "secondary"}>
+                                {customer.isActive ? "Activo" : "Inactivo"}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -406,16 +502,12 @@ export function CustomersPage() {
                                 >
                                   <PencilSimple size={16} weight="bold" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
-                                  onClick={() => handleDelete(customer)}
-                                  aria-label={`Eliminar ${customer.name}`}
-                                  title={`Eliminar ${customer.name}`}
-                                >
-                                  <Trash size={16} weight="bold" />
-                                </Button>
+                                <CustomerActions
+                                  customer={customer}
+                                  onEdit={handleEdit}
+                                  onDeactivate={handleDeactivate}
+                                  onDelete={handleDelete}
+                                />
                               </div>
                             </TableCell>
                           </TableRow>
@@ -427,10 +519,9 @@ export function CustomersPage() {
                     {totalPages > 1 && (
                       <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-3">
                         <span className="text-xs text-muted-foreground">
-                          Página{" "}
-                          <span className="font-semibold text-foreground">{currentPage}</span>{" "}
-                          de{" "}
-                          <span className="font-semibold text-foreground">{totalPages}</span>
+                          {(currentPage - 1) * itemsPerPage + 1}–
+                          {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} de{" "}
+                          {filteredCustomers.length} clientes
                         </span>
                         <div className="flex items-center gap-2">
                           <Button
@@ -445,7 +536,7 @@ export function CustomersPage() {
                             <CaretLeft size={16} weight="bold" />
                           </Button>
                           <span className="min-w-[60px] text-center text-xs text-muted-foreground">
-                            {paginatedCustomers.length} de {filteredCustomers.length}
+                            Página {currentPage} de {totalPages}
                           </span>
                           <Button
                             variant="outline"
@@ -482,7 +573,7 @@ export function CustomersPage() {
               <span className="font-semibold text-foreground">
                 {customerToDelete?.name}
               </span>
-              {" "}del sistema.
+              {" "}del sistema. Solo se permitirá si no tiene ventas, pedidos pendientes ni actividad CRM. Para conservar su historial, usa “Desactivar”.
             </>
           }
           confirmLabel="Eliminar cliente"
@@ -497,5 +588,50 @@ export function CustomersPage() {
         />
       </DashboardLayout>
     </PageTransition>
+  );
+}
+
+interface CustomerActionsProps {
+  customer: CustomerDto;
+  onEdit: (customer: CustomerDto) => void;
+  onDeactivate: (customer: CustomerDto) => void;
+  onDelete: (customer: CustomerDto) => void;
+}
+
+function CustomerActions({ customer, onEdit, onDeactivate, onDelete }: CustomerActionsProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-11 w-11 p-0 md:h-8 md:w-8"
+          aria-label={`Más acciones para ${customer.name}`}
+          title={`Más acciones para ${customer.name}`}
+        >
+          <DotsThreeVertical size={18} weight="bold" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onEdit(customer)}>
+          <PencilSimple size={16} />
+          Editar
+        </DropdownMenuItem>
+        {customer.isActive && (
+          <DropdownMenuItem onClick={() => onDeactivate(customer)}>
+            <UserMinus size={16} />
+            Desactivar
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => onDelete(customer)}
+        >
+          <Trash size={16} />
+          Eliminar definitivamente
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
