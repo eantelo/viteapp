@@ -533,9 +533,9 @@ export function PointOfSalePage() {
           { label: "Panel principal", href: "/dashboard" },
           { label: "Punto de Venta" },
         ]}
-        className={PAGE_LAYOUT_CLASS}
+        className={cn(PAGE_LAYOUT_CLASS, "min-h-0 overflow-hidden")}
       >
-        <div className="flex min-h-dvh w-full flex-col overflow-y-auto overflow-x-hidden pb-24 md:h-screen md:overflow-hidden md:pb-0">
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden pb-24 md:h-full md:overflow-hidden md:pb-0">
           <div className="flex flex-wrap items-center justify-end gap-2 md:flex-nowrap">
             {heldOrders.length > 0 && (
               <Button
@@ -758,15 +758,15 @@ export function PointOfSalePage() {
                 </div>
               </div>
 
-              <div className="flex-1 space-y-4 overflow-y-auto p-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:flex md:min-h-0 md:flex-col md:space-y-3 md:overflow-hidden md:p-3">
-                <Card className="shadow-sm md:flex md:min-h-0 md:flex-1 md:flex-col">
-                  <CardHeader className="pb-2 md:px-4 md:pt-4">
+              <div className="flex-1 space-y-4 overflow-y-auto p-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:flex md:min-h-0 md:flex-col md:space-y-2 md:overflow-hidden md:p-2">
+                <Card className="shadow-sm md:flex md:min-h-0 md:flex-1 md:flex-col md:gap-2 md:py-3">
+                  <CardHeader className="pb-2 md:px-3">
                     <CardTitle>Cliente</CardTitle>
                     <CardDescription>
                       Busca, crea o vende sin cliente identificado
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 md:flex md:min-h-0 md:flex-1 md:flex-col md:px-4 md:pb-4">
+                  <CardContent className="space-y-3 md:flex md:min-h-0 md:flex-1 md:flex-col md:px-3">
                     <div className="relative space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Buscar cliente</Label>
@@ -998,14 +998,14 @@ export function PointOfSalePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-primary/10 bg-linear-to-br from-background via-background to-primary/5 shadow-sm">
-                  <CardHeader className="pb-2 md:px-4 md:pt-4">
+                <Card className="border-primary/10 bg-linear-to-br from-background via-background to-primary/5 shadow-sm md:gap-2 md:py-3">
+                  <CardHeader className="pb-2 md:px-3">
                     <CardTitle>Resumen</CardTitle>
                     <CardDescription>
                       Totales calculados en tiempo real
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3 md:px-4 md:pb-4">
+                  <CardContent className="space-y-2 md:px-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-xl border bg-card/80 p-2.5 md:p-2.5">
                         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -1029,7 +1029,7 @@ export function PointOfSalePage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-2 text-sm">
+                    <div className="flex flex-col gap-1 text-sm">
                       <Label htmlFor="pos-discount" className="text-muted-foreground">
                         Ajuste manual
                       </Label>
@@ -1057,13 +1057,13 @@ export function PointOfSalePage() {
                         </span>
                       </div>
                     )}
-                    <Separator className="my-1" />
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5 md:px-4 md:py-3">
+                    <Separator />
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2.5">
                       <div>
                         <p className="text-sm text-muted-foreground">
                           Total a cobrar
                         </p>
-                        <p className="text-2xl font-black tracking-tight md:text-3xl">
+                        <p className="text-2xl font-black tracking-tight">
                           {formatCurrency(total)}
                         </p>
                       </div>
@@ -1074,9 +1074,9 @@ export function PointOfSalePage() {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-sm md:mt-auto">
-                  <CardContent className="space-y-3 pt-5 md:px-4 md:pb-4 md:pt-4">
-                    <div className="grid grid-cols-2 gap-3">
+                <Card className="shadow-sm md:mt-auto md:gap-2 md:py-3">
+                  <CardContent className="space-y-2 pt-5 md:px-3 md:pt-0">
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"
                         className="group relative h-10 px-3 text-sm"

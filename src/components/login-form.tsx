@@ -1,6 +1,6 @@
 import { useId, type FormEventHandler } from "react";
 import { Link } from "react-router-dom";
-import { Envelope, Eye, EyeSlash, Lock } from "@phosphor-icons/react";
+import { Envelope, Eye, EyeSlash, Fingerprint, Lock } from "@phosphor-icons/react";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,11 +19,14 @@ type LoginFormProps = {
   errorDetails?: string[];
   successMessage?: string | null;
   isLoading: boolean;
+  isPasskeyLoading: boolean;
+  isPasskeySupported: boolean;
   onSubmit: FormEventHandler<HTMLFormElement>;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onTogglePassword: () => void;
   onRememberDeviceChange: (value: boolean) => void;
+  onPasskeyLogin: () => void;
   className?: string;
 };
 
@@ -37,11 +40,14 @@ export function LoginForm({
   errorDetails,
   successMessage,
   isLoading,
+  isPasskeyLoading,
+  isPasskeySupported,
   onSubmit,
   onEmailChange,
   onPasswordChange,
   onTogglePassword,
   onRememberDeviceChange,
+  onPasskeyLogin,
   className,
 }: LoginFormProps) {
   const emailId = useId();
@@ -71,6 +77,31 @@ export function LoginForm({
           aria-atomic="true"
         />
       )}
+
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 w-full"
+        disabled={!isPasskeySupported || isLoading || isPasskeyLoading}
+        onClick={onPasskeyLogin}
+      >
+        {isPasskeyLoading ? (
+          <Spinner size="sm" className="mr-1 text-current" />
+        ) : (
+          <Fingerprint aria-hidden="true" className="mr-1 size-5" weight="duotone" />
+        )}
+        {isPasskeyLoading ? "Esperando aprobación…" : "Ingresar con passkey"}
+      </Button>
+      {!isPasskeySupported && (
+        <p className="text-center text-xs text-muted-foreground">
+          Este navegador no admite passkeys. Puedes ingresar con tu contraseña.
+        </p>
+      )}
+      <div className="flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">o con contraseña</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
 
       <form onSubmit={onSubmit} noValidate aria-busy={isLoading}>
         <div className="grid gap-5">

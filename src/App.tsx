@@ -32,6 +32,7 @@ const SystemPage = lazy(() => import("@/pages/SystemPage").then((module) => ({ d
 const WarehousesPage = lazy(() => import("@/pages/WarehousesPage").then((module) => ({ default: module.WarehousesPage })));
 const WarehouseDetailPage = lazy(() => import("@/pages/WarehouseDetailPage").then((module) => ({ default: module.WarehouseDetailPage })));
 const WarehouseTransfersPage = lazy(() => import("@/pages/WarehouseTransfersPage").then((module) => ({ default: module.WarehouseTransfersPage })));
+const AccountSecurityPage = lazy(() => import("@/pages/AccountSecurityPage").then((module) => ({ default: module.AccountSecurityPage })));
 
 interface RouteStateProps {
   authenticated?: boolean;
@@ -214,6 +215,7 @@ function App() {
           />
           <Route path="/settings" element={<TenantSettingsPage />} />
           <Route path="/system" element={<SystemPage />} />
+          <Route path="/account/security" element={<AccountSecurityPage />} />
         </Route>
         <Route path="*" element={<NotFoundRoute />} />
       </Routes>

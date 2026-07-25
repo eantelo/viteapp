@@ -10,6 +10,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { extractProblemDetails } from "@/lib/errors";
 import { validateEmail, validatePassword } from "@/lib/validation";
+import {
+  decodeRequestOptions,
+  describePasskeyError,
+  isPasskeySupported,
+  serializeCredential,
+} from "@/lib/passkeys";
+import { Button } from "@/components/ui/button";
+import { Fingerprint, ShieldCheck } from "@phosphor-icons/react";
 
 type LoginField = "email" | "password";
 
@@ -25,6 +33,8 @@ export function LoginPage() {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+  const [showPasskeyInvite, setShowPasskeyInvite] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(true);
   const [successMessage] = useState<string | null>(
@@ -64,7 +74,7 @@ export function LoginPage() {
     try {
       const response = await authApi.login(formState);
       setAuth(response);
-      navigate("/dashboard");
+      setShowPasskeyInvite(isPasskeySupported());
     } catch (error) {
       const apiError = error as ApiError;
       const { fieldErrors: serverFieldErrors, generalErrors } =
@@ -85,6 +95,59 @@ export function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  const handlePasskeyLogin = async () => {
+    setErrorMessage(null);
+    setErrorDetails([]);
+    setIsPasskeyLoading(true);
+    try {
+      const options = await authApi.beginPasskeyAuthentication();
+      const credential = await navigator.credentials.get({
+        publicKey: decodeRequestOptions(
+          options.publicKey as PublicKeyCredentialRequestOptions,
+        ),
+      });
+      if (!(credential instanceof PublicKeyCredential)) {
+        throw new Error("El navegador no devolvió una credencial válida.");
+      }
+      const response = await authApi.completePasskeyAuthentication(
+        options.ceremonyId,
+        serializeCredential(credential),
+      );
+      setAuth(response);
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMessage(describePasskeyError(error));
+    } finally {
+      setIsPasskeyLoading(false);
+    }
+  };
+
+  if (showPasskeyInvite) {
+    return (
+      <AuthLayout
+        title="Protege tu cuenta"
+        subtitle="Activa una passkey para ingresar con tu teléfono"
+      >
+        <div className="grid gap-5 text-center">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <ShieldCheck className="size-7" weight="duotone" aria-hidden="true" />
+          </div>
+          <p className="text-sm leading-6 text-muted-foreground">
+            En el próximo acceso podrás escanear un QR y aprobar con huella,
+            rostro o el desbloqueo seguro de tu teléfono.
+          </p>
+          <Button onClick={() => navigate("/account/security", { state: { autoEnroll: true } })}>
+            <Fingerprint className="size-5" weight="duotone" aria-hidden="true" />
+            Activar passkey
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            Ahora no
+          </Button>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <PageTransition>
@@ -113,11 +176,14 @@ export function LoginPage() {
           errorDetails={errorDetails}
           successMessage={successMessage}
           isLoading={isLoading}
+          isPasskeyLoading={isPasskeyLoading}
+          isPasskeySupported={isPasskeySupported()}
           onSubmit={handleSubmit}
           onEmailChange={(value) => handleChange("email", value)}
           onPasswordChange={(value) => handleChange("password", value)}
           onTogglePassword={() => setShowPassword((prev) => !prev)}
           onRememberDeviceChange={(value) => setRememberDevice(value)}
+          onPasskeyLogin={handlePasskeyLogin}
         />
       </AuthLayout>
     </PageTransition>

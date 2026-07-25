@@ -20,6 +20,19 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface PasskeyOptionsResponse {
+  ceremonyId: string;
+  publicKey: PublicKeyCredentialCreationOptions | PublicKeyCredentialRequestOptions;
+}
+
+export interface PasskeyCredentialInfo {
+  id: string;
+  relyingPartyId: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  isBackedUp: boolean;
+}
+
 export interface RegisterPayload {
   tenantCode: string;
   email: string;
@@ -97,6 +110,47 @@ async function resetPassword(
   });
 }
 
+async function beginPasskeyRegistration(): Promise<PasskeyOptionsResponse> {
+  return apiClient<PasskeyOptionsResponse>("/api/auth/passkeys/registration/options", {
+    method: "POST",
+    body: "{}",
+  });
+}
+
+async function completePasskeyRegistration(ceremonyId: string, credential: object): Promise<void> {
+  await apiClient("/api/auth/passkeys/registration/verify", {
+    method: "POST",
+    body: JSON.stringify({ ceremonyId, credential }),
+  });
+}
+
+async function beginPasskeyAuthentication(): Promise<PasskeyOptionsResponse> {
+  return apiClient<PasskeyOptionsResponse>("/api/auth/passkeys/authentication/options", {
+    method: "POST",
+    body: "{}",
+    skipAuth: true,
+  });
+}
+
+async function completePasskeyAuthentication(
+  ceremonyId: string,
+  credential: object,
+): Promise<AuthResponse> {
+  return apiClient<AuthResponse>("/api/auth/passkeys/authentication/verify", {
+    method: "POST",
+    body: JSON.stringify({ ceremonyId, credential }),
+    skipAuth: true,
+  });
+}
+
+async function listPasskeys(): Promise<PasskeyCredentialInfo[]> {
+  return apiClient<PasskeyCredentialInfo[]>("/api/auth/passkeys");
+}
+
+async function revokePasskey(credentialId: string): Promise<void> {
+  await apiClient<void>(`/api/auth/passkeys/${credentialId}`, { method: "DELETE" });
+}
+
 export const authApi = {
   login,
   register,
@@ -104,4 +158,10 @@ export const authApi = {
   revokeToken,
   forgotPassword,
   resetPassword,
+  beginPasskeyRegistration,
+  completePasskeyRegistration,
+  beginPasskeyAuthentication,
+  completePasskeyAuthentication,
+  listPasskeys,
+  revokePasskey,
 };

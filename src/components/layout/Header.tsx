@@ -8,6 +8,7 @@ import {
   Laptop,
   MagnifyingGlass,
   Gear,
+  ShieldCheck,
   Trash,
 } from "@phosphor-icons/react";
 import { useGlobalSearchShortcut } from "@/hooks/useGlobalSearchShortcut";
@@ -401,6 +402,12 @@ export function Header({ breadcrumbs }: HeaderProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link to="/account/security" className="flex items-center">
+                  <ShieldCheck className="mr-2 h-4 w-4" weight="bold" />
+                  <span>Seguridad</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center">
                   <Gear className="mr-2 h-4 w-4" weight="bold" />
