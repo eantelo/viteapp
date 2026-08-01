@@ -34,6 +34,10 @@ export interface PaymentDto {
   reference?: string;
 }
 
+export interface CreditTermsDto {
+  dueDate: string;
+}
+
 export interface SaleDto {
   id: string;
   saleNumber: number;
@@ -59,6 +63,7 @@ export interface SaleCreateDto {
     price: number;
   }>;
   payments?: PaymentCreateDto[];
+  credit?: CreditTermsDto;
 }
 
 export interface SaleUpdateDto {

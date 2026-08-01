@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import {
   AddressBook,
+  CurrencyCircleDollar,
   ArrowsLeftRight,
   CashRegister,
   CircleNotch,
@@ -55,6 +56,7 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { title: "Punto de venta", url: "/pos", icon: CashRegister },
       { title: "Historial de ventas", url: "/sales", icon: ShoppingCart },
+      { title: "Cuentas por cobrar", url: "/accounts-receivable", icon: CurrencyCircleDollar, permission: "AccountsReceivable.View" },
       { title: "POS restaurante", url: "/pos/restaurant", icon: Coffee },
     ],
   },

@@ -31,7 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/Spinner";
 import { CustomerFormDialog } from "@/components/customers/CustomerFormDialog";
-import { PaymentDialog } from "@/components/sales/PaymentDialog";
+import { PaymentDialog, type PaymentConfirmation } from "@/components/sales/PaymentDialog";
 import { HeldOrdersPanel } from "@/components/sales/HeldOrdersPanel";
 import { ProductAutoComplete } from "@/components/products/ProductAutoComplete";
 import { OrderProductTablePos } from "@/components/sales/OrderProductTablePos";
@@ -46,7 +46,6 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
 import type { CustomerDto } from "@/api/customersApi";
-import { type PaymentMethodType } from "@/api/salesApi";
 import { cn } from "@/lib/utils";
 
 type MobileSummarySnap = "collapsed" | "mid" | "full";
@@ -322,12 +321,11 @@ export function PointOfSalePage() {
     setIsPaymentDialogOpen(true);
   };
 
-  const handlePaymentConfirm = async (
-    paymentMethod: PaymentMethodType,
-    amountReceived: number,
-    reference: string
-  ) => {
-    await submitSale(paymentMethod, amountReceived, reference);
+  const handlePaymentConfirm = async (confirmation: PaymentConfirmation) => {
+    if (confirmation.creditDueDate && (!customerId || isGenericCustomer)) {
+      throw new Error("Selecciona un cliente registrado para vender a crédito.");
+    }
+    await submitSale(confirmation);
   };
 
   const handleDiscountChange = (value: string) => {

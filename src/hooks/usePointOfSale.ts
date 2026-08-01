@@ -9,8 +9,8 @@ import {
   createSale,
   PaymentMethod,
   type PaymentCreateDto,
-  type PaymentMethodType,
 } from "@/api/salesApi";
+import type { PaymentConfirmation } from "@/components/sales/PaymentDialog";
 import type { HeldOrderDto, HeldOrderItemDto } from "@/api/heldOrdersApi";
 import {
   getHeldOrders,
@@ -445,11 +445,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
   }, [customers, customerSearchTerm]);
 
   const submitSale = useCallback(
-    async (
-      paymentMethod?: PaymentMethodType,
-      amountReceived?: number,
-      paymentReference?: string,
-    ) => {
+    async (confirmation?: PaymentConfirmation) => {
       // Allow sales without a specific customer (generic customer)
       // if (customerId) {
       //   throw new Error("Selecciona un cliente antes de cobrar");
@@ -459,28 +455,32 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         throw new Error("Agrega al menos un producto a la orden");
       }
 
+      if (confirmation?.creditDueDate && !customerId) {
+        throw new Error("Selecciona un cliente registrado para vender a crédito");
+      }
+
       if (
-        paymentMethod !== undefined &&
-        paymentMethod === PaymentMethod.Cash &&
-        typeof amountReceived === "number" &&
-        amountReceived < total
+        confirmation?.paymentMethod === PaymentMethod.Cash &&
+        confirmation.amount > 0 &&
+        typeof confirmation.amountReceived === "number" &&
+        confirmation.amountReceived < confirmation.amount
       ) {
-        throw new Error("El monto recibido debe ser mayor o igual al total");
+        throw new Error("El monto recibido debe ser mayor o igual al abono");
       }
 
       setIsSubmitting(true);
       try {
         const payments: PaymentCreateDto[] =
-          paymentMethod !== undefined
+          confirmation && confirmation.amount > 0
             ? [
                 {
-                  method: paymentMethod,
-                  amount: total,
+                  method: confirmation.paymentMethod,
+                  amount: confirmation.amount,
                   amountReceived:
-                    paymentMethod === PaymentMethod.Cash
-                      ? amountReceived
+                    confirmation.paymentMethod === PaymentMethod.Cash
+                      ? confirmation.amountReceived
                       : undefined,
-                  reference: paymentReference?.trim() || undefined,
+                  reference: confirmation.reference.trim() || undefined,
                 },
               ]
             : [];
@@ -494,6 +494,9 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
             price: item.price,
           })),
           payments,
+          credit: confirmation?.creditDueDate
+            ? { dueDate: confirmation.creditDueDate }
+            : undefined,
         });
 
         clearOrder();

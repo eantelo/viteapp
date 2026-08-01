@@ -33,6 +33,7 @@ const WarehousesPage = lazy(() => import("@/pages/WarehousesPage").then((module)
 const WarehouseDetailPage = lazy(() => import("@/pages/WarehouseDetailPage").then((module) => ({ default: module.WarehouseDetailPage })));
 const WarehouseTransfersPage = lazy(() => import("@/pages/WarehouseTransfersPage").then((module) => ({ default: module.WarehouseTransfersPage })));
 const AccountSecurityPage = lazy(() => import("@/pages/AccountSecurityPage").then((module) => ({ default: module.AccountSecurityPage })));
+const AccountsReceivablePage = lazy(() => import("@/pages/AccountsReceivablePage").then((module) => ({ default: module.AccountsReceivablePage })));
 
 interface RouteStateProps {
   authenticated?: boolean;
@@ -191,6 +192,7 @@ function App() {
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/sales/new" element={<SaleUpsertPage />} />
           <Route path="/sales/:id/edit" element={<SaleUpsertPage />} />
+          <Route path="/accounts-receivable" element={<AccountsReceivablePage />} />
           <Route path="/pos" element={<PointOfSalePage />} />
           <Route path="/pos/restaurant" element={<RestaurantPosPage />} />
           <Route path="/products" element={<ProductCatalogPage />} />

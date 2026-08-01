@@ -21,8 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { PaymentDialog } from "@/components/sales/PaymentDialog";
-import { type PaymentMethodType } from "@/api/salesApi";
+import { PaymentDialog, type PaymentConfirmation } from "@/components/sales/PaymentDialog";
 
 type MobileOrderSnap = "collapsed" | "mid" | "full";
 
@@ -126,12 +125,11 @@ export function RestaurantPosPage() {
     [customers, customerId]
   );
 
-  const handlePaymentConfirm = async (
-    paymentMethod: PaymentMethodType,
-    amountReceived: number,
-    reference: string
-  ) => {
-    await submitSale(paymentMethod, amountReceived, reference);
+  const handlePaymentConfirm = async (confirmation: PaymentConfirmation) => {
+    if (confirmation.creditDueDate && !customerId) {
+      throw new Error("Selecciona un cliente registrado para vender a crédito.");
+    }
+    await submitSale(confirmation);
     setIsPaymentDialogOpen(false);
     setMobileOrderSnap("collapsed");
   };

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/Spinner";
+import { Switch } from "@/components/ui/switch";
 import { PaymentMethod, type PaymentMethodType } from "@/api/salesApi";
 import {
   Select,
@@ -27,15 +28,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+export interface PaymentConfirmation {
+  paymentMethod: PaymentMethodType;
+  amount: number;
+  amountReceived?: number;
+  reference: string;
+  creditDueDate?: string;
+}
+
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   total: number;
-  onConfirm: (
-    paymentMethod: PaymentMethodType,
-    amountReceived: number,
-    reference: string
-  ) => Promise<void>;
+  onConfirm: (confirmation: PaymentConfirmation) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -51,24 +56,44 @@ export function PaymentDialog({
   );
   const [amountReceived, setAmountReceived] = useState<number>(0);
   const [paymentReference, setPaymentReference] = useState<string>("");
+  const [isCredit, setIsCredit] = useState(false);
+  const [initialPayment, setInitialPayment] = useState<number>(0);
+  const [creditDueDate, setCreditDueDate] = useState(() => {
+    const due = new Date();
+    due.setDate(due.getDate() + 30);
+    return due.toISOString().slice(0, 10);
+  });
+
+  const amountToApply = isCredit ? initialPayment : total;
 
   const change =
     paymentMethod === PaymentMethod.Cash && amountReceived > 0
-      ? Math.max(0, Number((amountReceived - total).toFixed(2)))
+      ? Math.max(0, Number((amountReceived - amountToApply).toFixed(2)))
       : 0;
 
   const isValid =
-    paymentMethod !== PaymentMethod.Cash || amountReceived >= total;
+    isCredit
+      ? initialPayment >= 0 && initialPayment < total && !!creditDueDate &&
+        (paymentMethod !== PaymentMethod.Cash || initialPayment === 0 || amountReceived >= initialPayment)
+      : paymentMethod !== PaymentMethod.Cash || amountReceived >= total;
 
   const handleConfirm = async () => {
     if (!isValid) return;
 
     try {
-      await onConfirm(paymentMethod, amountReceived, paymentReference);
+      await onConfirm({
+        paymentMethod,
+        amount: amountToApply,
+        amountReceived: paymentMethod === PaymentMethod.Cash && amountToApply > 0 ? amountReceived : undefined,
+        reference: paymentReference,
+        creditDueDate: isCredit ? creditDueDate : undefined,
+      });
       // Reset form on success
       setPaymentMethod(PaymentMethod.Cash);
       setAmountReceived(0);
       setPaymentReference("");
+      setIsCredit(false);
+      setInitialPayment(0);
       onOpenChange(false);
     } catch {
       // Error handling is done in the parent component
@@ -81,6 +106,8 @@ export function PaymentDialog({
       setPaymentMethod(PaymentMethod.Cash);
       setAmountReceived(0);
       setPaymentReference("");
+      setIsCredit(false);
+      setInitialPayment(0);
     }
     onOpenChange(newOpen);
   };
@@ -108,6 +135,31 @@ export function PaymentDialog({
               <p className="text-sm text-muted-foreground">Total a cobrar</p>
               <p className="text-2xl font-bold">{formatCurrency(total)}</p>
             </div>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="credit-sale">Venta a crédito</Label>
+                <p className="text-xs text-muted-foreground">Registra el saldo en cuentas por cobrar.</p>
+              </div>
+              <Switch id="credit-sale" checked={isCredit} onCheckedChange={setIsCredit} />
+            </div>
+            {isCredit && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="initial-payment">Anticipo</Label>
+                  <Input id="initial-payment" type="number" min="0" max={total} step="0.01"
+                    value={initialPayment === 0 ? "" : initialPayment.toString()}
+                    onChange={(event) => setInitialPayment(event.target.value ? Number(event.target.value) : 0)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="credit-due-date">Vence el</Label>
+                  <Input id="credit-due-date" type="date" value={creditDueDate}
+                    onChange={(event) => setCreditDueDate(event.target.value)} />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Method */}
@@ -158,20 +210,20 @@ export function PaymentDialog({
           </div>
 
           {/* Amount Received (Cash only) */}
-          {paymentMethod === PaymentMethod.Cash && (
+          {paymentMethod === PaymentMethod.Cash && (!isCredit || initialPayment > 0) && (
             <div className="space-y-2">
               <Label htmlFor="amount-received">Monto recibido</Label>
               <Input
                 id="amount-received"
                 type="number"
-                min={total.toString()}
+                min={amountToApply.toString()}
                 step="0.01"
                 value={amountReceived === 0 ? "" : amountReceived.toString()}
                 onChange={(event) => {
                   const value = event.target.value;
                   setAmountReceived(value ? Number(value) : 0);
                 }}
-                placeholder={total.toString()}
+                placeholder={amountToApply.toString()}
                 className="h-9"
               />
               {amountReceived > 0 && (
@@ -186,9 +238,9 @@ export function PaymentDialog({
                   </span>
                 </div>
               )}
-              {amountReceived > 0 && amountReceived < total && (
+              {amountReceived > 0 && amountReceived < amountToApply && (
                 <p className="text-sm text-destructive">
-                  El monto recibido debe ser mayor o igual al total
+                  El monto recibido debe ser mayor o igual al abono
                 </p>
               )}
             </div>
@@ -236,6 +288,8 @@ export function PaymentDialog({
               <>
                 {paymentMethod === PaymentMethod.Cash && change > 0
                   ? `Confirmar y dar ${formatCurrency(change)}`
+                  : isCredit
+                  ? `Registrar crédito ${formatCurrency(total - initialPayment)}`
                   : `Confirmar ${formatCurrency(total)}`}
               </>
             )}
