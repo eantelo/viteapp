@@ -16,6 +16,8 @@ export interface SaleItemDto {
   productName?: string;
   quantity: number;
   price: number;
+  accountingUnitPrice?: number;
+  accountingSubtotal?: number;
 }
 
 export interface PaymentCreateDto {
@@ -23,6 +25,8 @@ export interface PaymentCreateDto {
   amount: number;
   amountReceived?: number;
   reference?: string;
+  currencyCode?: string;
+  exchangeRateId?: string | null;
 }
 
 export interface PaymentDto {
@@ -32,6 +36,10 @@ export interface PaymentDto {
   amountReceived?: number;
   change?: number;
   reference?: string;
+  currencyCode: string;
+  appliedAmount: number;
+  accountingAmount: number;
+  exchangeDifference: number;
 }
 
 export interface CreditTermsDto {
@@ -49,6 +57,11 @@ export interface SaleDto {
   items: SaleItemDto[];
   payments: PaymentDto[];
   isCreditSale: boolean;
+  currencyCode: string;
+  accountingCurrencyCode: string;
+  exchangeRateId?: string | null;
+  exchangeRateToAccounting: number;
+  accountingTotal: number;
 }
 
 export interface SendSaleToTrelloRequest {
@@ -65,6 +78,8 @@ export interface SaleCreateDto {
   }>;
   payments?: PaymentCreateDto[];
   credit?: CreditTermsDto;
+  currencyCode?: string;
+  exchangeRateId?: string | null;
 }
 
 export interface SaleUpdateDto {
@@ -180,6 +195,14 @@ export interface SalesHistoryParams {
 
 export interface SalesStatistics {
   totalSales: number;
+  accountingCurrencyCode: string;
+  displayCurrencyCode?: string | null;
+  estimatedDisplayTotal?: number | null;
+  originalCurrencyBreakdown: Array<{
+    currencyCode: string;
+    amount: number;
+    transactionCount: number;
+  }>;
   transactionCount: number;
   averageTicket: number;
   salesByHour: Array<{
@@ -218,10 +241,12 @@ export async function getSalesHistory(
 export async function getSalesStatistics(
   dateFrom?: string,
   dateTo?: string,
+  displayCurrencyCode?: string,
 ): Promise<SalesStatistics> {
   const params = new URLSearchParams();
   if (dateFrom) params.append("dateFrom", dateFrom);
   if (dateTo) params.append("dateTo", dateTo);
+  if (displayCurrencyCode) params.append("displayCurrencyCode", displayCurrencyCode);
 
   const query = params.toString() ? `?${params.toString()}` : "";
   return apiClient<SalesStatistics>(`/api/sales/statistics${query}`);

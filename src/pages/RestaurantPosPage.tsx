@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { getProducts, getCategories, type ProductDto } from "@/api/productsApi";
+import { getCurrencyQuote } from "@/api/currenciesApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { PaymentDialog, type PaymentConfirmation } from "@/components/sales/PaymentDialog";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 type MobileOrderSnap = "collapsed" | "mid" | "full";
 
@@ -29,6 +31,7 @@ export function RestaurantPosPage() {
   useDocumentTitle("Punto de Venta - Restaurante");
   const navigate = useNavigate();
   const { auth } = useAuth();
+  const { configuration, formatCurrency: formatMoney } = useCurrency();
 
   // State
   const [categories, setCategories] = useState<string[]>([]);
@@ -41,6 +44,8 @@ export function RestaurantPosPage() {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [mobileOrderSnap, setMobileOrderSnap] = useState<MobileOrderSnap>("collapsed");
   const [localSearchTerm, setLocalSearchTerm] = useState("");
+  const [saleCurrencyCode, setSaleCurrencyCode] = useState("USD");
+  const [saleQuote, setSaleQuote] = useState<{ rate: number; exchangeRateId?: string | null } | null>(null);
   const mobileSheetGestureRef = useRef<{ startY: number; startTime: number } | null>(null);
 
   // POS Hook
@@ -68,7 +73,31 @@ export function RestaurantPosPage() {
       });
     },
     includeTax: false,
+    currencyCode: saleCurrencyCode,
+    exchangeRateId: saleQuote?.exchangeRateId,
+    accountingToSaleRate: saleQuote?.rate ?? 1,
+    onHeldCurrencyRestored: setSaleCurrencyCode,
   });
+
+  useEffect(() => {
+    if (!configuration) return;
+    // Inicializa la moneda operativa cuando llega la configuración del tenant.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaleCurrencyCode((current) => current === "USD" ? configuration.defaultCurrencyCode : current);
+  }, [configuration]);
+
+  useEffect(() => {
+    if (!configuration) return;
+    let active = true;
+    void getCurrencyQuote(configuration.accountingCurrencyCode, saleCurrencyCode)
+      .then((quote) => {
+        if (active) setSaleQuote({ rate: quote.rate, exchangeRateId: quote.toExchangeRateId });
+      })
+      .catch(() => {
+        if (active) setSaleQuote(null);
+      });
+    return () => { active = false; };
+  }, [configuration, saleCurrencyCode]);
 
   // Load initial data (only once on mount)
   useEffect(() => {
@@ -134,6 +163,12 @@ export function RestaurantPosPage() {
     setMobileOrderSnap("collapsed");
   };
 
+  const handleStaleQuote = async () => {
+    if (!configuration) return;
+    const quote = await getCurrencyQuote(configuration.accountingCurrencyCode, saleCurrencyCode);
+    setSaleQuote({ rate: quote.rate, exchangeRateId: quote.toExchangeRateId });
+  };
+
   const handleHoldOrder = async () => {
     try {
       await holdOrder();
@@ -148,12 +183,7 @@ export function RestaurantPosPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(value);
-  };
+  const formatCurrency = (value: number) => formatMoney(value, saleCurrencyCode);
 
   const isMobileOrderExpanded = mobileOrderSnap !== "collapsed";
   const getNextSnapUp = (current: MobileOrderSnap): MobileOrderSnap => {
@@ -560,6 +590,22 @@ export function RestaurantPosPage() {
           </ScrollArea>
 
           <div className="p-4 bg-muted border-t space-y-4">
+            <label className="block text-sm font-medium text-foreground">
+              Moneda de venta
+              <select
+                className="mt-1 h-9 w-full rounded-md border bg-background px-3"
+                value={saleCurrencyCode}
+                onChange={(event) => setSaleCurrencyCode(event.target.value)}
+              >
+                {configuration?.enabledCurrencies
+                  .filter((currency) => currency.isEnabled)
+                  .map((currency) => (
+                    <option key={currency.currencyCode} value={currency.currencyCode}>
+                      {currency.currencyCode} · {currency.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span>
@@ -613,7 +659,9 @@ export function RestaurantPosPage() {
         open={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
         total={total}
+        saleCurrencyCode={saleCurrencyCode}
         onConfirm={handlePaymentConfirm}
+        onQuoteStale={handleStaleQuote}
         isSubmitting={isSubmitting}
       />
 

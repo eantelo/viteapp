@@ -8,12 +8,16 @@ import { toast } from "sonner";
 import { getTenantSettings, updateTenantSettings } from "@/api/tenantSettingsApi";
 import type { TenantSettings } from "@/types/TenantSettings";
 import { SpinnerGap, UploadSimple } from "@phosphor-icons/react";
+import { CurrencyAdministration } from "@/components/settings/CurrencyAdministration";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export function TenantSettingsPage() {
+  const { refreshCurrencies } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
     currencyCode: "USD",
+    accountingCurrencyCode: "USD",
     taxRate: 0,
   });
 
@@ -39,7 +43,9 @@ export function TenantSettingsPage() {
     e.preventDefault();
     try {
       setSaving(true);
-      await updateTenantSettings(settings);
+      const updated = await updateTenantSettings(settings);
+      setSettings(updated);
+      await refreshCurrencies();
       toast.success("Success", {
         description: "Settings updated successfully",
       });
@@ -143,15 +149,22 @@ export function TenantSettingsPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currencyCode">Código de Moneda</Label>
+                    <Label htmlFor="accountingCurrencyCode">Moneda contable</Label>
+                    <Input
+                      id="accountingCurrencyCode"
+                      value={settings.accountingCurrencyCode}
+                      disabled
+                      title="La moneda contable es inmutable después del onboarding"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currencyCode">Moneda operativa predeterminada</Label>
                     <Input
                       id="currencyCode"
                       value={settings.currencyCode}
-                      onChange={(e) =>
-                        setSettings({ ...settings, currencyCode: e.target.value })
-                      }
+                      onChange={(e) => setSettings({ ...settings, currencyCode: e.target.value.toUpperCase() })}
                       placeholder="USD"
-                      maxLength={3}
+                      maxLength={4}
                     />
                   </div>
                   <div className="space-y-2">
@@ -197,6 +210,8 @@ export function TenantSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <CurrencyAdministration accountingCurrencyCode={settings.accountingCurrencyCode} />
 
             {/* Contact Information Section */}
             <Card>

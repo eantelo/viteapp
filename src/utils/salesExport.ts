@@ -81,7 +81,8 @@ export function exportToExcel(
  */
 export function exportToPDF(
   sales: SaleDto[],
-  statistics?: SalesStatistics
+  statistics?: SalesStatistics,
+  accountingCurrencyCode = "USD",
 ): void {
   // Crear ventana de impresión
   const printWindow = window.open("", "_blank");
@@ -90,10 +91,10 @@ export function exportToPDF(
     return;
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currencyCode = accountingCurrencyCode) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
-      currency: "MXN",
+      currency: currencyCode,
     }).format(amount);
   };
 
@@ -235,7 +236,7 @@ export function exportToPDF(
         <td><strong>${sale.saleNumber}</strong></td>
         <td>${formatDate(sale.date)}</td>
         <td>${sale.customerName || "Sin cliente"}</td>
-        <td><strong>${formatCurrency(sale.total)}</strong></td>
+        <td><strong>${formatCurrency(sale.total, sale.currencyCode)}</strong></td>
         <td>${sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
         <td>${getStatusLabel(sale.status)}</td>
       </tr>

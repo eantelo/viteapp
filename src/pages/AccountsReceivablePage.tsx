@@ -16,6 +16,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import { PaymentMethod, type PaymentMethodType } from "@/api/salesApi";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getCurrencyQuote } from "@/api/currenciesApi";
 import {
   getAccountReceivable,
   getAccountsReceivable,
@@ -44,10 +46,6 @@ const stateVariant: Record<ReceivableState, "default" | "secondary" | "destructi
   Cancelled: "secondary",
 };
 
-const formatCurrency = (value: number) => new Intl.NumberFormat("es-BO", {
-  style: "currency", currency: "BOB", minimumFractionDigits: 2,
-}).format(value);
-
 const formatDate = (value: string) => new Intl.DateTimeFormat("es-BO", {
   dateStyle: "medium",
 }).format(new Date(value));
@@ -55,6 +53,7 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("es-BO", {
 export function AccountsReceivablePage() {
   useDocumentTitle("Cuentas por cobrar");
   const { hasPermission } = useAuth();
+  const { configuration, formatCurrency } = useCurrency();
   const canManage = hasPermission("AccountsReceivable.Manage");
   const [items, setItems] = useState<AccountReceivableListItem[]>([]);
   const [summary, setSummary] = useState<AccountsReceivableSummary | null>(null);
@@ -67,6 +66,9 @@ export function AccountsReceivablePage() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(PaymentMethod.Cash);
   const [paymentReference, setPaymentReference] = useState("");
+  const [paymentCurrency, setPaymentCurrency] = useState("USD");
+  const [paymentEquivalent, setPaymentEquivalent] = useState<number | null>(null);
+  const [paymentRateId, setPaymentRateId] = useState<string | null>(null);
   const [voidPaymentId, setVoidPaymentId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -87,17 +89,43 @@ export function AccountsReceivablePage() {
     }
   }, [search, state]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
   const openDetail = async (id: string) => {
     try {
       const detail = await getAccountReceivable(id);
       setSelected(detail);
+      setPaymentCurrency(detail.currencyCode);
       setDetailOpen(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo cargar el estado de cuenta");
     }
   };
+
+  useEffect(() => {
+    const amount = Number(paymentAmount);
+    if (!selected || !Number.isFinite(amount) || amount <= 0) {
+      // Reinicia el resultado derivado cuando la entrada deja de ser cotizable.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPaymentEquivalent(null);
+      setPaymentRateId(null);
+      return;
+    }
+    let active = true;
+    void getCurrencyQuote(paymentCurrency, selected.currencyCode, amount)
+      .then((quote) => {
+        if (!active) return;
+        setPaymentEquivalent(quote.convertedAmount ?? null);
+        setPaymentRateId(quote.fromExchangeRateId ?? null);
+      })
+      .catch(() => {
+        if (active) { setPaymentEquivalent(null); setPaymentRateId(null); }
+      });
+    return () => { active = false; };
+  }, [paymentAmount, paymentCurrency, selected]);
 
   const refreshDetail = async (id: string) => {
     const detail = await getAccountReceivable(id);
@@ -114,7 +142,8 @@ export function AccountsReceivablePage() {
     }
     setSaving(true);
     try {
-      await registerReceivablePayment(selected.id, { amount, method: paymentMethod, amountReceived: paymentMethod === PaymentMethod.Cash ? amount : undefined, reference: paymentReference || undefined });
+      if (paymentEquivalent === null) throw new Error("Conversión no disponible");
+      await registerReceivablePayment(selected.id, { amount, method: paymentMethod, amountReceived: paymentMethod === PaymentMethod.Cash ? amount : undefined, reference: paymentReference || undefined, currencyCode: paymentCurrency, exchangeRateId: paymentRateId });
       toast.success("Abono registrado");
       setPaymentOpen(false);
       setPaymentAmount("");
@@ -170,18 +199,19 @@ export function AccountsReceivablePage() {
           </CardHeader>
           <CardContent>
             {loading ? <div className="flex justify-center py-12"><Spinner /></div> : items.length === 0 ? <EmptyState icon={Bank} title="No hay cuentas por cobrar" description="Las ventas realizadas a crédito aparecerán aquí." /> : (
-              <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="border-b text-left text-muted-foreground"><tr><th className="p-3">Cliente</th><th className="p-3">Venta</th><th className="p-3">Vence</th><th className="p-3 text-right">Saldo</th><th className="p-3">Estado</th><th className="p-3" /></tr></thead><tbody>{items.map((item) => <tr key={item.id} className="border-b last:border-0"><td className="p-3 font-medium">{item.customerName}</td><td className="p-3">#{item.saleNumber}</td><td className="p-3">{formatDate(item.dueDate)}</td><td className="p-3 text-right font-semibold">{formatCurrency(item.outstandingAmount)}</td><td className="p-3"><Badge variant={stateVariant[item.state]}>{stateLabels[item.state]}</Badge></td><td className="p-3 text-right"><Button variant="outline" size="sm" onClick={() => void openDetail(item.id)}>Ver cuenta</Button></td></tr>)}</tbody></table></div>
+              <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="border-b text-left text-muted-foreground"><tr><th className="p-3">Cliente</th><th className="p-3">Venta</th><th className="p-3">Vence</th><th className="p-3 text-right">Saldo</th><th className="p-3">Estado</th><th className="p-3" /></tr></thead><tbody>{items.map((item) => <tr key={item.id} className="border-b last:border-0"><td className="p-3 font-medium">{item.customerName}</td><td className="p-3">#{item.saleNumber}</td><td className="p-3">{formatDate(item.dueDate)}</td><td className="p-3 text-right font-semibold">{formatCurrency(item.outstandingAmount, item.currencyCode)}<div className="text-xs font-normal text-muted-foreground">{formatCurrency(item.accountingOutstandingAmount, item.accountingCurrencyCode)}</div></td><td className="p-3"><Badge variant={stateVariant[item.state]}>{stateLabels[item.state]}</Badge></td><td className="p-3 text-right"><Button variant="outline" size="sm" onClick={() => void openDetail(item.id)}>Ver cuenta</Button></td></tr>)}</tbody></table></div>
             )}
           </CardContent>
         </Card>
       </main>
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}><DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">{selected && <><DialogHeader><DialogTitle>{selected.customerName}</DialogTitle><DialogDescription>Venta <Link className="underline" to={`/sales/${selected.saleId}/edit`}>#{selected.saleNumber}</Link> · vence {formatDate(selected.dueDate)}</DialogDescription></DialogHeader><div className="grid grid-cols-3 gap-3 rounded-lg bg-muted p-4 text-center"><div><p className="text-xs text-muted-foreground">Original</p><p className="font-semibold">{formatCurrency(selected.originalAmount)}</p></div><div><p className="text-xs text-muted-foreground">Abonado</p><p className="font-semibold">{formatCurrency(selected.paidAmount)}</p></div><div><p className="text-xs text-muted-foreground">Saldo</p><p className="font-semibold">{formatCurrency(selected.outstandingAmount)}</p></div></div><div className="space-y-2"><h3 className="font-semibold">Historial de cobros</h3>{selected.payments.length === 0 ? <p className="text-sm text-muted-foreground">Sin abonos registrados.</p> : selected.payments.map((payment) => <div key={payment.id} className="flex items-center justify-between rounded-md border p-3 text-sm"><div><p className={payment.isVoided ? "line-through text-muted-foreground" : "font-medium"}>{formatCurrency(payment.amount)} · {payment.reference || "Sin referencia"}</p><p className="text-xs text-muted-foreground">{formatDate(payment.createdAt)}{payment.isVoided ? ` · Anulado: ${payment.voidReason}` : ""}</p></div>{canManage && !payment.isVoided && <Button variant="ghost" size="sm" onClick={() => setVoidPaymentId(payment.id)}>Anular</Button>}</div>)}</div><DialogFooter>{canManage && selected.outstandingAmount > 0 && <Button onClick={() => setPaymentOpen(true)}>Registrar abono</Button>}</DialogFooter></>}</DialogContent></Dialog>
-      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}><DialogContent><DialogHeader><DialogTitle>Registrar abono</DialogTitle><DialogDescription>El abono no puede exceder el saldo pendiente.</DialogDescription></DialogHeader><div className="space-y-3"><div><Label htmlFor="receivable-amount">Monto</Label><Input id="receivable-amount" type="number" min="0.01" step="0.01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} /></div><div><Label>Método</Label><Select value={paymentMethod.toString()} onValueChange={(value) => setPaymentMethod(Number(value) as PaymentMethodType)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{paymentMethods.map(([value, label]) => <SelectItem key={value} value={value.toString()}>{label}</SelectItem>)}</SelectContent></Select></div><div><Label htmlFor="receivable-reference">Referencia</Label><Input id="receivable-reference" value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} /></div></div><DialogFooter><Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void submitPayment()} disabled={saving}>{saving ? <Spinner size="sm" /> : "Guardar abono"}</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}><DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">{selected && <><DialogHeader><DialogTitle>{selected.customerName}</DialogTitle><DialogDescription>Venta <Link className="underline" to={`/sales/${selected.saleId}/edit`}>#{selected.saleNumber}</Link> · vence {formatDate(selected.dueDate)}</DialogDescription></DialogHeader><div className="grid grid-cols-3 gap-3 rounded-lg bg-muted p-4 text-center"><div><p className="text-xs text-muted-foreground">Original</p><p className="font-semibold">{formatCurrency(selected.originalAmount, selected.currencyCode)}</p></div><div><p className="text-xs text-muted-foreground">Abonado</p><p className="font-semibold">{formatCurrency(selected.paidAmount, selected.currencyCode)}</p></div><div><p className="text-xs text-muted-foreground">Saldo</p><p className="font-semibold">{formatCurrency(selected.outstandingAmount, selected.currencyCode)}</p></div></div><div className="space-y-2"><h3 className="font-semibold">Historial de cobros</h3>{selected.payments.length === 0 ? <p className="text-sm text-muted-foreground">Sin abonos registrados.</p> : selected.payments.map((payment) => <div key={payment.id} className="flex items-center justify-between rounded-md border p-3 text-sm"><div><p className={payment.isVoided ? "line-through text-muted-foreground" : "font-medium"}>{formatCurrency(payment.amount, payment.currencyCode)} · aplicado {formatCurrency(payment.appliedAmount, selected.currencyCode)} · diferencia {formatCurrency(payment.exchangeDifference, selected.accountingCurrencyCode)} · {payment.reference || "Sin referencia"}</p><p className="text-xs text-muted-foreground">{formatDate(payment.createdAt)}{payment.isVoided ? ` · Anulado: ${payment.voidReason}` : ""}</p></div>{canManage && !payment.isVoided && <Button variant="ghost" size="sm" onClick={() => setVoidPaymentId(payment.id)}>Anular</Button>}</div>)}</div><DialogFooter>{canManage && selected.outstandingAmount > 0 && <Button onClick={() => setPaymentOpen(true)}>Registrar abono</Button>}</DialogFooter></>}</DialogContent></Dialog>
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}><DialogContent><DialogHeader><DialogTitle>Registrar abono</DialogTitle><DialogDescription>El equivalente aplicado no puede exceder el saldo pendiente.</DialogDescription></DialogHeader><div className="space-y-3"><div><Label>Moneda entregada</Label><Select value={paymentCurrency} onValueChange={setPaymentCurrency}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{configuration?.enabledCurrencies.filter((currency) => currency.isEnabled).map((currency) => <SelectItem key={currency.currencyCode} value={currency.currencyCode}>{currency.currencyCode}</SelectItem>)}</SelectContent></Select></div><div><Label htmlFor="receivable-amount">Monto entregado</Label><Input id="receivable-amount" type="number" min="0.000001" step="0.000001" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} />{selected && <p className="mt-1 text-xs text-muted-foreground">Equivalente aplicado: {paymentEquivalent === null ? "Conversión no disponible" : formatCurrency(paymentEquivalent, selected.currencyCode)}</p>}</div><div><Label>Método</Label><Select value={paymentMethod.toString()} onValueChange={(value) => setPaymentMethod(Number(value) as PaymentMethodType)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{paymentMethods.map(([value, label]) => <SelectItem key={value} value={value.toString()}>{label}</SelectItem>)}</SelectContent></Select></div><div><Label htmlFor="receivable-reference">Referencia</Label><Input id="receivable-reference" value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} /></div></div><DialogFooter><Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={saving}>Cancelar</Button><Button onClick={() => void submitPayment()} disabled={saving || paymentEquivalent === null}>{saving ? <Spinner size="sm" /> : "Guardar abono"}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={voidPaymentId !== null} onOpenChange={(open) => { if (!open && !saving) { setVoidPaymentId(null); setVoidReason(""); } }}><DialogContent><DialogHeader><DialogTitle>Anular abono</DialogTitle><DialogDescription>Esta acción conservará el historial y devolverá el monto al saldo pendiente.</DialogDescription></DialogHeader><div><Label htmlFor="void-reason">Motivo</Label><Input id="void-reason" value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Ej. cobro registrado por error" /></div><DialogFooter><Button variant="outline" onClick={() => setVoidPaymentId(null)} disabled={saving}>Cancelar</Button><Button variant="destructive" onClick={() => void submitVoidPayment()} disabled={saving}>Anular abono</Button></DialogFooter></DialogContent></Dialog>
     </DashboardLayout>
   );
 }
 
 function SummaryCard({ title, value, icon, destructive = false }: { title: string; value: number; icon: React.ReactNode; destructive?: boolean }) {
-  return <Card><CardContent className="flex items-center gap-4 p-5"><div className={destructive ? "rounded-full bg-destructive/10 p-3 text-destructive" : "rounded-full bg-primary/10 p-3 text-primary"}>{icon}</div><div><p className="text-sm text-muted-foreground">{title}</p><p className="text-xl font-semibold">{formatCurrency(value)}</p></div></CardContent></Card>;
+  const { configuration, formatCurrency } = useCurrency();
+  return <Card><CardContent className="flex items-center gap-4 p-5"><div className={destructive ? "rounded-full bg-destructive/10 p-3 text-destructive" : "rounded-full bg-primary/10 p-3 text-primary"}>{icon}</div><div><p className="text-sm text-muted-foreground">{title}</p><p className="text-xl font-semibold">{formatCurrency(value, configuration?.accountingCurrencyCode)}</p></div></CardContent></Card>;
 }

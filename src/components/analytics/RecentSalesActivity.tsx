@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Receipt } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface RecentSalesActivityProps {
   sales: SaleDto[];
@@ -35,12 +36,7 @@ const saleStatusLabels: Record<SaleDto["status"], string> = {
 
 /** Shows at most the five most recent sales in the selected period. */
 export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const getInitials = (name?: string | null) => {
     if (!name) return "C";
@@ -157,8 +153,8 @@ export function RecentSalesActivity({ sales, loading }: RecentSalesActivityProps
                     </p>
                   </div>
                   <div className="max-w-[42%] shrink-0 text-right">
-                    <p className="truncate font-mono text-sm font-semibold tabular-nums text-foreground" title={formatCurrency(sale.total)}>
-                      {formatCurrency(sale.total)}
+                    <p className="truncate font-mono text-sm font-semibold tabular-nums text-foreground" title={formatCurrency(sale.total, sale.currencyCode)}>
+                      {formatCurrency(sale.total, sale.currencyCode)}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {saleStatusLabels[sale.status]}

@@ -40,6 +40,7 @@ import {
   PurchaseOrderStatus,
   PurchasePaymentStatus,
   receivePurchase,
+  updatePurchase,
   type PurchaseOrderCreateDto,
   type PurchaseOrderDto,
   type PurchaseOrderStatusType,
@@ -57,6 +58,9 @@ import {
 import { toast } from "sonner";
 import { ConfirmDialog, EmptyState, PageHeader, SearchInput } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getCurrencyQuote } from "@/api/currenciesApi";
+import type { ApiError } from "@/api/apiClient";
 
 interface PurchaseItemForm {
   productId: string;
@@ -97,6 +101,7 @@ function statusBadgeVariant(status: PurchaseOrderStatusType): "default" | "secon
 
 export function PurchasesPage() {
   useDocumentTitle("Compras");
+  const { configuration, formatCurrency } = useCurrency();
 
   const [orders, setOrders] = useState<PurchaseOrderDto[]>([]);
   const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
@@ -110,6 +115,7 @@ export function PurchasesPage() {
     receivedOrders: number;
     pendingAmount: number;
     totalAmount: number;
+    accountingCurrencyCode: string;
   } | null>(null);
 
   const [search, setSearch] = useState("");
@@ -118,6 +124,7 @@ export function PurchasesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createForm, setCreateForm] = useState(initialCreateState);
+  const [purchaseCurrency, setPurchaseCurrency] = useState("USD");
 
   const [receiveDialogOpen, setReceiveDialogOpen] = useState(false);
   const [receiving, setReceiving] = useState(false);
@@ -160,7 +167,13 @@ export function PurchasesPage() {
     void loadData();
   }, []);
 
-  const loadData = async () => {
+  useEffect(() => {
+    // Inicializa la moneda de una nueva compra desde la configuración remota.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (configuration) setPurchaseCurrency(configuration.defaultCurrencyCode);
+  }, [configuration]);
+
+  async function loadData() {
     try {
       setLoading(true);
       setError(null);
@@ -246,19 +259,23 @@ export function PurchasesPage() {
       return;
     }
 
-    const payload: PurchaseOrderCreateDto = {
-      supplierId: createForm.supplierId,
-      date: new Date(createForm.date).toISOString(),
-      expectedDeliveryDate: createForm.expectedDeliveryDate
-        ? new Date(createForm.expectedDeliveryDate).toISOString()
-        : undefined,
-      taxAmount: Number(createForm.taxAmount) || 0,
-      notes: createForm.notes.trim() || undefined,
-      items,
-    };
-
     try {
       setSaving(true);
+      const quote = configuration
+        ? await getCurrencyQuote(configuration.accountingCurrencyCode, purchaseCurrency)
+        : null;
+      const payload: PurchaseOrderCreateDto = {
+        supplierId: createForm.supplierId,
+        date: new Date(createForm.date).toISOString(),
+        expectedDeliveryDate: createForm.expectedDeliveryDate
+          ? new Date(createForm.expectedDeliveryDate).toISOString()
+          : undefined,
+        taxAmount: Number(createForm.taxAmount) || 0,
+        notes: createForm.notes.trim() || undefined,
+        items,
+        currencyCode: purchaseCurrency,
+        exchangeRateId: quote?.toExchangeRateId,
+      };
       await createPurchase(payload);
       toast.success("Orden de compra creada correctamente.");
       setCreateDialogOpen(false);
@@ -279,6 +296,24 @@ export function PurchasesPage() {
       toast.success(`OC #${order.purchaseOrderNumber} confirmada.`);
       await loadData();
     } catch (confirmError) {
+      const apiError = confirmError as ApiError;
+      const details = apiError.details as { code?: string } | undefined;
+      if (apiError.status === 409 && details?.code === "currency_quote_stale" && configuration) {
+        const quote = await getCurrencyQuote(configuration.accountingCurrencyCode, order.currencyCode);
+        await updatePurchase(order.id, {
+          supplierId: order.supplierId,
+          date: order.date,
+          expectedDeliveryDate: order.expectedDeliveryDate ?? undefined,
+          notes: order.notes ?? undefined,
+          taxAmount: order.taxAmount,
+          items: order.items.map((item) => ({ productId: item.productId, quantity: item.quantity, unitCost: item.unitCost })),
+          currencyCode: order.currencyCode,
+          exchangeRateId: quote.toExchangeRateId,
+        });
+        toast.warning("La cotización cambió. Revise los totales y confirme nuevamente.");
+        await loadData();
+        return;
+      }
       toast.error(
         confirmError instanceof Error ? confirmError.message : "No se pudo confirmar la orden."
       );
@@ -287,7 +322,7 @@ export function PurchasesPage() {
 
   const handleCancel = (order: PurchaseOrderDto) => {
     setOrderToCancel(order);
-  };
+  }
 
   const confirmCancel = async () => {
     if (!orderToCancel) return;
@@ -441,7 +476,7 @@ export function PurchasesPage() {
             <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-sm text-muted-foreground">Monto pendiente</p>
               <p className="text-3xl font-semibold">
-                ${(summary?.pendingAmount ?? 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                {formatCurrency(summary?.pendingAmount ?? 0, summary?.accountingCurrencyCode ?? configuration?.accountingCurrencyCode)}
               </p>
             </div>
           </div>
@@ -528,7 +563,7 @@ export function PurchasesPage() {
                           {new Date(order.date).toLocaleDateString("es-MX")}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          ${order.total.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                          {formatCurrency(order.total, order.currencyCode)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={statusBadgeVariant(order.status)}>
@@ -706,9 +741,21 @@ export function PurchasesPage() {
                   <div className="grid gap-2">
                     <Label>Total estimado</Label>
                     <div className="h-10 rounded-md border bg-muted/40 px-3 flex items-center text-sm font-medium">
-                      ${createTotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      {formatCurrency(createTotal, purchaseCurrency)}
                     </div>
                   </div>
+                </div>
+
+                <div className="grid gap-2 md:max-w-xs">
+                  <Label>Moneda de compra</Label>
+                  <Select value={purchaseCurrency} onValueChange={setPurchaseCurrency}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {configuration?.enabledCurrencies.filter((currency) => currency.isEnabled).map((currency) => (
+                        <SelectItem key={currency.currencyCode} value={currency.currencyCode}>{currency.currencyCode}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">

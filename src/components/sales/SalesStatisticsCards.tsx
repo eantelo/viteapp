@@ -12,16 +12,13 @@ import {
   Receipt,
   TrendUp,
 } from "@phosphor-icons/react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SalesStatisticsCardsProps {
   statistics: SalesStatistics | null;
   loading?: boolean;
 }
 
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
 const countFormatter = new Intl.NumberFormat("es-MX");
 const percentageFormatter = new Intl.NumberFormat("es-MX", {
   style: "percent",
@@ -33,6 +30,9 @@ export function SalesStatisticsCards({
   statistics,
   loading,
 }: SalesStatisticsCardsProps) {
+  const { configuration, formatCurrency } = useCurrency();
+  const money = (value: number) => formatCurrency(value, configuration?.accountingCurrencyCode);
+  const estimatedDisplayTotal = statistics?.estimatedDisplayTotal;
   if (loading) {
     return (
       <div
@@ -100,7 +100,7 @@ export function SalesStatisticsCards({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <Card
           className="min-w-0 rounded-xl border-border/60 bg-card shadow-none"
-          aria-label={`Total vendido: ${currencyFormatter.format(statistics.totalSales)}`}
+          aria-label={`Total vendido: ${money(statistics.totalSales)}`}
         >
           <CardHeader className="min-w-0 gap-1.5 p-3 pb-1 sm:p-4 sm:pb-1">
             <div className="flex items-center justify-between">
@@ -111,12 +111,21 @@ export function SalesStatisticsCards({
                 <CurrencyDollar className="h-4 w-4 text-muted-foreground" weight="duotone" aria-hidden="true" />
               </div>
             </div>
-            <CardDescription className="hidden truncate sm:block">Ingresos netos del periodo</CardDescription>
+            <CardDescription className="hidden truncate sm:block">
+              Total oficial en {statistics.accountingCurrencyCode}
+            </CardDescription>
           </CardHeader>
           <CardContent className="min-w-0 px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
-            <div className="truncate font-mono text-lg font-semibold tabular-nums text-foreground sm:text-2xl" title={currencyFormatter.format(statistics.totalSales)}>
-              {currencyFormatter.format(statistics.totalSales)}
+            <div className="truncate font-mono text-lg font-semibold tabular-nums text-foreground sm:text-2xl" title={money(statistics.totalSales)}>
+              {money(statistics.totalSales)}
             </div>
+            {statistics.displayCurrencyCode !== statistics.accountingCurrencyCode && (
+              <div className="truncate text-xs text-muted-foreground">
+                {estimatedDisplayTotal == null
+                  ? "Conversión no disponible"
+                  : `Estimado: ${formatCurrency(estimatedDisplayTotal, statistics.displayCurrencyCode ?? undefined)}`}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -144,7 +153,7 @@ export function SalesStatisticsCards({
 
         <Card
           className="min-w-0 rounded-xl border-border/60 bg-card shadow-none"
-          aria-label={`Ticket promedio: ${currencyFormatter.format(statistics.averageTicket)}`}
+          aria-label={`Ticket promedio: ${money(statistics.averageTicket)}`}
         >
           <CardHeader className="min-w-0 gap-1.5 p-3 pb-1 sm:p-4 sm:pb-1">
             <div className="flex items-center justify-between">
@@ -158,8 +167,8 @@ export function SalesStatisticsCards({
             <CardDescription className="hidden truncate sm:block">Promedio por venta</CardDescription>
           </CardHeader>
           <CardContent className="min-w-0 px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
-            <div className="truncate font-mono text-lg font-semibold tabular-nums text-foreground sm:text-2xl" title={currencyFormatter.format(statistics.averageTicket)}>
-              {currencyFormatter.format(statistics.averageTicket)}
+            <div className="truncate font-mono text-lg font-semibold tabular-nums text-foreground sm:text-2xl" title={money(statistics.averageTicket)}>
+              {money(statistics.averageTicket)}
             </div>
           </CardContent>
         </Card>
@@ -222,7 +231,7 @@ export function SalesStatisticsCards({
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="font-mono text-sm font-semibold tabular-nums text-foreground">
-                          {currencyFormatter.format(item.amount)}
+                          {money(item.amount)}
                         </div>
                         <div className="font-mono text-xs tabular-nums text-muted-foreground">
                           {percentageFormatter.format(percentage / 100)}

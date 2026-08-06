@@ -40,6 +40,7 @@ import {
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type {
   PaymentMethodType,
   SaleDto,
@@ -119,6 +120,7 @@ function getStatusBadge(status: SaleDto["status"]) {
 }
 
 export function SaleUpsertPage() {
+  const { configuration, formatCurrency: formatMoney } = useCurrency();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
@@ -613,12 +615,7 @@ export function SaleUpsertPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => formatMoney(amount, configuration?.accountingCurrencyCode);
 
   const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 

@@ -42,6 +42,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Switch } from "@/components/ui/switch";
 import { ModeToggle } from "@/components/mode-toggle";
 import type { BreadcrumbItem as BreadcrumbItemType } from "./DashboardLayout";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface HeaderProps {
   breadcrumbs: BreadcrumbItemType[];
@@ -49,6 +50,7 @@ interface HeaderProps {
 
 export function Header({ breadcrumbs }: HeaderProps) {
   const { auth, logout } = useAuth();
+  const { configuration, displayCurrencyCode, setDisplayCurrencyCode } = useCurrency();
   const { isEnabled, setIsEnabled, isChatVisibleAndDocked } = useChatDock();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -152,6 +154,25 @@ export function Header({ breadcrumbs }: HeaderProps) {
 
       {/* Right Section: Notifications + Help + User Menu */}
       <div className="flex items-center gap-2 flex-1 justify-end">
+        {configuration && (
+          <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+            <span className="sr-only">Moneda de visualización</span>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+              value={displayCurrencyCode}
+              onChange={(event) => setDisplayCurrencyCode(event.target.value)}
+              aria-label="Moneda de visualización"
+            >
+              {configuration.enabledCurrencies
+                .filter((currency) => currency.isEnabled)
+                .map((currency) => (
+                  <option key={currency.currencyCode} value={currency.currencyCode}>
+                    {currency.currencyCode}
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
         <Button
           variant="ghost"
           size="icon"

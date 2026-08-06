@@ -28,6 +28,8 @@ export interface PurchaseOrderItemDto {
   receivedQuantity: number;
   unitCost: number;
   subtotal: number;
+  accountingUnitCost: number;
+  accountingSubtotal: number;
 }
 
 export interface PurchaseOrderDto {
@@ -46,6 +48,13 @@ export interface PurchaseOrderDto {
   receivedAt?: string | null;
   createdAt: string;
   items: PurchaseOrderItemDto[];
+  currencyCode: string;
+  accountingCurrencyCode: string;
+  exchangeRateId?: string | null;
+  exchangeRateToAccounting: number;
+  accountingSubtotal: number;
+  accountingTaxAmount: number;
+  accountingTotal: number;
 }
 
 export interface PurchaseOrderItemCreateDto {
@@ -61,6 +70,8 @@ export interface PurchaseOrderCreateDto {
   expectedDeliveryDate?: string;
   taxAmount: number;
   items: PurchaseOrderItemCreateDto[];
+  currencyCode?: string;
+  exchangeRateId?: string | null;
 }
 
 export type PurchaseOrderUpdateDto = PurchaseOrderCreateDto;
@@ -81,6 +92,7 @@ export interface PurchaseOrderSummaryDto {
   receivedOrders: number;
   pendingAmount: number;
   totalAmount: number;
+  accountingCurrencyCode: string;
 }
 
 export interface PurchaseFilters {

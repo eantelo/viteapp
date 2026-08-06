@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,7 @@ import { ConfirmDialog, EmptyState, PageHeader } from "@/components/shared";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function SalesPage() {
+  const { configuration, displayCurrencyCode, formatCurrency: formatMoney } = useCurrency();
   type PendingSaleAction =
     | { type: "sendToTrello"; sale: SaleDto }
     | { type: "refund"; sale: SaleDto }
@@ -196,7 +198,7 @@ export function SalesPage() {
       // Cargar ventas y estadísticas en paralelo
       const [salesData, statsData] = await Promise.all([
         getSalesHistory(params),
-        getSalesStatistics(utcDateRange.from, utcDateRange.to),
+        getSalesStatistics(utcDateRange.from, utcDateRange.to, displayCurrencyCode),
       ]);
 
       setSales(salesData);
@@ -213,10 +215,12 @@ export function SalesPage() {
   };
 
   useEffect(() => {
+    // Recarga el reporte remoto al cambiar período o moneda global de visualización.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
     // Other filters are applied explicitly; this automatic refresh follows preset changes only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datePreset]);
+  }, [datePreset, displayCurrencyCode]);
 
   // Filtrar ventas por búsqueda
   const filteredSales = useMemo(() => {
@@ -517,12 +521,7 @@ export function SalesPage() {
   };
 
   // Formateo
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number, code?: string) => formatMoney(amount, code ?? configuration?.accountingCurrencyCode);
 
   const formatDateTime = (dateString: string) => {
     if (!dateString) return "-";
@@ -1097,7 +1096,7 @@ export function SalesPage() {
                             </div>
                           </div>
                           <span className="text-base font-semibold tabular-nums font-mono shrink-0">
-                            {formatCurrency(sale.total)}
+                            {formatCurrency(sale.total, sale.currencyCode)}
                           </span>
                         </div>
 
@@ -1371,7 +1370,7 @@ export function SalesPage() {
                                 {sale.customerName || "Sin cliente"}
                               </TableCell>
                               <TableCell className="text-right text-sm font-semibold tabular-nums">
-                                {formatCurrency(sale.total)}
+                                {formatCurrency(sale.total, sale.currencyCode)}
                               </TableCell>
                               <TableCell>{getSaleTypeBadge(sale)}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">

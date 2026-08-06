@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ import {
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
 
 export function ProductDetailPage() {
+  const { configuration, formatCurrency } = useCurrency();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -149,12 +151,7 @@ export function ProductDetailPage() {
     loadProduct();
   };
 
-  const formatPrice = (priceValue: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(priceValue);
-  };
+  const formatPrice = (priceValue: number) => formatCurrency(priceValue, configuration?.accountingCurrencyCode);
 
   // Estado de carga
   if (loading) {

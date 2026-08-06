@@ -20,6 +20,7 @@ import {
   PencilSimple,
   SpinnerGap,
 } from "@phosphor-icons/react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SaleDetailModalProps {
   open: boolean;
@@ -40,14 +41,8 @@ export function SaleDetailModal({
   onSendToTrello,
   isSendingToTrello = false,
 }: SaleDetailModalProps) {
+  const { formatCurrency } = useCurrency();
   if (!sale) return null;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
 
   const formatDateTime = (dateString: string) => {
     if (!dateString) return "-";
@@ -155,12 +150,12 @@ export function SaleDetailModal({
                       {item.productName || "Producto sin nombre"}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Cantidad: {item.quantity} × {formatCurrency(item.price)}
+                      Cantidad: {item.quantity} × {formatCurrency(item.price, sale.currencyCode)}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-gray-900 dark:text-white">
-                      {formatCurrency(item.quantity * item.price)}
+                      {formatCurrency(item.quantity * item.price, sale.currencyCode)}
                     </div>
                   </div>
                 </div>
@@ -193,14 +188,14 @@ export function SaleDetailModal({
                     )}
                     {payment.amountReceived && payment.change && (
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Recibido: {formatCurrency(payment.amountReceived)} |
-                        Cambio: {formatCurrency(payment.change)}
+                        Recibido: {formatCurrency(payment.amountReceived, payment.currencyCode)} |
+                        Cambio: {formatCurrency(payment.change, payment.currencyCode)}
                       </div>
                     )}
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-gray-900 dark:text-white">
-                      {formatCurrency(payment.amount)}
+                      {formatCurrency(payment.amount, payment.currencyCode)}
                     </div>
                   </div>
                 </div>
@@ -216,7 +211,7 @@ export function SaleDetailModal({
               Total
             </div>
             <div className="text-2xl font-bold text-primary">
-              {formatCurrency(sale.total)}
+              {formatCurrency(sale.total, sale.currencyCode)}
             </div>
           </div>
 

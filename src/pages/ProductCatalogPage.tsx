@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -285,6 +286,7 @@ function FilterContent({
 }
 
 export function ProductCatalogPage() {
+  const { configuration, formatCurrency } = useCurrency();
   useDocumentTitle("Catálogo de Productos");
   const navigate = useNavigate();
 
@@ -533,12 +535,7 @@ export function ProductCatalogPage() {
     }
   }, [filteredProducts.length, pendingHighlightId, highlightedProductId]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(price);
-  };
+  const formatPrice = (price: number) => formatCurrency(price, configuration?.accountingCurrencyCode);
 
   const getStatusBadgeClass = (isActive: boolean, stock: number) => {
     if (stock === 0) {

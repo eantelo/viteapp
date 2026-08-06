@@ -14,6 +14,11 @@ export interface AccountReceivableListItem {
   outstandingAmount: number;
   dueDate: string;
   state: ReceivableState;
+  currencyCode: string;
+  accountingCurrencyCode: string;
+  exchangeRateToAccounting: number;
+  accountingOriginalAmount: number;
+  accountingOutstandingAmount: number;
 }
 
 export interface ReceivablePayment {
@@ -27,6 +32,10 @@ export interface ReceivablePayment {
   isVoided: boolean;
   voidedAt?: string;
   voidReason?: string;
+  currencyCode: string;
+  appliedAmount: number;
+  accountingAmount: number;
+  exchangeDifference: number;
 }
 
 export interface AccountReceivableDetail extends AccountReceivableListItem {
@@ -46,6 +55,7 @@ export interface AccountsReceivableSummary {
   totalDueSoon: number;
   openCount: number;
   overdueCount: number;
+  accountingCurrencyCode: string;
 }
 
 export interface AccountsReceivableQuery {
@@ -79,7 +89,7 @@ export async function getAccountReceivable(id: string): Promise<AccountReceivabl
 
 export async function registerReceivablePayment(
   id: string,
-  payload: { amount: number; method: PaymentMethodType; amountReceived?: number; reference?: string },
+  payload: { amount: number; method: PaymentMethodType; amountReceived?: number; reference?: string; currencyCode?: string; exchangeRateId?: string | null },
 ): Promise<AccountReceivableDetail> {
   return apiClient<AccountReceivableDetail>(`/api/accounts-receivable/${id}/payments`, {
     method: "POST",

@@ -27,6 +27,11 @@ export interface HeldOrderDto {
   total: number;
   createdAt: string;
   isActive: boolean;
+  currencyCode: string;
+  accountingCurrencyCode: string;
+  exchangeRateId?: string | null;
+  exchangeRateToAccounting: number;
+  accountingTotal: number;
 }
 
 /**
@@ -37,6 +42,8 @@ export interface HeldOrderCreateDto {
   customerName?: string | null;
   items: HeldOrderItemDto[];
   discount: number;
+  currencyCode?: string;
+  exchangeRateId?: string | null;
 }
 
 /**

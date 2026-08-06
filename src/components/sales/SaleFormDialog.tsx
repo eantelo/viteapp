@@ -25,6 +25,7 @@ import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts } from "@/api/productsApi";
 import { OrderProductTable } from "./OrderProductTable";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SaleFormDialogProps {
   open: boolean;
@@ -41,6 +42,7 @@ interface SaleItemForm {
 }
 
 export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
+  const { configuration, formatCurrency } = useCurrency();
   const [customerId, setCustomerId] = useState("");
   const [saleDate, setSaleDate] = useState("");
   const [items, setItems] = useState<SaleItemForm[]>([]);
@@ -228,13 +230,6 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
     console.log("Editar producto:", product, "en índice:", index);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-MX", {
-      style: "currency",
-      currency: "MXN",
-    }).format(amount);
-  };
-
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -304,7 +299,7 @@ export function SaleFormDialog({ open, sale, onClose }: SaleFormDialogProps) {
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name} - {formatCurrency(product.price)}{" "}
+                          {product.name} - {formatCurrency(product.price, configuration?.accountingCurrencyCode)}{" "}
                           (Stock: {product.stock})
                         </SelectItem>
                       ))}

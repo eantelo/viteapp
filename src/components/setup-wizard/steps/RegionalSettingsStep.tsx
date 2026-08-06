@@ -20,6 +20,7 @@ const CURRENCIES = [
   { code: "EUR", name: "Euro", symbol: "€" },
   { code: "MXN", name: "Peso Mexicano", symbol: "$" },
   { code: "BOB", name: "Peso Boliviano", symbol: "Bs." },
+  { code: "USDT", name: "Tether", symbol: "₮" },
   { code: "COP", name: "Peso Colombiano", symbol: "$" },
   { code: "ARS", name: "Peso Argentino", symbol: "$" },
   { code: "CLP", name: "Peso Chileno", symbol: "$" },

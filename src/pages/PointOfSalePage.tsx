@@ -47,12 +47,18 @@ import { useKeyPressIndicator } from "@/hooks/useKeyPressIndicator";
 import type { ProductDto } from "@/api/productsApi";
 import type { CustomerDto } from "@/api/customersApi";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { getCurrencyQuote } from "@/api/currenciesApi";
 
 type MobileSummarySnap = "collapsed" | "mid" | "full";
 
 export function PointOfSalePage() {
   useDocumentTitle("Punto de Venta");
   const navigate = useNavigate();
+  const { configuration, formatCurrency: formatMoney } = useCurrency();
+  const [saleCurrencyCode, setSaleCurrencyCode] = useState("USD");
+  const [saleQuote, setSaleQuote] = useState<{ rate: number; exchangeRateId?: string | null } | null>(null);
+  const currencyInitializedRef = useRef(false);
 
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -124,7 +130,39 @@ export function PointOfSalePage() {
     },
     // Punto de Venta: no aplicar impuestos al total
     includeTax: false,
+    currencyCode: saleCurrencyCode,
+    exchangeRateId: saleQuote?.exchangeRateId,
+    accountingToSaleRate: saleQuote?.rate ?? 1,
+    onHeldCurrencyRestored: (currencyCode) => {
+      setSaleCurrencyCode(currencyCode);
+      toast.info("Orden retomada", { description: "Se obtendrá una cotización vigente antes de confirmar." });
+    },
   });
+
+  useEffect(() => {
+    if (!configuration) return;
+    if (!currencyInitializedRef.current) {
+      currencyInitializedRef.current = true;
+      if (saleCurrencyCode !== configuration.defaultCurrencyCode) {
+        // Inicialización única desde la configuración remota del tenant.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSaleCurrencyCode(configuration.defaultCurrencyCode);
+        return;
+      }
+    }
+
+    let active = true;
+    void getCurrencyQuote(configuration.accountingCurrencyCode, saleCurrencyCode)
+      .then((quote) => {
+        if (active) setSaleQuote({ rate: quote.rate, exchangeRateId: quote.toExchangeRateId });
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSaleQuote(null);
+        toast.error("Conversión no disponible", { description: error instanceof Error ? error.message : undefined });
+      });
+    return () => { active = false; };
+  }, [configuration, saleCurrencyCode]);
 
   // Effect para hacer scroll al elemento seleccionado en el dropdown de clientes
   useEffect(() => {
@@ -191,16 +229,7 @@ export function PointOfSalePage() {
     }
   }, [addProductToOrder]);
 
-  const currencyFormatter = useMemo(
-    () =>
-      new Intl.NumberFormat("es-MX", {
-        style: "currency",
-        currency: "MXN",
-      }),
-    []
-  );
-
-  const formatCurrency = (value: number) => currencyFormatter.format(value);
+  const formatCurrency = (value: number) => formatMoney(value, saleCurrencyCode);
 
   const selectedCustomer = useMemo(
     () => customers.find((customer) => customer.id === customerId) ?? null,
@@ -326,6 +355,15 @@ export function PointOfSalePage() {
       throw new Error("Selecciona un cliente registrado para vender a crédito.");
     }
     await submitSale(confirmation);
+  };
+
+  const handleStaleQuote = async () => {
+    if (!configuration) return;
+    const quote = await getCurrencyQuote(
+      configuration.accountingCurrencyCode,
+      saleCurrencyCode,
+    );
+    setSaleQuote({ rate: quote.rate, exchangeRateId: quote.toExchangeRateId });
   };
 
   const handleDiscountChange = (value: string) => {
@@ -535,6 +573,17 @@ export function PointOfSalePage() {
       >
         <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overflow-x-hidden pb-24 md:h-full md:overflow-hidden md:pb-0">
           <div className="flex flex-wrap items-center justify-end gap-2 md:flex-nowrap">
+            {configuration && (
+              <label className="flex items-center gap-2 text-sm">
+                <span>Moneda de venta</span>
+                <select className="h-9 rounded-md border bg-background px-2" value={saleCurrencyCode}
+                  onChange={(event) => setSaleCurrencyCode(event.target.value)}>
+                  {configuration.enabledCurrencies.filter((currency) => currency.isEnabled).map((currency) => (
+                    <option key={currency.currencyCode}>{currency.currencyCode}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             {heldOrders.length > 0 && (
               <Button
                 variant="outline"
@@ -1190,7 +1239,9 @@ export function PointOfSalePage() {
         open={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
         total={total}
+        saleCurrencyCode={saleCurrencyCode}
         onConfirm={handlePaymentConfirm}
+        onQuoteStale={handleStaleQuote}
         isSubmitting={isSubmitting}
       />
       <KeyboardShortcutsModal

@@ -30,6 +30,7 @@ import {
   CircleNotch,
 } from "@phosphor-icons/react";
 import { PAGE_LAYOUT_CLASS } from "@/lib/constants";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import type { ProductCreateDto, ProductUpdateDto } from "@/api/productsApi";
 import {
   getProductById,
@@ -42,6 +43,7 @@ import {
 } from "@/api/productsApi";
 
 export function ProductUpsertPage() {
+  const { configuration, formatCurrency } = useCurrency();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
@@ -344,12 +346,7 @@ export function ProductUpsertPage() {
     navigate(-1);
   };
 
-  const formatPrice = (value: number) => {
-    return new Intl.NumberFormat("es-BO", {
-      style: "currency",
-      currency: "BOB",
-    }).format(value);
-  };
+  const formatPrice = (value: number) => formatCurrency(value, configuration?.accountingCurrencyCode);
 
   // Estado de carga
   if (loading) {

@@ -11,6 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface ChartData {
   type: "bar" | "line";
@@ -32,16 +33,6 @@ interface ChatChartProps {
   chartData: ChartData;
 }
 
-// Formateador de moneda para tooltips
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
 // Formateador de números
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat("es-MX").format(value);
@@ -53,11 +44,13 @@ function CustomTooltip({
   payload,
   label,
   dataKey,
+  formatCurrency,
 }: {
   active?: boolean;
   payload?: { value: number; dataKey: string }[];
   label?: string;
   dataKey: string;
+  formatCurrency: (value: number) => string;
 }) {
   if (!active || !payload || !payload.length) return null;
 
@@ -76,6 +69,8 @@ function CustomTooltip({
 }
 
 export function ChatChart({ chartData }: ChatChartProps) {
+  const { configuration, formatCurrency: formatMoney } = useCurrency();
+  const formatCurrency = (value: number) => formatMoney(value, configuration?.accountingCurrencyCode);
   const { type, title, dataKey, labelKey, data, summary } = chartData;
 
   // Determinar si los valores son monetarios
@@ -140,7 +135,7 @@ export function ChatChart({ chartData }: ChatChartProps) {
         axisLine={false}
         width={50}
         tickFormatter={(value) =>
-          isMonetary ? `$${(value / 1000).toFixed(0)}k` : formatNumber(value)
+          isMonetary ? `${(value / 1000).toFixed(0)}k ${configuration?.accountingCurrencyCode ?? ""}` : formatNumber(value)
         }
         domain={[0, maxValue]}
       />
@@ -148,7 +143,7 @@ export function ChatChart({ chartData }: ChatChartProps) {
 
     const commonTooltip = (
       <Tooltip
-        content={<CustomTooltip dataKey={dataKey} />}
+        content={<CustomTooltip dataKey={dataKey} formatCurrency={formatCurrency} />}
         cursor={{ fill: chartColorLight }}
       />
     );

@@ -20,6 +20,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export const description = "Tendencia de ventas del periodo seleccionado";
 
@@ -42,11 +43,6 @@ interface SalesTrendPoint {
   total: number;
   count: number;
 }
-
-const currencyFormatter = new Intl.NumberFormat("es-MX", {
-  style: "currency",
-  currency: "MXN",
-});
 
 const countFormatter = new Intl.NumberFormat("es-MX");
 const hourFormatter = new Intl.DateTimeFormat("es-MX", {
@@ -119,7 +115,7 @@ function buildSalesTrend(
   sales.forEach((sale) => {
     const saleDate = new Date(sale.date);
     const saleTime = saleDate.getTime();
-    const saleTotal = Number(sale.total);
+    const saleTotal = Number(sale.accountingTotal ?? sale.total);
 
     if (
       !Number.isFinite(saleTime) ||
@@ -177,6 +173,7 @@ export function ChartAreaInteractive({
   loading = false,
   historyLimit,
 }: ChartAreaInteractiveProps) {
+  const { configuration, formatCurrency } = useCurrency();
   const gradientId = React.useId().replace(/:/g, "");
   const granularity = React.useMemo(
     () => getGranularity(dateRange),
@@ -331,7 +328,7 @@ export function ChartAreaInteractive({
                       <>
                         <span className="text-muted-foreground">Importe</span>
                         <span className="ml-auto font-mono font-semibold tabular-nums text-foreground">
-                          {currencyFormatter.format(Number(value))}
+                          {formatCurrency(Number(value), configuration?.accountingCurrencyCode)}
                         </span>
                       </>
                     )}

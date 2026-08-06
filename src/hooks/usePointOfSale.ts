@@ -23,6 +23,7 @@ export interface PosLineItem {
   name: string;
   sku: string;
   price: number;
+  accountingPrice: number;
   quantity: number;
   stock: number;
   barcode?: string;
@@ -42,11 +43,18 @@ export interface UsePointOfSaleOptions {
    * Optional callback when a sale is persisted.
    */
   onSaleCreated?: (sale: SaleDto) => void;
+  currencyCode?: string;
+  exchangeRateId?: string | null;
+  accountingToSaleRate?: number;
+  onHeldCurrencyRestored?: (currencyCode: string) => void;
 }
 
 export function usePointOfSale(options?: UsePointOfSaleOptions) {
   const includeTax = options?.includeTax ?? true;
   const onSaleCreated = options?.onSaleCreated;
+  const currencyCode = options?.currencyCode;
+  const exchangeRateId = options?.exchangeRateId;
+  const accountingToSaleRate = options?.accountingToSaleRate ?? 1;
   const [items, setItems] = useState<PosLineItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<ProductDto[]>([]);
@@ -93,12 +101,15 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
 
   // Load initial reference data. Both callbacks are stable useCallback values.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCustomers();
     loadHeldOrders();
   }, [loadCustomers, loadHeldOrders]);
 
   useEffect(() => {
     if (!searchTerm.trim()) {
+      // Limpia el resultado derivado cuando el filtro externo queda vacío.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchResults([]);
       setSearchError(null);
       setIsSearchLoading(false);
@@ -173,7 +184,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
           productId: product.id,
           name: product.name,
           sku: product.sku,
-          price: product.price,
+          price: Number((product.price * accountingToSaleRate).toFixed(6)),
+          accountingPrice: product.price,
           quantity: 1,
           stock: product.stock,
           barcode: product.barcode,
@@ -181,7 +193,16 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         },
       ];
     });
-  }, []);
+  }, [accountingToSaleRate]);
+
+  useEffect(() => {
+    // Reexpresa el carrito conservando siempre el precio contable original.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setItems((current) => current.map((item) => ({
+      ...item,
+      price: Number((item.accountingPrice * accountingToSaleRate).toFixed(6)),
+    })));
+  }, [accountingToSaleRate]);
 
   const lookupProduct = useCallback(async (term: string) => {
     const normalized = term.trim();
@@ -310,6 +331,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         customerName,
         items: heldItems,
         discount,
+        currencyCode,
+        exchangeRateId,
       });
 
       clearOrder();
@@ -318,7 +341,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
       console.error("Failed to hold order", error);
       throw error;
     }
-  }, [items, customerId, customers, discount, clearOrder, loadHeldOrders]);
+  }, [items, customerId, customers, discount, currencyCode, exchangeRateId, clearOrder, loadHeldOrders]);
 
   const resumeHeldOrder = useCallback((order: HeldOrderDto) => {
     const restoredItems: PosLineItem[] = order.items.map((item) => ({
@@ -326,6 +349,9 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
       name: item.name,
       sku: item.sku,
       price: item.price,
+      accountingPrice: order.exchangeRateToAccounting > 0
+        ? item.price * order.exchangeRateToAccounting
+        : item.price,
       quantity: item.quantity,
       stock: item.stock,
       barcode: item.barcode,
@@ -335,7 +361,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
     setItems(restoredItems);
     setCustomerId(order.customerId || "");
     setDiscount(order.discount);
-  }, []);
+    options?.onHeldCurrencyRestored?.(order.currencyCode);
+  }, [options]);
 
   const removeHeldOrder = useCallback(
     async (orderId: string) => {
@@ -382,6 +409,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
             customerName,
             items: heldItems,
             discount,
+            currencyCode,
+            exchangeRateId,
           });
 
           await loadHeldOrders();
@@ -397,7 +426,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         autoSaveTimerRef.current = null;
       }
     };
-  }, [items, customerId, customers, discount, loadHeldOrders]);
+  }, [items, customerId, customers, discount, currencyCode, exchangeRateId, loadHeldOrders]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -459,31 +488,24 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         throw new Error("Selecciona un cliente registrado para vender a crédito");
       }
 
-      if (
-        confirmation?.paymentMethod === PaymentMethod.Cash &&
-        confirmation.amount > 0 &&
-        typeof confirmation.amountReceived === "number" &&
-        confirmation.amountReceived < confirmation.amount
-      ) {
-        throw new Error("El monto recibido debe ser mayor o igual al abono");
+      if (confirmation?.payments.some((payment) =>
+        payment.paymentMethod === PaymentMethod.Cash &&
+        payment.amount > 0 &&
+        typeof payment.amountReceived === "number" &&
+        payment.amountReceived < payment.amount)) {
+        throw new Error("El monto recibido debe ser mayor o igual al importe entregado");
       }
 
       setIsSubmitting(true);
       try {
-        const payments: PaymentCreateDto[] =
-          confirmation && confirmation.amount > 0
-            ? [
-                {
-                  method: confirmation.paymentMethod,
-                  amount: confirmation.amount,
-                  amountReceived:
-                    confirmation.paymentMethod === PaymentMethod.Cash
-                      ? confirmation.amountReceived
-                      : undefined,
-                  reference: confirmation.reference.trim() || undefined,
-                },
-              ]
-            : [];
+        const payments: PaymentCreateDto[] = confirmation?.payments.map((payment) => ({
+          method: payment.paymentMethod,
+          amount: payment.amount,
+          amountReceived: payment.paymentMethod === PaymentMethod.Cash ? payment.amountReceived : undefined,
+          reference: payment.reference.trim() || undefined,
+          currencyCode: payment.currencyCode,
+          exchangeRateId: payment.exchangeRateId,
+        })) ?? [];
 
         const sale = await createSale({
           date: new Date().toISOString(),
@@ -497,6 +519,8 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
           credit: confirmation?.creditDueDate
             ? { dueDate: confirmation.creditDueDate }
             : undefined,
+          currencyCode,
+          exchangeRateId,
         });
 
         clearOrder();
@@ -507,7 +531,7 @@ export function usePointOfSale(options?: UsePointOfSaleOptions) {
         setIsSubmitting(false);
       }
     },
-    [clearOrder, customerId, items, total, onSaleCreated, loadHeldOrders],
+    [clearOrder, customerId, items, currencyCode, exchangeRateId, onSaleCreated, loadHeldOrders],
   );
 
   return {

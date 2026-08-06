@@ -76,6 +76,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
     try {
       const settings: TenantSettings = {
         currencyCode: data.currencyCode,
+        accountingCurrencyCode: data.currencyCode,
         timezone: data.timezone,
         taxName: data.taxName,
         taxRate: data.taxRate,
@@ -124,7 +125,7 @@ export function SetupWizard({ open, onComplete }: SetupWizardProps) {
       case 1:
         return data.businessName.trim().length > 0;
       case 2:
-        return data.currencyCode.length === 3;
+        return data.currencyCode.length >= 3 && data.currencyCode.length <= 4;
       case 3:
         return true; // Tax config is optional
       default:
