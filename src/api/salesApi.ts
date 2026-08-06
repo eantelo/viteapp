@@ -48,6 +48,7 @@ export interface SaleDto {
   status: "Pending" | "Completed" | "Closed" | "Cancelled" | "Refunded";
   items: SaleItemDto[];
   payments: PaymentDto[];
+  isCreditSale: boolean;
 }
 
 export interface SendSaleToTrelloRequest {

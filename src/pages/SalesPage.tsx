@@ -588,6 +588,12 @@ export function SalesPage() {
     return methods.join(", ");
   };
 
+  const getSaleTypeBadge = (sale: SaleDto) => (
+    <Badge variant={sale.isCreditSale ? "secondary" : "outline"}>
+      {sale.isCreditSale ? "Crédito" : "Contado"}
+    </Badge>
+  );
+
   const getStatusBadge = (status: string) => {
     const variants: Record<
       string,
@@ -1106,8 +1112,9 @@ export function SalesPage() {
                           {getStatusBadge(sale.status)}
                         </div>
 
-                        {/* Row 3: payment method + product count */}
+                        {/* Row 3: sale type + payment method + product count */}
                         <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                          {getSaleTypeBadge(sale)}
                           <span>{getPaymentMethodsLabel(sale)}</span>
                           <span>·</span>
                           <span className="tabular-nums">
@@ -1323,6 +1330,9 @@ export function SalesPage() {
                               Total
                             </TableHead>
                             <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              Tipo de venta
+                            </TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                               Método Pago
                             </TableHead>
                             <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1363,6 +1373,7 @@ export function SalesPage() {
                               <TableCell className="text-right text-sm font-semibold tabular-nums">
                                 {formatCurrency(sale.total)}
                               </TableCell>
+                              <TableCell>{getSaleTypeBadge(sale)}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {getPaymentMethodsLabel(sale)}
                               </TableCell>
