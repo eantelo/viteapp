@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { CurrencyAdministration } from "@/components/settings/CurrencyAdministra
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 export function TenantSettingsPage() {
-  const { refreshCurrencies } = useCurrency();
+  const { configuration, refreshCurrencies } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
@@ -21,11 +21,7 @@ export function TenantSettingsPage() {
     taxRate: 0,
   });
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getTenantSettings();
@@ -37,7 +33,13 @@ export function TenantSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Carga inicial del recurso remoto; loadSettings administra explícitamente sus estados de UI.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadSettings();
+  }, [loadSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,13 +161,27 @@ export function TenantSettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="currencyCode">Moneda operativa predeterminada</Label>
-                    <Input
+                    <select
                       id="currencyCode"
+                      name="currencyCode"
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                       value={settings.currencyCode}
                       onChange={(e) => setSettings({ ...settings, currencyCode: e.target.value.toUpperCase() })}
-                      placeholder="USD"
-                      maxLength={4}
-                    />
+                    >
+                      {!configuration?.enabledCurrencies.some((currency) => currency.isEnabled && currency.currencyCode === settings.currencyCode) && (
+                        <option value={settings.currencyCode}>{settings.currencyCode}</option>
+                      )}
+                      {configuration?.enabledCurrencies
+                        .filter((currency) => currency.isEnabled)
+                        .map((currency) => (
+                          <option key={currency.currencyCode} value={currency.currencyCode}>
+                            {currency.currencyCode} · {currency.name}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Se aplicará por defecto a nuevas ventas, compras y cobros; cada operación puede elegir otra moneda habilitada.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Zona Horaria</Label>
@@ -211,7 +227,7 @@ export function TenantSettingsPage() {
               </CardContent>
             </Card>
 
-            <CurrencyAdministration accountingCurrencyCode={settings.accountingCurrencyCode} />
+            <CurrencyAdministration />
 
             {/* Contact Information Section */}
             <Card>

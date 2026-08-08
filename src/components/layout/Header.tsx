@@ -50,7 +50,7 @@ interface HeaderProps {
 
 export function Header({ breadcrumbs }: HeaderProps) {
   const { auth, logout } = useAuth();
-  const { configuration, displayCurrencyCode, setDisplayCurrencyCode } = useCurrency();
+  const { configuration, displayCurrencyCode, setDisplayCurrencyCode, isLoading: isLoadingCurrencies } = useCurrency();
   const { isEnabled, setIsEnabled, isChatVisibleAndDocked } = useChatDock();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -155,19 +155,21 @@ export function Header({ breadcrumbs }: HeaderProps) {
       {/* Right Section: Notifications + Help + User Menu */}
       <div className="flex items-center gap-2 flex-1 justify-end">
         {configuration && (
-          <label className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-            <span className="sr-only">Moneda de visualización</span>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground" title="Cambia la moneda de visualización en reportes compatibles">
+            <span className="hidden xl:inline">Ver en</span>
             <select
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+              name="displayCurrencyCode"
+              className="h-9 max-w-28 rounded-md border border-input bg-background px-2 text-sm font-medium text-foreground outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:max-w-44"
               value={displayCurrencyCode}
               onChange={(event) => setDisplayCurrencyCode(event.target.value)}
               aria-label="Moneda de visualización"
+              disabled={isLoadingCurrencies}
             >
               {configuration.enabledCurrencies
                 .filter((currency) => currency.isEnabled)
                 .map((currency) => (
                   <option key={currency.currencyCode} value={currency.currencyCode}>
-                    {currency.currencyCode}
+                    {currency.currencyCode}{currency.currencyCode === configuration.accountingCurrencyCode ? " · contable" : ` · ${currency.name}`}
                   </option>
                 ))}
             </select>
