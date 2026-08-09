@@ -8,6 +8,7 @@ export interface ProductDto {
   barcode: string;
   brand: string;
   category: string;
+  officialUrl: string | null;
   price: number;
   cost: number;
   stock: number;
@@ -22,6 +23,7 @@ export interface ProductCreateDto {
   barcode: string;
   brand: string;
   category: string;
+  officialUrl?: string;
   price: number;
   cost: number;
   stock: number;
@@ -34,6 +36,7 @@ export interface ProductUpdateDto {
   barcode: string;
   brand: string;
   category: string;
+  officialUrl?: string;
   price: number;
   cost: number;
   stock: number;

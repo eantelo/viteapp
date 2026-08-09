@@ -32,7 +32,8 @@ ProductFormDialog
      - SKU (obligatorio, máx 100 caracteres)
    - Marca (opcional, máx 120 caracteres)
    - Categoría (opcional, máx 120 caracteres)
-     - Código de Barras (opcional, máx 100 caracteres)
+  - Código de Barras (opcional, máx 100 caracteres)
+  - URL oficial (opcional, máx 2048 caracteres; enlace HTTP/HTTPS a la ficha técnica oficial)
      - Precio (obligatorio, ≥0)
      - Stock (obligatorio, ≥0)
      - Estado activo/inactivo (solo en modo edición)
@@ -57,6 +58,7 @@ interface ProductDto {
   barcode: string;
    brand: string;
    category: string;
+  officialUrl: string | null;
   price: number;
   stock: number;
   isActive: boolean;
@@ -68,6 +70,7 @@ interface ProductCreateDto {
   barcode: string;
    brand: string;
    category: string;
+  officialUrl?: string;
   price: number;
   stock: number;
 }
@@ -78,6 +81,7 @@ interface ProductUpdateDto {
   barcode: string;
    brand: string;
    category: string;
+  officialUrl?: string;
   price: number;
   stock: number;
   isActive: boolean;
@@ -191,6 +195,7 @@ Las validaciones definitivas se realizan en `Sales.Api` mediante DataAnnotations
 - `Barcode`: StringLength(100)
 - `Price`: Range(0.00, 999999999999.99)
 - `Stock`: Range(0, int.MaxValue)
+- `OfficialUrl`: opcional, máximo 2048 caracteres y URL absoluta HTTP/HTTPS
 
 ## Manejo de errores
 

@@ -64,6 +64,7 @@ export function ProductUpsertPage() {
   const [barcode, setBarcode] = useState("");
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
+  const [officialUrl, setOfficialUrl] = useState("");
   const [price, setPrice] = useState("");
   const [cost, setCost] = useState("");
   const [stock, setStock] = useState("");
@@ -119,6 +120,7 @@ export function ProductUpsertPage() {
       setBarcode(data.barcode || "");
       setBrand(data.brand || "");
       setCategory(data.category || "");
+      setOfficialUrl(data.officialUrl || "");
       setPrice(data.price.toString());
       setCost(data.cost.toString());
       setStock(data.stock.toString());
@@ -293,6 +295,18 @@ export function ProductUpsertPage() {
       return;
     }
 
+    if (officialUrl.trim()) {
+      try {
+        const url = new URL(officialUrl.trim());
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          throw new Error("unsupported protocol");
+        }
+      } catch {
+        setFormError("La URL oficial debe ser un enlace HTTP o HTTPS válido.");
+        return;
+      }
+    }
+
     savingRef.current = true;
     setSaving(true);
     setFormError(null);
@@ -306,6 +320,7 @@ export function ProductUpsertPage() {
           barcode: barcode.trim(),
           brand: brand.trim(),
           category: category.trim(),
+          officialUrl: officialUrl.trim() || undefined,
           price: priceValue,
           cost: costValue,
           stock: stockValue,
@@ -323,6 +338,7 @@ export function ProductUpsertPage() {
           barcode: barcode.trim(),
           brand: brand.trim(),
           category: category.trim(),
+          officialUrl: officialUrl.trim() || undefined,
           price: priceValue,
           cost: costValue,
           stock: stockValue,
@@ -562,6 +578,21 @@ export function ProductUpsertPage() {
                       maxLength={1000}
                       rows={3}
                     />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="officialUrl">URL oficial</Label>
+                    <Input
+                      id="officialUrl"
+                      type="url"
+                      value={officialUrl}
+                      onChange={(e) => setOfficialUrl(e.target.value)}
+                      placeholder="https://fabricante.com/productos/modelo"
+                      maxLength={2048}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Página oficial del producto con su información técnica.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

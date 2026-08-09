@@ -12,7 +12,9 @@ La ruta `/inventory-counts` permite iniciar, continuar y consultar tomas física
 2. Seleccionar **Nueva toma**, un almacén activo y notas opcionales.
 3. Registrar una cantidad entera igual o mayor que cero para cada producto. Cero confirma que no existe mercadería física.
 4. Buscar por nombre, SKU o código de barras y guardar con el botón de cada línea o la tecla Enter.
-5. Cuando no queden pendientes, completar la toma para generar el reporte de conciliación.
+5. Cerrar la toma después de registrar al menos un producto. Las líneas sin registrar son opcionales y quedan fuera del reporte.
+6. Revisar faltantes y sobrantes en el reporte cerrado.
+7. Seleccionar **Conciliar existencias** para aplicar las diferencias al almacén como movimientos auditados.
 
 Solo existe un borrador por almacén. Si se inicia otra toma en el mismo almacén, la API devuelve el borrador vigente y la SPA lo reanuda.
 
@@ -25,7 +27,7 @@ Solo existe un borrador por almacén. Si se inicia otra toma en el mismo almacé
 
 ## Conciliación
 
-El cierre muestra existencias del sistema, conteo físico, conteo ajustado, diferencias, faltantes, sobrantes y productos con movimientos durante el recorrido. Completar o cancelar no modifica stock. Una regularización posterior debe ser una operación explícita y auditada.
+El cierre muestra existencias del sistema, conteo físico, conteo ajustado, diferencias, faltantes, sobrantes y productos con movimientos durante el recorrido. Completar o cancelar no modifica stock. La acción posterior **Conciliar existencias** crea movimientos `InventoryReconciliation` únicamente para productos contados con diferencia; coincidencias y productos omitidos no cambian. El estado final `Reconciled` y `ReconciledAt` permiten comprobar que los ajustes ya fueron aplicados sin duplicarlos.
 
 ## Archivos
 

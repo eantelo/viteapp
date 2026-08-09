@@ -7,6 +7,7 @@ export const StockTransactionType = {
   Adjustment: 3,
   Return: 4,
   Transfer: 5,
+  InventoryReconciliation: 6,
 } as const;
 
 export type StockTransactionType = typeof StockTransactionType[keyof typeof StockTransactionType];

@@ -204,6 +204,7 @@ export function PointOfSalePage() {
               barcode: "",
               brand: "",
               category: "",
+              officialUrl: null,
               price: item.price,
               cost: 0,
               stock: item.quantity,

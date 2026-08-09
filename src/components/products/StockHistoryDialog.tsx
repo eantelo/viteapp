@@ -56,9 +56,12 @@ export function StockHistoryDialog({
   }, [productId, warehouseId]);
 
   useEffect(() => {
-    if (open && productId) {
-      void loadHistory();
+    if (!open || !productId) {
+      return;
     }
+
+    const timeoutId = window.setTimeout(() => void loadHistory(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadHistory, open, productId]);
 
   const getTransactionTypeName = (type: StockTransactionType) => {
@@ -69,6 +72,7 @@ export function StockHistoryDialog({
       case StockTransactionType.Adjustment: return "Ajuste";
       case StockTransactionType.Return: return "Devolución";
       case StockTransactionType.Transfer: return "Traslado";
+      case StockTransactionType.InventoryReconciliation: return "Conciliación de inventario";
       default: return "Desconocido";
     }
   };

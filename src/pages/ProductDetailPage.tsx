@@ -29,6 +29,7 @@ import {
   Barcode,
   Tag,
   FolderOpen,
+  LinkSimple,
   Cube,
   Warning,
 } from "@phosphor-icons/react";
@@ -390,6 +391,23 @@ export function ProductDetailPage() {
                       <p className="text-lg">{product.category || "—"}</p>
                     </div>
                   </div>
+
+                  {product.officialUrl && (
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <LinkSimple size={16} weight="bold" />
+                        URL oficial
+                      </h4>
+                      <a
+                        href={product.officialUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="break-all text-primary underline-offset-4 hover:underline"
+                      >
+                        Ver información técnica del producto
+                      </a>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,6 +1,6 @@
 import { apiClient } from "./apiClient";
 
-export type InventoryCountStatus = "Draft" | "Completed" | "Cancelled";
+export type InventoryCountStatus = "Draft" | "Completed" | "Cancelled" | "Reconciled";
 export type InventoryCountLineResult =
   | "Pending"
   | "Counted"
@@ -17,6 +17,7 @@ export interface InventoryCountSummaryDto {
   version: string;
   snapshotAt: string;
   completedAt?: string;
+  reconciledAt?: string;
   cancelledAt?: string;
   totalProducts: number;
   countedProducts: number;
@@ -51,6 +52,7 @@ export interface InventoryCountDto {
   notes?: string;
   snapshotAt: string;
   completedAt?: string;
+  reconciledAt?: string;
   cancelledAt?: string;
   totalProducts: number;
   countedProducts: number;
@@ -113,6 +115,16 @@ export async function completeInventoryCount(
   inventoryCountVersion: string,
 ): Promise<InventoryCountDto> {
   return apiClient<InventoryCountDto>(`/api/inventory-counts/${id}/complete`, {
+    method: "POST",
+    body: JSON.stringify({ inventoryCountVersion }),
+  });
+}
+
+export async function reconcileInventoryCount(
+  id: string,
+  inventoryCountVersion: string,
+): Promise<InventoryCountDto> {
+  return apiClient<InventoryCountDto>(`/api/inventory-counts/${id}/reconcile`, {
     method: "POST",
     body: JSON.stringify({ inventoryCountVersion }),
   });
