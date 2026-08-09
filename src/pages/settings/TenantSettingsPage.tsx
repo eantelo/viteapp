@@ -12,7 +12,7 @@ import { CurrencyAdministration } from "@/components/settings/CurrencyAdministra
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 export function TenantSettingsPage() {
-  const { configuration, refreshCurrencies } = useCurrency();
+  const { refreshCurrencies } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
@@ -51,9 +51,9 @@ export function TenantSettingsPage() {
       toast.success("Success", {
         description: "Settings updated successfully",
       });
-    } catch {
+    } catch (error) {
       toast.error("Error", {
-        description: "Failed to update settings",
+        description: error instanceof Error ? error.message : "No se pudo actualizar la configuración.",
       });
     } finally {
       setSaving(false);
@@ -140,49 +140,16 @@ export function TenantSettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Currency & Tax Section */}
+            {/* Tax Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Moneda e Impuestos</CardTitle>
+                <CardTitle>Impuestos y Región</CardTitle>
                 <CardDescription>
-                  Configure la moneda y los ajustes de impuestos
+                  Configure la zona horaria y los ajustes de impuestos
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accountingCurrencyCode">Moneda contable</Label>
-                    <Input
-                      id="accountingCurrencyCode"
-                      value={settings.accountingCurrencyCode}
-                      disabled
-                      title="La moneda contable es inmutable después del onboarding"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="currencyCode">Moneda operativa predeterminada</Label>
-                    <select
-                      id="currencyCode"
-                      name="currencyCode"
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                      value={settings.currencyCode}
-                      onChange={(e) => setSettings({ ...settings, currencyCode: e.target.value.toUpperCase() })}
-                    >
-                      {!configuration?.enabledCurrencies.some((currency) => currency.isEnabled && currency.currencyCode === settings.currencyCode) && (
-                        <option value={settings.currencyCode}>{settings.currencyCode}</option>
-                      )}
-                      {configuration?.enabledCurrencies
-                        .filter((currency) => currency.isEnabled)
-                        .map((currency) => (
-                          <option key={currency.currencyCode} value={currency.currencyCode}>
-                            {currency.currencyCode} · {currency.name}
-                          </option>
-                        ))}
-                    </select>
-                    <p className="text-xs text-muted-foreground">
-                      Se aplicará por defecto a nuevas ventas, compras y cobros; cada operación puede elegir otra moneda habilitada.
-                    </p>
-                  </div>
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Zona Horaria</Label>
                     <Input
@@ -227,7 +194,10 @@ export function TenantSettingsPage() {
               </CardContent>
             </Card>
 
-            <CurrencyAdministration />
+            <CurrencyAdministration
+              primaryCurrencyCode={settings.currencyCode}
+              onPrimaryCurrencyChange={(currencyCode) => setSettings({ ...settings, currencyCode })}
+            />
 
             {/* Contact Information Section */}
             <Card>
@@ -294,7 +264,7 @@ export function TenantSettingsPage() {
             <div className="flex justify-end">
               <Button type="submit" disabled={saving}>
                 {saving && <SpinnerGap weight="bold" className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar Configuración
+                Guardar Configuración y Moneda Principal
               </Button>
             </div>
           </div>

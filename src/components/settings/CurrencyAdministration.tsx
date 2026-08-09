@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent } from "react";
 import {
   ArrowClockwise,
   CalendarBlank,
+  CaretDown,
   CheckCircle,
   CurrencyCircleDollar,
   Info,
   LockKey,
+  MagnifyingGlass,
   WarningCircle,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -50,6 +53,11 @@ import type { CurrencyConfiguration, CurrencyDefinition, ExchangeRate } from "@/
 
 type RateFilter = "all" | "current" | "upcoming" | "history";
 
+interface CurrencyAdministrationProps {
+  primaryCurrencyCode: string;
+  onPrimaryCurrencyChange: (currencyCode: string) => void;
+}
+
 const dateTimeFormatter = new Intl.DateTimeFormat("es-BO", {
   dateStyle: "medium",
   timeStyle: "short",
@@ -81,7 +89,10 @@ function statusBadge(status: RateStatus) {
 }
 
 /** Administra las monedas operativas y sus cotizaciones manuales por tenant. */
-export function CurrencyAdministration() {
+export function CurrencyAdministration({
+  primaryCurrencyCode,
+  onPrimaryCurrencyChange,
+}: CurrencyAdministrationProps) {
   const { hasPermission } = useAuth();
   const { refreshCurrencies } = useCurrency();
   const canManage = hasPermission("Settings.Manage");
@@ -101,6 +112,9 @@ export function CurrencyAdministration() {
   const [togglingCode, setTogglingCode] = useState<string | null>(null);
   const [rateToCancel, setRateToCancel] = useState<ExchangeRate | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [currencyCatalogExpanded, setCurrencyCatalogExpanded] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState("");
+  const rateInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -156,6 +170,24 @@ export function CurrencyAdministration() {
     ),
     [currentRates, enabledForeignCurrencies],
   );
+
+  const currenciesWithCurrentRate = useMemo(
+    () => new Set(currentRates.map((item) => item.currencyCode)),
+    [currentRates],
+  );
+
+  const filteredCatalog = useMemo(() => {
+    const query = currencySearch.trim().toLocaleLowerCase("es");
+    if (!query) return catalog;
+    return catalog.filter((currency) =>
+      `${currency.code} ${currency.name}`.toLocaleLowerCase("es").includes(query),
+    );
+  }, [catalog, currencySearch]);
+
+  const selectRateCurrency = (currencyCode: string) => {
+    setSelectedCode(currencyCode);
+    requestAnimationFrame(() => rateInputRef.current?.focus());
+  };
 
   const filteredRates = useMemo(() => rates.filter((item) => {
     if (currencyFilter !== "all" && item.currencyCode !== currencyFilter) return false;
@@ -308,21 +340,113 @@ export function CurrencyAdministration() {
         )}
 
         {currenciesWithoutCurrentRate.length > 0 && (
-          <Alert
-            variant="info"
-            title="Faltan Cotizaciones Vigentes"
-            message="Estas monedas están habilitadas, pero no pueden utilizarse ahora en conversiones."
-            items={currenciesWithoutCurrentRate.map((currency) => `${currency.currencyCode} · ${currency.name}`)}
-          />
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+            <div className="flex items-start gap-3">
+              <WarningCircle className="mt-0.5 h-5 w-5 shrink-0" weight="duotone" aria-hidden="true" />
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="font-semibold">Faltan Cotizaciones Vigentes</p>
+                  <p>Registre una tasa manual para poder usar estas monedas en conversiones.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {currenciesWithoutCurrentRate.map((currency) => (
+                    <Button
+                      key={currency.currencyCode}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => selectRateCurrency(currency.currencyCode)}
+                      disabled={!canManage}
+                    >
+                      Registrar {currency.currencyCode} · {currency.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         <section aria-labelledby="enabled-currencies-title" className="space-y-4">
           <div>
-            <h3 id="enabled-currencies-title" className="font-semibold text-pretty">Monedas Disponibles</h3>
-            <p className="text-sm text-muted-foreground">Deshabilitar una moneda no elimina sus operaciones ni sus cotizaciones históricas.</p>
+            <h3 id="enabled-currencies-title" className="font-semibold text-pretty">Moneda Principal y Secundarias</h3>
+            <p className="text-sm text-muted-foreground">La principal se usará por defecto. Habilite como secundarias las monedas que necesite en ventas, compras y cobros.</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {catalog.map((currency) => {
+
+          <div className="grid gap-2 rounded-xl border bg-muted/20 p-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,24rem)] md:items-center">
+            <div>
+              <Label htmlFor="primaryCurrency">Moneda Principal</Label>
+              <p className="text-xs text-muted-foreground">Solo puede seleccionarse una moneda con cotización vigente.</p>
+            </div>
+            <Select value={primaryCurrencyCode} onValueChange={onPrimaryCurrencyChange} disabled={!canManage}>
+              <SelectTrigger id="primaryCurrency" className="w-full" aria-label="Moneda principal">
+                <SelectValue placeholder="Seleccione la moneda principal" />
+              </SelectTrigger>
+              <SelectContent>
+                {configuration?.enabledCurrencies.filter((currency) => currency.isEnabled).map((currency) => {
+                  const available = currency.currencyCode === configuration.accountingCurrencyCode
+                    || currenciesWithCurrentRate.has(currency.currencyCode)
+                    || currency.currencyCode === primaryCurrencyCode;
+                  return (
+                    <SelectItem key={currency.currencyCode} value={currency.currencyCode} disabled={!available}>
+                      {currency.currencyCode} · {currency.name}{!available ? " · falta cotización" : ""}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-xl border">
+            <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Monedas Secundarias Activas</p>
+                <div className="flex flex-wrap gap-2">
+                  {enabledForeignCurrencies.length > 0 ? enabledForeignCurrencies.map((currency) => (
+                    <Badge key={currency.currencyCode} variant="outline" className="gap-1.5 py-1">
+                      <span translate="no">{currency.currencyCode}</span>
+                      <span className="max-w-40 truncate text-muted-foreground">{currency.name}</span>
+                    </Badge>
+                  )) : (
+                    <span className="text-sm text-muted-foreground">No hay monedas secundarias habilitadas.</span>
+                  )}
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                aria-expanded={currencyCatalogExpanded}
+                aria-controls="currency-catalog"
+                onClick={() => setCurrencyCatalogExpanded((expanded) => !expanded)}
+              >
+                {currencyCatalogExpanded ? "Ocultar Monedas" : "Administrar Monedas"}
+                <CaretDown
+                  className={`transition-transform motion-reduce:transition-none ${currencyCatalogExpanded ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                />
+              </Button>
+            </div>
+
+            {currencyCatalogExpanded && (
+              <div id="currency-catalog" className="space-y-4 border-t p-4">
+                <div className="relative max-w-md">
+                  <Label htmlFor="currencySearch" className="sr-only">Buscar Moneda</Label>
+                  <MagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <Input
+                    id="currencySearch"
+                    name="currencySearch"
+                    type="search"
+                    autoComplete="off"
+                    className="pl-9"
+                    value={currencySearch}
+                    onChange={(event) => setCurrencySearch(event.target.value)}
+                    placeholder="Buscar por código o nombre…"
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredCatalog.map((currency) => {
               const enabled = enabledCodes.has(currency.code);
               const isAccounting = currency.code === configuration?.accountingCurrencyCode;
               const isDefault = currency.code === configuration?.defaultCurrencyCode;
@@ -342,6 +466,16 @@ export function CurrencyAdministration() {
                         {isDefault && !isAccounting && <Badge variant="secondary">Predeterminada</Badge>}
                       </div>
                       <p className="truncate text-sm text-muted-foreground" title={currency.name}>{currency.name}</p>
+                      {enabled && !isAccounting && !currenciesWithCurrentRate.has(currency.code) && (
+                        <button
+                          type="button"
+                          className="mt-1 text-xs font-medium text-amber-700 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => selectRateCurrency(currency.code)}
+                          disabled={!canManage}
+                        >
+                          Registrar cotización
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -349,7 +483,7 @@ export function CurrencyAdministration() {
                     <Switch
                       checked={enabled}
                       disabled={!canManage || locked || Boolean(togglingCode)}
-                      onCheckedChange={(checked) => void toggleCurrency(currency.code, checked)}
+                      onCheckedChange={(checked: boolean) => void toggleCurrency(currency.code, checked)}
                       aria-label={`${enabled ? "Deshabilitar" : "Habilitar"} ${currency.name}`}
                       aria-busy={isBusy}
                     />
@@ -357,6 +491,14 @@ export function CurrencyAdministration() {
                 </div>
               );
             })}
+                </div>
+                {filteredCatalog.length === 0 && (
+                  <p className="rounded-lg bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+                    No se encontraron monedas para “{currencySearch}”.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <p className="flex items-start gap-2 text-xs text-muted-foreground">
             <Info className="mt-0.5 shrink-0" aria-hidden="true" />
@@ -394,6 +536,7 @@ export function CurrencyAdministration() {
             <div className="space-y-2">
               <Label htmlFor="rateValue">Tasa a {configuration?.accountingCurrencyCode}</Label>
               <Input
+                ref={rateInputRef}
                 id="rateValue"
                 name="rateToAccounting"
                 type="number"
@@ -481,7 +624,7 @@ export function CurrencyAdministration() {
                   ))}
                 </SelectContent>
               </Select>
-              <Tabs value={rateFilter} onValueChange={(value) => setRateFilter(value as RateFilter)}>
+              <Tabs value={rateFilter} onValueChange={(value: string) => setRateFilter(value as RateFilter)}>
                 <TabsList className="grid w-full grid-cols-4 sm:w-auto">
                   <TabsTrigger value="all">Todas</TabsTrigger>
                   <TabsTrigger value="current">Vigentes</TabsTrigger>
@@ -543,7 +686,7 @@ export function CurrencyAdministration() {
         </section>
       </CardContent>
 
-      <AlertDialog open={Boolean(rateToCancel)} onOpenChange={(open) => !open && !cancelling && setRateToCancel(null)}>
+      <AlertDialog open={Boolean(rateToCancel)} onOpenChange={(open: boolean) => !open && !cancelling && setRateToCancel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Cancelar Esta Cotización?</AlertDialogTitle>
@@ -558,7 +701,7 @@ export function CurrencyAdministration() {
             <AlertDialogCancel disabled={cancelling}>Conservar Cotización</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={(event) => {
+              onClick={(event: MouseEvent<HTMLButtonElement>) => {
                 event.preventDefault();
                 void confirmCancelRate();
               }}

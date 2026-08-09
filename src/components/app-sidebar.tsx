@@ -5,6 +5,7 @@ import {
   CurrencyCircleDollar,
   ArrowsLeftRight,
   CashRegister,
+  ClipboardText,
   CircleNotch,
   Coffee,
   Factory,
@@ -71,6 +72,7 @@ const navigationGroups: NavigationGroup[] = [
         feature: FEATURES.CATEGORIES,
       },
       { title: "Almacenes", url: "/warehouses", icon: Warehouse },
+      { title: "Tomas de inventario", url: "/inventory-counts", icon: ClipboardText },
       {
         title: "Traslados",
         url: "/warehouse-transfers",

@@ -32,6 +32,8 @@ const SystemPage = lazy(() => import("@/pages/SystemPage").then((module) => ({ d
 const WarehousesPage = lazy(() => import("@/pages/WarehousesPage").then((module) => ({ default: module.WarehousesPage })));
 const WarehouseDetailPage = lazy(() => import("@/pages/WarehouseDetailPage").then((module) => ({ default: module.WarehouseDetailPage })));
 const WarehouseTransfersPage = lazy(() => import("@/pages/WarehouseTransfersPage").then((module) => ({ default: module.WarehouseTransfersPage })));
+const InventoryCountsPage = lazy(() => import("@/pages/InventoryCountsPage").then((module) => ({ default: module.InventoryCountsPage })));
+const InventoryCountDetailPage = lazy(() => import("@/pages/InventoryCountDetailPage").then((module) => ({ default: module.InventoryCountDetailPage })));
 const AccountSecurityPage = lazy(() => import("@/pages/AccountSecurityPage").then((module) => ({ default: module.AccountSecurityPage })));
 const AccountsReceivablePage = lazy(() => import("@/pages/AccountsReceivablePage").then((module) => ({ default: module.AccountsReceivablePage })));
 
@@ -215,6 +217,8 @@ function App() {
             path="/warehouse-transfers"
             element={<WarehouseTransfersPage />}
           />
+          <Route path="/inventory-counts" element={<InventoryCountsPage />} />
+          <Route path="/inventory-counts/:id" element={<InventoryCountDetailPage />} />
           <Route path="/settings" element={<TenantSettingsPage />} />
           <Route path="/system" element={<SystemPage />} />
           <Route path="/account/security" element={<AccountSecurityPage />} />
