@@ -21,17 +21,6 @@ import type { PipelineListConfig } from "@/lib/crmPipelineLists";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared";
 import { SlidersHorizontal } from "@phosphor-icons/react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 
 interface KanbanBoardProps {
   leads: LeadDto[];
@@ -59,13 +48,6 @@ const STATUSES: LeadStatus[] = [
   LeadStatus.Lost,
 ];
 
-interface PendingLeadMove {
-  lead: LeadDto;
-  targetStatus: LeadStatus;
-  targetIndex: number;
-  previousLeads: LeadDto[];
-}
-
 export function KanbanBoard({
   leads,
   listConfigs,
@@ -83,10 +65,6 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [draggedLead, setDraggedLead] = useState<LeadDto | null>(null);
   const [overStatus, setOverStatus] = useState<LeadStatus | null>(null);
-  const [pendingLeadMove, setPendingLeadMove] = useState<PendingLeadMove | null>(
-    null
-  );
-  const [isMoveSubmitting, setIsMoveSubmitting] = useState(false);
 
   const orderedListConfigs = [...listConfigs].sort((a, b) => a.order - b.order);
   const visibleListConfigs = orderedListConfigs.filter((item) => item.visible);
@@ -111,7 +89,12 @@ export function KanbanBoard({
   );
 
   const executeLeadMove = async (
-    pendingMove: PendingLeadMove,
+    pendingMove: {
+      lead: LeadDto;
+      targetStatus: LeadStatus;
+      targetIndex: number;
+      previousLeads: LeadDto[];
+    },
     convertToCustomer: boolean
   ) => {
     const { lead, previousLeads, targetIndex, targetStatus } = pendingMove;
@@ -139,7 +122,11 @@ export function KanbanBoard({
     } catch (error) {
       console.error("Error updating lead status:", error);
       onLeadsChange(previousLeads);
-      toast.error("Error al mover el lead");
+      toast.error(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : "Error al mover el lead"
+      );
     }
   };
 
@@ -215,19 +202,6 @@ export function KanbanBoard({
       return;
     }
 
-    const shouldOfferConversion =
-      targetStatus === LeadStatus.Won && !currentDraggedLead.customerId;
-
-    if (shouldOfferConversion) {
-      setPendingLeadMove({
-        lead: currentDraggedLead,
-        previousLeads: leads,
-        targetStatus,
-        targetIndex,
-      });
-      return;
-    }
-
     try {
       await executeLeadMove(
         {
@@ -236,24 +210,10 @@ export function KanbanBoard({
           targetStatus,
           targetIndex,
         },
-        false
+        targetStatus === LeadStatus.Won && !currentDraggedLead.customerId
       );
     } catch (error) {
       console.error("Unexpected lead move error:", error);
-    }
-  };
-
-  const handlePendingMoveDecision = async (convertToCustomer: boolean) => {
-    if (!pendingLeadMove || isMoveSubmitting) {
-      return;
-    }
-
-    setIsMoveSubmitting(true);
-    try {
-      await executeLeadMove(pendingLeadMove, convertToCustomer);
-    } finally {
-      setIsMoveSubmitting(false);
-      setPendingLeadMove(null);
     }
   };
 
@@ -331,60 +291,6 @@ export function KanbanBoard({
           </div>
         )}
       </DragOverlay>
-      <AlertDialog
-        open={!!pendingLeadMove}
-        onOpenChange={(open) => {
-          if (!open && !isMoveSubmitting) {
-            setPendingLeadMove(null);
-          }
-        }}
-      >
-        <AlertDialogContent
-          className="max-w-md"
-          onEscapeKeyDown={(event) => event.preventDefault()}
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Crear cliente al ganar lead?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <span className="block">
-                El lead{" "}
-                <span className="font-semibold text-foreground">
-                  {pendingLeadMove?.lead.name}
-                </span>{" "}
-                se moverá a la lista de ganados.
-              </span>
-              <span className="block">
-                Puedes crear también un cliente con sus datos actuales o moverlo sin generar ese registro.
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              asChild
-              disabled={isMoveSubmitting}
-            >
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void handlePendingMoveDecision(false)}
-              >
-                Mover sin crear cliente
-              </Button>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              asChild
-              disabled={isMoveSubmitting}
-            >
-              <Button
-                type="button"
-                onClick={() => void handlePendingMoveDecision(true)}
-              >
-                {isMoveSubmitting ? "Procesando..." : "Crear cliente y mover"}
-              </Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DndContext>
   );
 }
