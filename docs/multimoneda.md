@@ -10,11 +10,14 @@ Sales.Web obtiene de `Sales.Api` la moneda contable, la moneda operativa y las m
 - Filtros por moneda y estado (`vigente`, `programada`, `vencida` o `cancelada`) con fechas presentadas en la hora local del usuario.
 - Confirmación explícita antes de cancelar una cotización futura; la acción conserva el historial y la auditoría.
 - Selector de moneda en POS, pagos mixtos y confirmación obligatoria cuando la API responde `409 currency_quote_stale`.
+- Selector de moneda en **Nueva Orden de Venta** (`/sales/new`): usa únicamente monedas habilitadas, cotiza para la fecha de la orden, reexpresa los precios desde su valor contable y conserva `currencyCode` y `exchangeRateId` al guardar. Las órdenes existentes muestran su moneda congelada en modo de solo lectura.
 - Cartera con deuda original, equivalente contable, pagos cruzados y diferencia cambiaria.
 - Compras y pedidos retenidos con recotización antes de confirmar o reanudar.
 - Reportes con total oficial contable y equivalente de visualización secundario cuando existe cotización.
 
 Si la API responde `422 currency_rate_unavailable`, la interfaz muestra que la conversión no está disponible y no usa una tasa anterior. La fórmula, reglas de redondeo, contratos y operación se documentan en `../../docs/multimoneda.md`.
+
+En órdenes manuales, guardar y aprobar permanecen bloqueados mientras se obtiene la cotización o cuando no existe una tasa vigente. Si la API devuelve `409 currency_quote_stale`, la pantalla obtiene la nueva cotización, recalcula los importes y exige que el operador confirme nuevamente. La aprobación de una orden nueva envía venta y pago juntos para que la API los persista atómicamente.
 
 ## Uso desde Configuración
 

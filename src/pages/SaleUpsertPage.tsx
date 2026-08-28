@@ -62,15 +62,22 @@ import type { CustomerDto } from "@/api/customersApi";
 import { getCustomers } from "@/api/customersApi";
 import type { ProductDto } from "@/api/productsApi";
 import { getProducts } from "@/api/productsApi";
+import { getCurrencyQuote } from "@/api/currenciesApi";
 import { ProductSearchSelector } from "@/components/sales/ProductSearchSelector";
 import { OrderProductTableEnhanced } from "@/components/sales/OrderProductTableEnhanced";
 import { ConfirmDialog } from "@/components/shared";
+import {
+  convertAccountingPrice,
+  convertSalePriceToAccounting,
+  isCurrencyQuoteStale,
+} from "@/lib/saleCurrency";
 
 interface SaleItemForm {
   productId: string;
   productName: string;
   quantity: number;
   price: number;
+  accountingPrice: number;
   subtotal: number;
 }
 
@@ -142,6 +149,13 @@ export function SaleUpsertPage() {
   );
   const [amountReceived, setAmountReceived] = useState("");
   const [paymentReference, setPaymentReference] = useState("");
+  const [saleCurrencyCode, setSaleCurrencyCode] = useState("");
+  const [saleQuote, setSaleQuote] = useState<{
+    rate: number;
+    exchangeRateId?: string | null;
+  } | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   // Datos de referencia
   const [customers, setCustomers] = useState<CustomerDto[]>([]);
@@ -157,6 +171,7 @@ export function SaleUpsertPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mobileSnap, setMobileSnap] = useState<MobileSnapPoint>("collapsed");
   const sheetGestureRef = useRef<{ startY: number; startTime: number } | null>(null);
+  const quoteRequestRef = useRef(0);
 
   // Solo se pueden editar ventas en estado Pending
   const isReadOnly = isEditing && sale?.status !== "Pending";
@@ -216,6 +231,91 @@ export function SaleUpsertPage() {
       : "Nueva Orden de Venta"
   );
 
+  const selectedCurrency = configuration?.enabledCurrencies.find(
+    (currency) => currency.isEnabled && currency.currencyCode === saleCurrencyCode
+  );
+  const saleCurrencyMinorUnits = selectedCurrency?.minorUnits ?? 2;
+  const currencyReady = isEditing
+    ? sale !== null
+    : saleQuote !== null && !quoteLoading && quoteError === null;
+
+  /** Obtiene una tasa vigente y reexpresa las líneas desde su precio contable original. */
+  const refreshSaleQuote = useCallback(async (): Promise<boolean> => {
+    if (!configuration || !saleCurrencyCode || !saleDate || isEditing) {
+      return false;
+    }
+
+    const requestId = ++quoteRequestRef.current;
+    setQuoteLoading(true);
+    setQuoteError(null);
+    setSaleQuote(null);
+
+    try {
+      const effectiveAt = dateStringWithTimeToUTC(saleDate, new Date());
+      const quote = await getCurrencyQuote(
+        configuration.accountingCurrencyCode,
+        saleCurrencyCode,
+        undefined,
+        new Date(effectiveAt)
+      );
+
+      if (requestId !== quoteRequestRef.current) return false;
+
+      const nextQuote = {
+        rate: quote.rate,
+        exchangeRateId: quote.toExchangeRateId,
+      };
+      setSaleQuote(nextQuote);
+      setItems((current) =>
+        current.map((item) => {
+          const price = convertAccountingPrice(
+            item.accountingPrice,
+            nextQuote.rate,
+            saleCurrencyMinorUnits
+          );
+          return {
+            ...item,
+            price,
+            subtotal: item.quantity * price,
+          };
+        })
+      );
+      return true;
+    } catch (error) {
+      if (requestId !== quoteRequestRef.current) return false;
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No existe una cotización vigente para la moneda seleccionada.";
+      setQuoteError(message);
+      setSaleQuote(null);
+      return false;
+    } finally {
+      if (requestId === quoteRequestRef.current) {
+        setQuoteLoading(false);
+      }
+    }
+  }, [
+    configuration,
+    isEditing,
+    saleCurrencyCode,
+    saleCurrencyMinorUnits,
+    saleDate,
+  ]);
+
+  useEffect(() => {
+    if (isEditing || !configuration) return;
+
+    setSaleCurrencyCode((current) => current || configuration.defaultCurrencyCode);
+  }, [configuration, isEditing]);
+
+  useEffect(() => {
+    if (isEditing || !configuration || !saleCurrencyCode || !saleDate) return;
+
+    void refreshSaleQuote();
+  }, [configuration, isEditing, refreshSaleQuote, saleCurrencyCode, saleDate]);
+
   // Cargar la venta existente (para edición)
   const loadSale = useCallback(async () => {
     if (!id) return;
@@ -230,12 +330,25 @@ export function SaleUpsertPage() {
       setCustomerId(data.customerId ?? "");
       setSaleDate(data.date ? data.date.split("T")[0] : "");
       setSaleTimeSource(data.date ? new Date(data.date) : null);
+      setSaleCurrencyCode(data.currencyCode);
+      setQuoteError(null);
+      setQuoteLoading(false);
+      setSaleQuote({
+        rate:
+          data.exchangeRateToAccounting > 0
+            ? 1 / data.exchangeRateToAccounting
+            : 1,
+        exchangeRateId: data.exchangeRateId,
+      });
       setItems(
         data.items.map((item) => ({
           productId: item.productId,
           productName: item.productName ?? "",
           quantity: item.quantity,
           price: item.price,
+          accountingPrice:
+            item.accountingUnitPrice ??
+            item.price * data.exchangeRateToAccounting,
           subtotal: item.quantity * item.price,
         }))
       );
@@ -322,6 +435,7 @@ export function SaleUpsertPage() {
               productName: product.productName,
               quantity: product.quantity,
               price: product.price,
+              accountingPrice: product.price,
               subtotal: product.quantity * product.price,
             },
           ];
@@ -354,12 +468,19 @@ export function SaleUpsertPage() {
       return;
     }
 
+    const accountingPrice = product.price;
+    const price = convertAccountingPrice(
+      accountingPrice,
+      saleQuote?.rate ?? 1,
+      saleCurrencyMinorUnits
+    );
     const newItem: SaleItemForm = {
       productId: product.id,
       productName: product.name,
       quantity: 1,
-      price: product.price,
-      subtotal: product.price,
+      price,
+      accountingPrice,
+      subtotal: price,
     };
 
     setItems([...items, newItem]);
@@ -388,6 +509,10 @@ export function SaleUpsertPage() {
       const numValue =
         typeof value === "string" ? parseFloat(value) || 0 : value;
       item.price = numValue;
+      item.accountingPrice = convertSalePriceToAccounting(
+        numValue,
+        saleQuote?.rate ?? 1
+      );
       item.subtotal = calculateSubtotal(item.quantity, item.price);
     }
 
@@ -410,6 +535,12 @@ export function SaleUpsertPage() {
 
       if (items.length === 0) {
         throw new Error("Debes agregar al menos un producto");
+      }
+
+      if (!isEditing && !currencyReady) {
+        throw new Error(
+          quoteError ?? "Espera a que la cotización de la moneda esté disponible."
+        );
       }
 
       const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
@@ -440,6 +571,8 @@ export function SaleUpsertPage() {
           date: timestamp,
           customerId,
           items: createItems,
+          currencyCode: saleCurrencyCode,
+          exchangeRateId: saleQuote?.exchangeRateId,
         };
         await createSale(dto);
         toast.success("Orden de venta creada correctamente");
@@ -447,6 +580,16 @@ export function SaleUpsertPage() {
 
       navigate("/sales");
     } catch (submitError) {
+      if (!isEditing && isCurrencyQuoteStale(submitError)) {
+        const refreshed = await refreshSaleQuote();
+        const message = refreshed
+          ? "La cotización cambió. Revisa los importes y confirma nuevamente."
+          : "La cotización cambió y no fue posible obtener una nueva tasa vigente.";
+        setFormError(message);
+        toast.warning(message);
+        return;
+      }
+
       setFormError(
         submitError instanceof Error
           ? submitError.message
@@ -534,6 +677,12 @@ export function SaleUpsertPage() {
         throw new Error("Debes agregar al menos un producto");
       }
 
+      if (!isEditing && !currencyReady) {
+        throw new Error(
+          quoteError ?? "Espera a que la cotización de la moneda esté disponible."
+        );
+      }
+
       let normalizedAmountReceived: number | undefined;
       if (paymentMethod === PaymentMethod.Cash) {
         if (amountReceived.trim().length > 0) {
@@ -556,9 +705,19 @@ export function SaleUpsertPage() {
 
       const normalizedReference = paymentReference.trim() || undefined;
 
-      let saleId: string;
       const timeSource = isEditing ? saleTimeSource ?? new Date() : new Date();
       const timestamp = dateStringWithTimeToUTC(saleDate, timeSource);
+      const payment = {
+        method: paymentMethod,
+        amount: totalAmount,
+        amountReceived: normalizedAmountReceived,
+        reference: normalizedReference,
+        currencyCode: isEditing && sale ? sale.currencyCode : saleCurrencyCode,
+        exchangeRateId:
+          isEditing && sale ? sale.exchangeRateId : saleQuote?.exchangeRateId,
+      };
+
+      setStatusAction("approve");
 
       if (isEditing && sale) {
         // Actualizar la venta existente primero (incluir price)
@@ -573,9 +732,9 @@ export function SaleUpsertPage() {
           items: updateItems,
         };
         await updateSale(sale.id, dto);
-        saleId = sale.id;
+        await completeSale(sale.id, [payment]);
       } else {
-        // Crear nueva venta (incluir price)
+        // La venta nueva y su pago se persisten en una sola transacción de API.
         const createItems = items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
@@ -585,25 +744,27 @@ export function SaleUpsertPage() {
           date: timestamp,
           customerId,
           items: createItems,
+          payments: [payment],
+          currencyCode: saleCurrencyCode,
+          exchangeRateId: saleQuote?.exchangeRateId,
         };
-        const newSale = await createSale(dto);
-        saleId = newSale.id;
+        await createSale(dto);
       }
-
-      // Completar la venta con pago en efectivo por el total
-      setStatusAction("approve");
-      await completeSale(saleId, [
-        {
-          method: paymentMethod,
-          amount: totalAmount,
-          amountReceived: normalizedAmountReceived,
-          reference: normalizedReference,
-        },
-      ]);
 
       toast.success("Venta aprobada y completada correctamente");
       navigate("/sales");
     } catch (submitError) {
+      if (!isEditing && isCurrencyQuoteStale(submitError)) {
+        const refreshed = await refreshSaleQuote();
+        const message = refreshed
+          ? "La cotización cambió. Revisa los importes y confirma nuevamente."
+          : "La cotización cambió y no fue posible obtener una nueva tasa vigente.";
+        setFormError(message);
+        toast.warning(message);
+        setStatusAction(null);
+        return;
+      }
+
       setFormError(
         submitError instanceof Error
           ? submitError.message
@@ -615,7 +776,21 @@ export function SaleUpsertPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => formatMoney(amount, configuration?.accountingCurrencyCode);
+  const formatCurrency = (amount: number) =>
+    formatMoney(
+      amount,
+      saleCurrencyCode || configuration?.accountingCurrencyCode
+    );
+
+  const formatCatalogCurrency = (accountingAmount: number) =>
+    formatMoney(
+      convertAccountingPrice(
+        accountingAmount,
+        saleQuote?.rate ?? 1,
+        saleCurrencyMinorUnits
+      ),
+      saleCurrencyCode || configuration?.accountingCurrencyCode
+    );
 
   const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 
@@ -673,7 +848,7 @@ export function SaleUpsertPage() {
                 id="amount-received"
                 type="number"
                 min={0}
-                step="0.01"
+                step={1 / 10 ** saleCurrencyMinorUnits}
                 value={amountReceived}
                 onChange={(e) => setAmountReceived(e.target.value)}
                 placeholder={totalAmount ? totalAmount.toString() : "0"}
@@ -682,6 +857,13 @@ export function SaleUpsertPage() {
               <p className="text-xs text-muted-foreground">
                 Si lo dejas vacío, se usará el total.
               </p>
+              {amountReceived.trim().length > 0 &&
+                Number.isFinite(Number(amountReceived)) &&
+                Number(amountReceived) >= totalAmount && (
+                  <p className="text-sm font-medium text-success">
+                    Cambio: {formatCurrency(Number(amountReceived) - totalAmount)}
+                  </p>
+                )}
             </div>
           )}
 
@@ -1039,7 +1221,7 @@ export function SaleUpsertPage() {
                   <Button
                     type="submit"
                     variant="outline"
-                    disabled={saving || statusAction !== null}
+                    disabled={saving || statusAction !== null || !currencyReady}
                     className="min-h-11"
                   >
                     <FloppyDisk size={20} weight="bold" className="mr-2" />
@@ -1049,7 +1231,7 @@ export function SaleUpsertPage() {
                   </Button>
                   <Button
                     type="button"
-                    disabled={saving || statusAction !== null}
+                    disabled={saving || statusAction !== null || !currencyReady}
                     onClick={handleApproveSale}
                     className="min-h-11 bg-green-600 hover:bg-green-700"
                   >
@@ -1075,7 +1257,7 @@ export function SaleUpsertPage() {
                   <Button
                     type="submit"
                     variant="outline"
-                    disabled={saving || statusAction !== null}
+                    disabled={saving || statusAction !== null || !currencyReady}
                     className="min-h-11"
                   >
                     <FloppyDisk size={20} weight="bold" className="mr-2" />
@@ -1085,7 +1267,7 @@ export function SaleUpsertPage() {
                   </Button>
                   <Button
                     type="button"
-                    disabled={saving || statusAction !== null}
+                    disabled={saving || statusAction !== null || !currencyReady}
                     onClick={handleApproveSale}
                     className="min-h-11 bg-green-600 hover:bg-green-700"
                   >
@@ -1200,6 +1382,70 @@ export function SaleUpsertPage() {
                         disabled={isReadOnly}
                       />
                     </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="sale-currency">Moneda de la orden</Label>
+                      <Select
+                        value={saleCurrencyCode}
+                        onValueChange={(value) => {
+                          setSaleCurrencyCode(value);
+                          setAmountReceived("");
+                          setFormError(null);
+                        }}
+                        disabled={saving || isEditing || !configuration}
+                      >
+                        <SelectTrigger
+                          id="sale-currency"
+                          aria-describedby="sale-currency-status"
+                        >
+                          <SelectValue placeholder="Selecciona una moneda" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {configuration?.enabledCurrencies
+                            .filter((currency) => currency.isEnabled)
+                            .map((currency) => (
+                              <SelectItem
+                                key={currency.currencyCode}
+                                value={currency.currencyCode}
+                              >
+                                {currency.currencyCode} · {currency.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <div id="sale-currency-status" className="text-xs">
+                        {isEditing ? (
+                          <span className="text-muted-foreground">
+                            La moneda y la tasa quedaron congeladas al crear la orden.
+                          </span>
+                        ) : quoteLoading ? (
+                          <span className="text-muted-foreground">
+                            Obteniendo cotización vigente…
+                          </span>
+                        ) : quoteError ? (
+                          <div className="space-y-2 text-error">
+                            <p>{quoteError}</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void refreshSaleQuote()}
+                            >
+                              Reintentar cotización
+                            </Button>
+                          </div>
+                        ) : saleQuote && configuration ? (
+                          <span className="text-muted-foreground">
+                            1 {configuration.accountingCurrencyCode} = {saleQuote.rate}{" "}
+                            {saleCurrencyCode}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Selecciona una moneda con cotización vigente.
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid gap-2 mt-4">
@@ -1237,8 +1483,8 @@ export function SaleUpsertPage() {
                         products={products}
                         onAddProduct={handleAddProduct}
                         existingProductIds={items.map((i) => i.productId)}
-                        disabled={saving}
-                        formatCurrency={formatCurrency}
+                        disabled={saving || !currencyReady}
+                        formatCurrency={formatCatalogCurrency}
                       />
                     </div>
                   )}
@@ -1251,7 +1497,7 @@ export function SaleUpsertPage() {
                       onRemoveItem={handleRemoveItem}
                       onItemChange={handleItemChange}
                       formatCurrency={formatCurrency}
-                      readOnly={isReadOnly}
+                      readOnly={isReadOnly || !currencyReady}
                     />
                   ) : (
                     <div className="text-center py-12 text-muted-foreground border border-dashed rounded-lg">
