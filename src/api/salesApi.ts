@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiBaseUrl, apiClient, buildApiHeaders } from "./apiClient";
 
 export const PaymentMethod = {
   Cash: 0,
@@ -315,34 +315,11 @@ export async function downloadShippingLabels(saleIds: string[]): Promise<void> {
     throw new Error("Debe proporcionar al menos un ID de venta.");
   }
 
-  const baseUrl =
-    (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
-    "http://localhost:5205";
-  const url = `${baseUrl}/api/Sales/shipping-labels`;
-
-  // Obtener token de autenticación
-  let token: string | undefined;
-  try {
-    const authStorage = localStorage.getItem("salesnet.auth");
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage);
-      token = parsed.token;
-    }
-  } catch (e) {
-    console.warn("Error reading auth token", e);
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, {
+  const response = await fetch(`${apiBaseUrl}/api/Sales/shipping-labels`, {
     method: "POST",
-    headers,
+    headers: buildApiHeaders(undefined, { "Content-Type": "application/json" }),
     body: JSON.stringify({ saleIds }),
+    credentials: "include",
   });
 
   if (!response.ok) {

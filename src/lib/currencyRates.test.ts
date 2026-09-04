@@ -27,7 +27,7 @@ describe("currency rate administration rules", () => {
     expect(getRateStatus(rate, now)).toBe(expected);
   });
 
-  it("findOverlappingRate detects an intersection only for the same currency", () => {
+  it("findOverlappingRate identifies an intersection to inform rate precedence", () => {
     const usd = createRate();
     const usdt = createRate({ id: "rate-2", currencyCode: "USDT" });
 

@@ -207,14 +207,16 @@ export function CurrencyAdministration({
     if (validFrom && validTo && (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)) {
       return "La fecha final debe ser posterior a la fecha inicial.";
     }
-    if (rate && validFrom && validTo) {
-      const overlap = findOverlappingRate(rates, selectedCode, start, end);
-      if (overlap) {
-        return `La vigencia se cruza con una cotización del ${dateTimeFormatter.format(new Date(overlap.validFrom))} al ${dateTimeFormatter.format(new Date(overlap.validTo))}.`;
-      }
-    }
     return null;
-  }, [rate, rates, selectedCode, validFrom, validTo]);
+  }, [rate, selectedCode, validFrom, validTo]);
+
+  const overlappingRate = useMemo(() => {
+    if (!selectedCode || !validFrom || !validTo) return undefined;
+    const start = new Date(validFrom).getTime();
+    const end = new Date(validTo).getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return undefined;
+    return findOverlappingRate(rates, selectedCode, start, end);
+  }, [rates, selectedCode, validFrom, validTo]);
 
   const toggleCurrency = async (code: string, enabled: boolean) => {
     if (!canManage || togglingCode) return;
@@ -590,6 +592,13 @@ export function CurrencyAdministration({
             <p className="flex items-start gap-2 text-sm text-destructive" role="alert">
               <WarningCircle className="mt-0.5 shrink-0" aria-hidden="true" />
               {formError}
+            </p>
+          )}
+
+          {!formError && overlappingRate && (
+            <p className="flex items-start gap-2 text-sm text-amber-700" role="status">
+              <Info className="mt-0.5 shrink-0" aria-hidden="true" />
+              La nueva cotización tendrá prioridad desde {dateTimeFormatter.format(new Date(validFrom))} durante el período compartido. La cotización anterior se conservará en el historial.
             </p>
           )}
 

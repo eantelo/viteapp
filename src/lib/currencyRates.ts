@@ -10,7 +10,7 @@ export function getRateStatus(item: ExchangeRate, now = Date.now()): RateStatus 
   return "current";
 }
 
-/** Encuentra una cotización activa cuya ventana se solape con la propuesta. */
+/** Encuentra una cotización activa solapada para informar que la nueva tendrá prioridad. */
 export function findOverlappingRate(
   rates: ExchangeRate[],
   currencyCode: string,

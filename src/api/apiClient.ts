@@ -45,7 +45,10 @@ function getApiErrorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
-function buildHeaders(
+/**
+ * Construye las cabeceras estándar de las solicitudes del navegador a la API.
+ */
+export function buildApiHeaders(
   skipAuth: boolean | undefined,
   headers?: Record<string, string>,
 ): Record<string, string> {
@@ -80,7 +83,7 @@ export async function apiClient<TResponse>(
 
   const response = await fetch(url, {
     method,
-    headers: buildHeaders(skipAuth, headers),
+    headers: buildApiHeaders(skipAuth, headers),
     body,
     credentials: "include",
     ...rest,
